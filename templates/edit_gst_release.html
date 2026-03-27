@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit GST Release</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<h2>Edit GST Release</h2>
+
+<form action="/edit_gst_release/{{ gst_release_data.gst_release_id }}" method="POST">
+
+    <!-- PMC Number -->
+    <label for="PMC_No">PMC No :</label><br>
+    <input type="text" id="PMC_No" name="PMC_No" value="{{ gst_release_data.pmc_no }}" required><br><br>
+
+    <!-- Invoice Number -->
+    <label for="invoice_no">Invoice No:</label><br>
+    <input type="text" id="invoice_no" name="invoice_no" value="{{ gst_release_data.invoice_no }}" required><br><br>
+
+    <!-- Basic Amount -->
+    <label for="Basic_Amount">Basic Amount:</label><br>
+    <input type="number" step="0.01" id="Basic_Amount" name="Basic_Amount" value="{{ gst_release_data.basic_amount }}" required><br><br>
+
+    <!-- Final Amount -->
+    <label for="Final_Amount">Final Amount:</label><br>
+    <input type="number" step="0.01" id="Final_Amount" name="Final_Amount" value="{{ gst_release_data.final_amount }}" required><br><br>
+
+    <!-- Total Amount -->
+    <label for="Total_Amount">Total Amount:</label><br>
+    <input type="number" step="0.01" id="Total_Amount" name="Total_Amount" value="{{ gst_release_data.total_amount }}" required><br><br>
+
+    <!-- UTR -->
+    <label for="UTR">UTR:</label><br>
+    <input type="text" id="UTR" name="UTR" value="{{ gst_release_data.utr }}" readonly required><br><br>
+
+    <!-- Hidden Contractor ID -->
+    <input type="hidden" id="Contractor_ID" name="Contractor_ID" value="{{ gst_release_data.contractor_id }}">
+
+    <button type="submit">Update GST Release</button>
+</form>
+
+</body>
+{% endblock %}

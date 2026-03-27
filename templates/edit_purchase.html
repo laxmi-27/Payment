@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Purchase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>Edit Purchase Order</h2>
+    <form method="POST">
+        <label>Purchase Date:</label>
+        <input type="date" name="purchase_date" value="{{ purchase['purchase_date'] }}" required><br><br>
+
+        <label>Supplier Name:</label>
+        <input type="text" name="supplier_name" value="{{ purchase['supplier_name'] }}" required><br><br>
+
+        <label>Purchase Order No:</label>
+        <input type="text" name="purchase_order_no" value="{{ purchase['purchase_order_no'] }}" required><br><br>
+
+        <label>Item Name:</label>
+        <input type="text" name="item_name" value="{{ purchase['item_name'] }}" required><br><br>
+
+        <label>Quantity:</label>
+        <input type="number" name="quantity" value="{{ purchase['quantity'] }}" required><br><br>
+
+        <label>Unit:</label>
+        <input type="text" name="unit" value="{{ purchase['unit'] }}" required><br><br>
+
+        <label>Rate:</label>
+        <input type="number" step="0.01" name="rate" value="{{ purchase['rate'] }}" required><br><br>
+
+        <label>Amount:</label>
+        <input type="number" step="0.01" name="amount" value="{{ purchase['amount'] }}" required><br><br>
+
+
+        <label>GST Amount:</label>
+        <input type="text" name="GST_Amount" value="{{ purchase['GST_Amount'] }}" required><br><br>
+
+        <label>TDS:</label>
+        <input type="number" step="0.01" name="TDS" value="{{ purchase['TDS'] }}" required><br><br>
+
+        <label>Final Amount:</label>
+        <input type="number" step="0.01" name="final_amount" value="{{ purchase['final_amount'] }}" required><br><br>
+
+        <input type="submit" value="Update">
+    </form>
+</body>
+</html>

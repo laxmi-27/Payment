@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block content %}
+<head>
+    <title>Manage Purchases</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="button-container">
+    <button id="addButton" class="action-button">Add Purchase</button>
+    <button id="displayButton" class="action-button">Display Purchases</button>
+</div>
+
+<!-- ADD PURCHASE FORM -->
+<!-- ADD PURCHASE FORM -->
+<div id="addForm" style="display: none;">
+    <h2>Add Purchase Entry</h2>
+    <form action="/add_purchase_order" method="POST">
+        <label for="purchase_date">Purchase Date:</label><br>
+        <input type="date" id="purchase_date" name="purchase_date" required><br><br>
+
+        <label for="supplier_name">Supplier Name:</label><br>
+        <input type="text" id="supplier_name" name="supplier_name" required><br><br>
+
+        <label for="Purchase Order No">Purchase Order No:</label><br>
+        <input type="text" name="purchase_order_no" required><br><br>
+
+        <label for="unit">Item Name:</label><br>
+        <input type="text" id="item_name" name="item_name" required><br><br>
+
+        <label for="quantity">Quantity:</label><br>
+        <input type="number" id="quantity" name="quantity" step="1" required><br><br>
+
+        <label for="unit">Unit:</label><br>
+        <input type="text" id="unit" name="unit" required><br><br>
+
+        <label for="rate">Rate:</label><br>
+        <input type="number" step="0.01" id="rate" name="rate" required><br><br>
+
+        <label for="amount">Amount:</label><br>
+        <input type="number" step="0.01" id="amount" name="amount" readonly><br><br>
+
+        <!-- GST input -->
+        <label for="gst_percent">GST %:</label><br>
+        <input type="number" step="0.01" id="gst_percent"><br><br>
+
+        <label>GST Amount:</label><br>
+        <input type="number" step="0.01" id="GST_Amount" name="GST_Amount" readonly><br><br>
+
+        <!-- TDS input -->
+        <label for="tds_percent">TDS %:</label><br>
+        <input type="number" step="0.01" id="tds_percent"><br><br>
+
+        <label>TDS:</label><br>
+        <input type="number" step="0.01" id="TDS" name="TDS" readonly><br><br>
+
+        <label>Final Amount:</label><br>
+        <input type="number" step="0.01" id="final_amount" name="final_amount" readonly><br><br>
+
+        <input type="submit" value="Submit">
+    </form>
+</div>
+
+<!-- DISPLAY TABLE -->
+<div id="displayTable" style="display: none;">
+    <h2>Purchase List</h2>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Purchase Date</th>
+            <th>Supplier Name</th>
+            <th>Purchase Order No</th>
+            <th>Item Name</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>GST Amount</th>
+            <th>TDS</th>
+            <th>Final Amount</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+        {% for purchase in purchases %}
+        <tr>
+            <td>{{ purchase['purchase_id'] }}</td>
+            <td>{{ purchase['purchase_date'] }}</td>
+            <td>{{ purchase['supplier_name'] }}</td>
+            <td>{{ purchase['purchase_order_no'] }}</td>
+            <td>{{ purchase['item_name'] }}</td>
+            <td>{{ purchase['quantity'] }}</td>
+            <td>{{ purchase['unit'] }}</td>
+            <td>{{ purchase['rate'] }}</td>
+            <td>{{ purchase['amount'] }}</td>
+            <td>{{ purchase['GST_Amount'] }}</td>
+            <td>{{ purchase['TDS'] }}</td>
+            <td>{{ purchase['final_amount'] }}</td>
+            <td><a href="{{ url_for('update_purchase', id=purchase['purchase_id']) }}">Edit</a></td>
+            <td>
+                <form method="POST" action="{{ url_for('delete_purchase', id=purchase['purchase_id']) }}" style="display:inline;">
+                    <button type="submit" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#addButton').click(function() {
+        $('#addForm').toggle();
+    });
+    $('#displayButton').click(function() {
+        $('#displayTable').toggle();
+    });
+});
+</script>
+<script>
+function calculateAmounts() {
+    const qty = parseFloat(document.getElementById('quantity').value) || 0;
+    const rate = parseFloat(document.getElementById('rate').value) || 0;
+    const gstPercent = parseFloat(document.getElementById('gst_percent').value) || 0;
+    const tdsPercent = parseFloat(document.getElementById('tds_percent').value) || 0;
+
+    const amount = qty * rate;
+    document.getElementById('amount').value = amount.toFixed(2);
+
+    const gstAmount = (gstPercent / 100) * amount;
+    document.getElementById('GST_Amount').value = gstAmount.toFixed(2);
+
+    const tdsAmount = (tdsPercent / 100) * amount;
+    document.getElementById('TDS').value = tdsAmount.toFixed(2);
+
+    const finalAmount = amount + gstAmount - tdsAmount;
+    document.getElementById('final_amount').value = finalAmount.toFixed(2);
+}
+
+// Attach events
+document.getElementById('quantity').addEventListener('input', calculateAmounts);
+document.getElementById('rate').addEventListener('input', calculateAmounts);
+document.getElementById('gst_percent').addEventListener('input', calculateAmounts);
+document.getElementById('tds_percent').addEventListener('input', calculateAmounts);
+</script>
+
+</body>
+{% endblock %}

@@ -1,0 +1,74 @@
+2025-08-22 13:29:24,485 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.180
+2025-08-22 13:41:42,046 | User: v.sinha | Action: Logout | Details: User v.sinha logged out | IP: 192.168.0.180
+2025-08-22 14:07:01,924 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.180
+2025-08-22 15:05:59,287 | User: v.sinha | Action: Logout | Details: User v.sinha logged out | IP: 192.168.0.180
+2025-08-22 15:06:05,201 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.180
+2025-08-23 15:58:28,248 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.180
+2025-08-23 17:33:06,648 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.180
+2025-08-23 17:39:08,442 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.180
+2025-08-23 18:14:51,722 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.180
+2025-08-25 11:57:12,202 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.238
+2025-08-25 12:00:17,780 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 14:09:29,385 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 14:12:35,084 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 14:23:53,539 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 14:23:54,024 | User: v.sinha | Action: Added State | Details: User MP Adding State | IP: 192.168.0.181
+2025-08-25 14:23:57,113 | User: v.sinha | Action: Deleted State | Details: User 11 Deleting State | IP: 192.168.0.181
+2025-08-25 14:31:55,715 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 14:36:21,158 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 14:36:21,496 | User: v.sinha | Action: Added State | Details: State 'MP' added. | IP: 192.168.0.181
+2025-08-25 14:47:08,719 | User: v.sinha | Action: Checked State | Details: User Maharashtra Checking State | IP: 192.168.0.181
+2025-08-25 14:47:14,759 | User: v.sinha | Action: Deleted State | Details: User 12 Deleting State | IP: 192.168.0.181
+2025-08-25 14:47:16,915 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 14:47:17,708 | User: v.sinha | Action: Added State | Details: State 'MP' added. | IP: 192.168.0.181
+2025-08-25 14:49:09,480 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 14:49:13,014 | User: v.sinha | Action: Deleted State | Details: User 13 Deleting State | IP: 192.168.0.181
+2025-08-25 14:49:14,584 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 14:49:15,055 | User: v.sinha | Action: Added State | Details: State 'MP' added. | IP: 192.168.0.181
+2025-08-25 14:51:55,187 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 14:51:58,463 | User: v.sinha | Action: Deleted State | Details: User 14 Deleting State | IP: 192.168.0.181
+2025-08-25 14:52:00,606 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 14:52:00,953 | User: v.sinha | Action: Added State | Details: State 'MP' added. | IP: 192.168.0.181
+2025-08-25 14:54:26,674 | User: v.sinha | Action: Deleted State | Details: User 15 Deleting State | IP: 192.168.0.181
+2025-08-25 14:54:28,892 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 14:54:29,553 | User: v.sinha | Action: Added State | Details: State 'MP' added. | IP: 192.168.0.181
+2025-08-25 15:18:37,773 | User: v.sinha | Action: Logout | Details: User v.sinha logged out | IP: 192.168.0.181
+2025-08-25 15:18:43,347 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 15:20:41,331 | User: v.sinha | Action: Logout | Details: User v.sinha logged out | IP: 192.168.0.181
+2025-08-25 15:20:47,525 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 15:20:55,687 | User: v.sinha | Action: Checked State | Details: User MP Checking State | IP: 192.168.0.181
+2025-08-25 15:20:58,544 | User: v.sinha | Action: Deleted State | Details: User 16 Deleting State | IP: 192.168.0.181
+2025-08-25 16:33:49,898 | User: v.sinha | Action: Check State | Details: User v.sinha Checked state 'MP' | IP: 192.168.0.181
+2025-08-25 16:33:50,394 | User: v.sinha | Action: Add State | Details: User v.sinha added state 'MP' | IP: 192.168.0.181
+2025-08-25 16:43:46,446 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 16:43:49,710 | User: v.sinha | Action: Logout | Details: User v.sinha logged out | IP: 192.168.0.181
+2025-08-25 16:43:58,093 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 16:44:11,935 | User: v.sinha | Action: Check State | Details: User v.sinha Checked state 'shamli' | IP: 192.168.0.181
+2025-08-25 16:44:12,466 | User: v.sinha | Action: Add State | Details: User v.sinha added state 'shamli' | IP: 192.168.0.181
+2025-08-25 16:44:17,731 | User: v.sinha | Action: Delete State | Details: User v.sinha Deleted state '18' | IP: 192.168.0.181
+2025-08-25 16:57:27,983 | User: v.sinha | Action: Logout | Details: User v.sinha logged out | IP: 192.168.0.181
+2025-08-25 16:57:33,498 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 16:57:41,438 | User: v.sinha | Action: Check State | Details: User v.sinha Checked state 'shamli' | IP: 192.168.0.181
+2025-08-25 16:57:42,250 | User: v.sinha | Action: Add State | Details: User v.sinha added state 'shamli' | IP: 192.168.0.181
+2025-08-25 16:57:45,339 | User: v.sinha | Action: Delete State | Details: User v.sinha Deleted state '19' | IP: 192.168.0.181
+2025-08-25 16:57:48,794 | User: v.sinha | Action: Delete State | Details: User v.sinha Deleted state '17' | IP: 192.168.0.181
+2025-08-25 17:04:11,021 | User: v.sinha | Action: Logout | Details: User v.sinha logged out | IP: 192.168.0.181
+2025-08-25 17:04:16,165 | User: v.sinha | Action: Login | Details: User v.sinha logged in | IP: 192.168.0.181
+2025-08-25 17:04:21,702 | User: v.sinha | Action: Check State | Details: User v.sinha Checked state 'shamli' | IP: 192.168.0.181
+2025-08-25 17:04:22,159 | User: v.sinha | Action: Add State | Details: User v.sinha added state 'shamli' | IP: 192.168.0.181
+2025-08-25 17:04:26,850 | User: v.sinha | Action: Check State | Details: User v.sinha Checked state 'M' | IP: 192.168.0.181
+2025-08-25 17:04:27,076 | User: v.sinha | Action: Check State | Details: User v.sinha Checked state 'MP' | IP: 192.168.0.181
+2025-08-25 17:04:28,070 | User: v.sinha | Action: Add State | Details: User v.sinha added state 'MP' | IP: 192.168.0.181
+2025-08-25 17:04:32,165 | User: v.sinha | Action: Delete State | Details: User v.sinha Deleted state '21' | IP: 192.168.0.181
+2025-08-25 17:04:35,058 | User: v.sinha | Action: Delete State | Details: User v.sinha Deleted state '20' | IP: 192.168.0.181
+2025-08-25 17:06:05,113 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'Shamli' | IP: 192.168.0.181
+2025-08-25 17:06:05,114 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'Shamli' | IP: 192.168.0.181
+2025-08-25 17:06:08,040 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'p' | IP: 192.168.0.181
+2025-08-25 17:06:08,360 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'pu' | IP: 192.168.0.181
+2025-08-25 17:06:08,554 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'pun' | IP: 192.168.0.181
+2025-08-25 17:06:08,756 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'pune' | IP: 192.168.0.181
+2025-08-25 17:06:10,190 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'pune' | IP: 192.168.0.181
+2025-08-25 17:06:11,204 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'pune' | IP: 192.168.0.181
+2025-08-25 17:06:11,206 | User: v.sinha | Action: Check District | Details: User v.sinha Checked District 'pune' | IP: 192.168.0.181
+2025-08-25 17:06:13,085 | User: v.sinha | Action: Add District | Details: User v.sinha Added District 'pune' | IP: 192.168.0.181
+2025-08-25 17:06:19,524 | User: v.sinha | Action: Delete District | Details: User v.sinha Deleted District '5' | IP: 192.168.0.181

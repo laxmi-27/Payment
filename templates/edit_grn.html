@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><title>Edit GRN</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>Edit GRN</h2>
+    <form method="POST">
+        <label>GRN Date:</label>
+        <input type="date" name="grn_date" value="{{ grn['grn_date'] }}" required><br><br>
+
+        <label>Purchase ID:</label>
+        <input type="number" name="purchase_id" value="{{ grn['purchase_id'] }}" required><br><br>
+
+        <label>Supplier Name:</label>
+        <input type="text" name="supplier_name" value="{{ grn['supplier_name'] }}" required><br><br>
+
+        <label>Item Description:</label>
+        <input type="text" name="item_description" value="{{ grn['item_description'] }}" required><br><br>
+
+        <label>Received Quantity:</label>
+        <input type="number" name="received_quantity" value="{{ grn['received_quantity'] }}" required><br><br>
+
+        <label>Unit:</label>
+        <input type="text" name="unit" value="{{ grn['unit'] }}" required><br><br>
+
+        <label>Rate:</label>
+        <input type="number" step="0.01" name="rate" value="{{ grn['rate'] }}" required><br><br>
+
+        <label>Amount:</label>
+        <input type="number" step="0.01" name="amount" value="{{ grn['amount'] }}" required><br><br>
+
+        <label>Remarks:</label>
+        <input type="text" name="remarks" value="{{ grn['remarks'] }}"><br><br>
+
+        <input type="submit" value="Update GRN">
+    </form>
+</body>
+</html>

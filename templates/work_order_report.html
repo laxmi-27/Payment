@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block content %}
+<head>
+    <title>Work Order Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/subcontractor_report.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        h2.report-title {
+            font-size: 28px;
+            color: #1a73e8;
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        select {
+            padding: 6px;
+        }
+        #downloadBtn, #searchBtn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #downloadBtn:hover, #searchBtn:hover {
+            background-color: #45a049;
+        }
+        table {
+            margin: 0 auto;
+            margin-top: 30px;
+            border-collapse: collapse;
+            width: 95%;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2 class="report-title">Work Order Report</h2>
+
+    <div class="filter-section">
+        <div>
+            <label for="vendor_name">Select Vendor Name:</label>
+            <select id="vendor_name" name="vendor_name" style="width: 300px;"></select>
+        </div>
+
+        <div>
+            <label for="work_order_number">Select Work Order Number:</label>
+            <select id="work_order_number" name="work_order_number" style="width: 300px;"></select>
+        </div>
+
+        <button id="searchBtn">Search</button>
+        <button id="downloadBtn" style="display: none;">Download Report</button>
+    </div>
+
+    <table border="1" id="workOrderTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Vendor Name</th>
+                <th>Work Order Type</th>
+                <th>Amount</th>
+                <th>BOQ</th>
+                <th>Done %</th>
+                <th>GST</th>
+                <th>TDS</th>
+                <th>Security Deposit</th>
+                <th>SD GST</th>
+                <th>Final Total</th>
+                <th>TDS of GST</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- JS Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#vendor_name, #work_order_number').select2({
+                placeholder: 'Search',
+                minimumInputLength: 1,
+                ajax: {
+                    delay: 250,
+                    dataType: 'json',
+                    cache: true
+                }
+            });
+
+            $('#vendor_name').select2({
+                placeholder: 'Search Vendor',
+                ajax: {
+                    url: '/get_vendor_names',
+                    data: function (params) {
+                        return { q: params.term };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.map(v => ({ id: v, text: v }))
+                        };
+                    }
+                }
+            });
+
+            $('#work_order_number').select2({
+                placeholder: 'Search Work Order',
+                ajax: {
+                    url: '/get_work_order_numbers',
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            vendor_name: $('#vendor_name').val()
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.map(o => ({ id: o, text: o }))
+                        };
+                    }
+                }
+            });
+
+            // Fetch and display table
+            $('#searchBtn').click(function () {
+                let vendor = $('#vendor_name').val();
+                let order = $('#work_order_number').val();
+
+                if (!vendor && !order) {
+                    alert("Please select Vendor or Work Order Number or both.");
+                    return;
+                }
+
+                $.ajax({
+                    url: '/get_work_order_data',
+                    data: {
+                        vendor_name: vendor,
+                        work_order_number: order
+                    },
+                    success: function (data) {
+                        let tbody = $('#workOrderTable tbody');
+                        tbody.empty();
+
+                        if (data.length > 0) {
+                            $('#workOrderTable').show();
+                            $('#downloadBtn').show();
+
+                            data.forEach(function (row) {
+                                tbody.append(`
+                                    <tr>
+                                        <td>${row.work_order_id}</td>
+                                        <td>${row.vendor_name}</td>
+                                        <td>${row.work_order_type}</td>
+                                        <td>${row.work_order_amount}</td>
+                                        <td>${row.boq_amount}</td>
+                                        <td>${row.work_done_percentage}</td>
+                                        <td>${row.gst_amount}</td>
+                                        <td>${row.tds_amount}</td>
+                                        <td>${row.security_deposit}</td>
+                                        <td>${row.sd_against_gst}</td>
+                                        <td>${row.final_total}</td>
+                                        <td>${row.tds_of_gst}</td>
+                                    </tr>
+                                `);
+                            });
+                        } else {
+                            alert("No data found for selected filters.");
+                            $('#workOrderTable').hide();
+                            $('#downloadBtn').hide();
+                        }
+                    }
+                });
+            });
+
+            // Download report
+            $('#downloadBtn').click(function () {
+                let vendor = $('#vendor_name').val();
+                let order = $('#work_order_number').val();
+
+                if (!vendor && !order) {
+                    alert("Please select filters before downloading.");
+                    return;
+                }
+
+                let url = '/download_work_order_report?';
+                if (vendor) url += 'vendor_name=' + encodeURIComponent(vendor);
+                if (order) url += '&work_order_number=' + encodeURIComponent(order);
+
+                window.location.href = url;
+            });
+        });
+    </script>
+</body>
+{% endblock %}

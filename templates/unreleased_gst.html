@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>🚫 GST Release Not Filled</h2>
+
+    <table border="1" cellpadding="8" cellspacing="0">
+        <thead>
+            <tr>
+                <th>PMC No</th>
+                <th>Invoice No</th>
+                <th>Invoice Details</th>
+                <th>GST_SD_Amount</th>
+                
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td>{{ row.PMC_No }}</td>
+                <td>{{ row.Invoice_No }}</td>
+                <td>{{ row.Invoice_Details }}</td>
+                <td>{{ row.GST_SD_Amount }}</td>
+
+               
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if data|length == 0 %}
+        <p><strong>✅ All invoices have GST releases.</strong></p>
+    {% endif %}
+</div>
+{% endblock %}
