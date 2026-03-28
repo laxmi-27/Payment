@@ -51,42 +51,17 @@ class PmcReport:
 
             total_invo_final = sum(row.get('Final_Amount', 0) or 0 for row in invoices)
 
-
-            # GST RELEASE
-            # cursor.callproc('GetGSTReleaseByPMC', [pmc_no])
-            # gst_rel = []
-            # for result in cursor.stored_results():
-            #     gst_rel = result.fetchall()
             
             gst_rel = ReportHelper.execute_sp(cursor, 'GetGSTReleaseByPMC', [pmc_no])
 
             total_gst_basic = sum(row.get('basic_amount', 0) or 0 for row in gst_rel)
             total_gst_final = sum(row.get('final_amount', 0) or 0 for row in gst_rel)
 
-            # ---------------- HOLD RELEASE ----------------
-            # cursor.callproc('GetHoldReleaseByPMC', [pmc_no])
-            # hold_release = []
-            # for result in cursor.stored_results():
-            #     hold_release = result.fetchall()
-
             hold_release = ReportHelper.execute_sp(cursor, 'GetHoldReleaseByPMC', [pmc_no])
-
-            # ---------------- CREDIT NOTE ----------------
-            # cursor.callproc('GetCreditNoteByPMC', [pmc_no])
-            # credit_note = []
-            # for result in cursor.stored_results():
-            #     credit_note = result.fetchall()
             
             credit_note = ReportHelper.execute_sp(cursor, 'GetCreditNoteByPMC', [pmc_no])
 
             payments = ReportHelper.execute_sp(cursor, 'GetPaymentsByPMC', [pmc_no])
-
-
-            # ---------------- PAYMENTS ----------------
-            # cursor.callproc('GetPaymentsByPMC', [pmc_no])
-            # payments = []
-            # for result in cursor.stored_results():
-            #     payments = result.fetchall()
 
             
 
@@ -151,7 +126,7 @@ class PmcReport:
             )
 
             contractor_info = contractor_info[0] if contractor_info else None
-            print(contractor_info)
+            print("contractor_info:::",contractor_info)
 
             if not contractor_info:
                 return None
@@ -160,6 +135,7 @@ class PmcReport:
                 cursor, 'GetHoldTypesByContractor',
                 [contractor_info["Contractor_Id"]]
             )
+            print("hold_types::::",hold_types)
 
             hold_type_map = {
                 ht['hold_type_id']: ht['hold_type'] for ht in hold_types
@@ -169,9 +145,12 @@ class PmcReport:
                 cursor, 'GetInvoicesAndGstReleaseByPmcNo', [pmc_no]
             )
 
+            print("invoices:::",invoices)
+
             credit_notes = ReportHelper.execute_sp(
-                cursor, 'GetCreditNoteByPMC', [pmc_no]
+                cursor, 'NewGetCreditNotesByPMCNo', [pmc_no]
             )
+            print("credit_notes:::",credit_notes)
 
             hold_amounts = ReportHelper.execute_sp(
                 cursor, 'GetHoldAmountsByContractor',
@@ -193,7 +172,10 @@ class PmcReport:
 
             credit_note_map = {}
             for cn in credit_notes:
-                credit_note_map.setdefault(cn['Invoice_Id'], []).append(cn)
+                pmc = cn.get("PMC_No")
+                if pmc:
+                    credit_note_map.setdefault(pmc, []).append(cn)
+                
 
             gst_map = {}
             for gst in gst_releases:
@@ -228,9 +210,10 @@ class PmcReport:
 
             hold_headers = [ht['hold_type'] for ht in hold_types]
             payment_headers = ["Final Amount", "Payment Amount", "TDS Payment", "Total Paid", "UTR"]
-            gst_headers = ["GST Release Amount", "GST Release UTR"]
+            # gst_headers = ["GST Release Amount", "GST Release UTR"]
 
-            headers = base_headers + hold_headers + payment_headers + gst_headers
+            # headers = base_headers + hold_headers + payment_headers + gst_headers
+            headers = base_headers + hold_headers + payment_headers 
             sheet.append(headers)
             for cell in sheet[sheet.max_row]:
                 cell.font = Font(bold=True)
@@ -273,25 +256,45 @@ class PmcReport:
                 # GST release placeholders (will add real GST below)
                 row += ["", ""]
 
+                print("11111::",row)
+
                 sheet.append(row)
             # ================= CREDIT NOTE ROWS =================
-            for inv_id, notes in credit_note_map.items():
-                for cn in notes:
+            # for notes in credit_note_map.items():
+            #     for cn in notes:
+            #         cn_row = [
+            #             pmc_no,
+            #             "", "", "Credit Note",
+            #             "", cn.get("Invoice_No", ""),
+            #             cn.get("Basic_Amount", ""),
+            #             "", "", "", "", "", "", "", "", "", ""
+            #         ]
+            #         cn_row += [""] * len(hold_headers)
+            #         cn_row += [
+            #             cn.get("Final_Amount", ""),
+            #             "",
+            #             "",
+            #             cn.get("Total_Amount", ""),
+            #             cn.get("UTR", "")
+            #         ]
+            #         print("22222::",cn_row)
+            #         sheet.append(cn_row)
+            for pmc, cn_list in credit_note_map.items():
+                for cn in cn_list:
                     cn_row = [
                         pmc_no,
                         "", "", "Credit Note",
                         "", cn.get("Invoice_No", ""),
                         cn.get("Basic_Amount", ""),
-                        "", "", "", "", "", "", "", "", "", ""
+                        "", "", "", "", "", "", "", "", "", "", ""
                     ]
                     cn_row += [""] * len(hold_headers)
                     cn_row += [
                         cn.get("Final_Amount", ""),
-                        "",
-                        "",
                         cn.get("Total_Amount", ""),
                         cn.get("UTR", "")
                     ]
+                    print("22222::", cn_row)
                     sheet.append(cn_row)
 
             # ================= GST RELEASE ROWS =================
@@ -311,6 +314,7 @@ class PmcReport:
                     gst.get("Total_Amount", ""),
                     gst.get("UTR", "")
                 ]
+                print("33333::",gst_row)
                 sheet.append(gst_row)
 
             # ================= AUTO WIDTH =================

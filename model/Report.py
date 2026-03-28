@@ -161,6 +161,7 @@ class ReportHelper:
     @staticmethod
     def generate_excel(contractor_id, contInfo, invoices, hold_types, hold_data,
                  credit_note_map, gst_release_map, output_file):
+                 
 
         workbook = openpyxl.Workbook()
         sheet = workbook.active
