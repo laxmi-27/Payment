@@ -17,8 +17,6 @@ class PmcReport:
 
         try:
 
-            # cursor.callproc("GetContractorInfoByPmcNo", (pmc_no,))
-            # pmc_info = next(cursor.stored_results()).fetchone()
             pmc_info = ReportHelper.execute_sp(cursor, 'GetContractorInfoByPmcNo', [pmc_no], True)
 
             if not pmc_info:
@@ -166,10 +164,6 @@ class PmcReport:
             for h in hold_amounts:
                 hold_data.setdefault(h['Invoice_Id'], {})[h['hold_type_id']] = h['hold_amount']
 
-            # hold_release_map = {}
-            # for hr in hold_releases:
-            #     hold_release_map.setdefault(hr['Invoice_Id'], []).append(hr)
-
             credit_note_map = {}
             for cn in credit_notes:
                 pmc = cn.get("PMC_No")
@@ -210,9 +204,7 @@ class PmcReport:
 
             hold_headers = [ht['hold_type'] for ht in hold_types]
             payment_headers = ["Final Amount", "Payment Amount", "TDS Payment", "Total Paid", "UTR"]
-            # gst_headers = ["GST Release Amount", "GST Release UTR"]
 
-            # headers = base_headers + hold_headers + payment_headers + gst_headers
             headers = base_headers + hold_headers + payment_headers 
             sheet.append(headers)
             for cell in sheet[sheet.max_row]:
@@ -259,26 +251,7 @@ class PmcReport:
                 print("11111::",row)
 
                 sheet.append(row)
-            # ================= CREDIT NOTE ROWS =================
-            # for notes in credit_note_map.items():
-            #     for cn in notes:
-            #         cn_row = [
-            #             pmc_no,
-            #             "", "", "Credit Note",
-            #             "", cn.get("Invoice_No", ""),
-            #             cn.get("Basic_Amount", ""),
-            #             "", "", "", "", "", "", "", "", "", ""
-            #         ]
-            #         cn_row += [""] * len(hold_headers)
-            #         cn_row += [
-            #             cn.get("Final_Amount", ""),
-            #             "",
-            #             "",
-            #             cn.get("Total_Amount", ""),
-            #             cn.get("UTR", "")
-            #         ]
-            #         print("22222::",cn_row)
-            #         sheet.append(cn_row)
+
             for pmc, cn_list in credit_note_map.items():
                 for cn in cn_list:
                     cn_row = [
