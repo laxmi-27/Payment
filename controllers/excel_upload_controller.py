@@ -350,6 +350,8 @@ def save_data():
 # --------------------------------------
 # If no village/work detected, only PMC/Payment
                 if not (Invoice_Details and 'village' in Invoice_Details.lower() and 'work' in Invoice_Details.lower()):
+                # if not (Invoice_Details and 'village' in Invoice_Details.lower() and 'work' in Invoice_Details.lower() and 'gst' in Invoice_Details.lower() and 'gst release note' in Invoice_Details.lower() and 'release' in Invoice_Details.lower()):
+                        
                     # ---------- Only PMC / Payment rows ----------
                     if PMC_No and  not Invoice_No and  UTR :
                         # print("No village/work, using PMC only :", PMC_No)

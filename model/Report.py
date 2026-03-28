@@ -200,7 +200,8 @@ class ReportHelper:
                 else ""
             )
 
-            key = (pmc_no, invoice_no)
+            # key = (pmc_no, invoice_no)
+            key = (pmc_no)
 
             # Yellow separator
             if previous_pmc_no and pmc_no != previous_pmc_no:
@@ -218,6 +219,7 @@ class ReportHelper:
                 inv.get("Work_Type", ""),
                 inv.get("Invoice_Details", ""),
                 inv.get("Invoice_Date", ""),
+                # inv.get("invoice_no",""),
                 invoice_no,
                 inv.get("Basic_Amount", ""),
                 inv.get("Debit_Amount", ""),
@@ -348,9 +350,12 @@ class ReportHelper:
         credit_note_raw = ReportHelper.execute_sp(cursor, 'GetCreditNotesByContractor', [contractor_id])
         credit_note_map = {}
         for cn in credit_note_raw:
+            # key = (
+            #     str(cn['PMC_No']).strip(),
+            #     str(cn['Invoice_No']).replace(" ", "") if cn['Invoice_No'] else ""
+            # )
             key = (
-                str(cn['PMC_No']).strip(),
-                str(cn['Invoice_No']).replace(" ", "") if cn['Invoice_No'] else ""
+                str(cn['PMC_No']).strip()
             )
             credit_note_map.setdefault(key, []).append(cn)
 
@@ -358,9 +363,12 @@ class ReportHelper:
         gst_release_raw = ReportHelper.execute_sp(cursor, 'GstReleasesByContractorId', [contractor_id])
         gst_release_map = {}
         for gr in gst_release_raw:
+            # key = (
+            #     str(gr['PMC_No']).strip(),
+            #     str(gr['Invoice_No']).replace(" ", "") if gr['Invoice_No'] else ""
+            # )
             key = (
-                str(gr['PMC_No']).strip(),
-                str(gr['Invoice_No']).replace(" ", "") if gr['Invoice_No'] else ""
+                str(gr['PMC_No']).strip()
             )
             gst_release_map.setdefault(key, []).append(gr)
 

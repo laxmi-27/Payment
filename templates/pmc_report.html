@@ -118,7 +118,7 @@
     {% for invoice in invoices %}
     <tr>
         <td>{{ invoice.PMC_No }}</td>
-        <td>{{ invoice.Village_Name.capitalize() }}</td>
+        <td>{{ invoice.Village_Name.capitalize() if invoice.Village_Name else '' }}</td>
         <td>{{ invoice.Work_Type }}</td>
         <td>{{ invoice.Invoice_Details }}</td>
         <td>{{ invoice.Invoice_Date }}</td>
