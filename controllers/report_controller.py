@@ -52,10 +52,6 @@ def contractor_report(contractor_id):
 
 #     return ReportHelper().download_report(contractor_id=contractor_id)
 
-
-
-
-
 @report_bp.route('/download_report/<int:contractor_id>')
 def download_report(contractor_id):
     output_file, error = ReportHelper.create_contractor_report(contractor_id)

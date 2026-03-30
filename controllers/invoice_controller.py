@@ -1,6 +1,3 @@
-
-
-
 # controllers/invoice_controller.py
 
 from flask import Blueprint, request, jsonify, render_template

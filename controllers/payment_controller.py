@@ -72,15 +72,13 @@ def edit_payment(payment_id):
         Paymentmodel.call_update_payment_proc(payment_id, pmc_no, invoice_no, amount, tds_amount, total_amount, utr)
 
         # Update inpayment
-        connection = Paymentmodel.get_connection()
-        cursor = connection.cursor()
-        cursor.callproc(
-        'UpdateInpaymentByPMCInvoiceUTR',
-        [amount, tds_amount, total_amount, pmc_no, invoice_no, utr]
-)
-        connection.commit()
-        cursor.close()
-        connection.close()
+        # connection = Paymentmodel.get_connection()
+        # cursor = connection.cursor()
+        # cursor.callproc('UpdateInpaymentByPMCInvoiceUTR',[amount, tds_amount, total_amount, pmc_no, invoice_no, utr])
+
+        # connection.commit()
+        # cursor.close()
+        # connection.close()
 
         return redirect(url_for('payment_bp.add_payment'))
 

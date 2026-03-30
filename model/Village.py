@@ -85,7 +85,7 @@ class Village:
                 request=request,
                 parentid=block_id,
                 childname=village_name,
-                storedprocfetch="GetVillageByNameAndBlocks"
+                storedprocfetch="GetVillageByNameAndBlock"     # Change GetVillageByNameAndBlocks to GetVillageByNameAndBlock
             )
             self._set_status(self.village)
             return result

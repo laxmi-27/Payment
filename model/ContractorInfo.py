@@ -1,6 +1,3 @@
-
-
-
 from mysql.connector import Error
 import config
 from datetime import datetime
@@ -17,7 +14,7 @@ class ContractorInfo:
         try:
             connection = config.get_db_connection()
             with connection.cursor(dictionary=True, buffered=True) as cursor:
-                cursor.callproc('GetContractorInfoById', [self.ID])
+                cursor.callproc('GetContractorInfo', [self.ID])                     #Change  GetContractorInfoById to GetContractorInfo
                 # Get the first result set
                 for result in cursor.stored_results():
                     self.contInfo = result.fetchone()

@@ -66,14 +66,14 @@ def show_table(filename):
                     errors.append(f"State '{file_info['State']}' is not valid. Please add it.")
 
                 if state_data:
-                    cursor.callproc('GetDistrictByNameAndStates', [file_info['District'], state_data['State_ID']])
+                    cursor.callproc('GetDistrictByNameAndState', [file_info['District'], state_data['State_ID']])     # Change GetDistrictByNameAndStates to GetDistrictByNameAndState
                     for result in cursor.stored_results():
                         district_data = result.fetchone()
                     if not district_data:
                         errors.append(f"District '{file_info['District']}' is not valid under state '{file_info['State']}'.")
 
                 if district_data:
-                    cursor.callproc('GetBlockByNameAndDistricts', [file_info['Block'], district_data['District_ID']])
+                    cursor.callproc('GetBlockByNameAndDistrict', [file_info['Block'], district_data['District_id']])       #Change District_ID to District_id  and GetBlockByNameAndDistricts to GetBlockByNameAndDistrict
                     for result in cursor.stored_results():
                         block_data = result.fetchone()
                     if not block_data:

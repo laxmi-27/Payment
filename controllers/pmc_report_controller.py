@@ -1,9 +1,6 @@
 from flask import Blueprint, render_template, send_from_directory
 from flask_login import login_required
-
 from model.PmcReport import PmcReport
-
-
 
 pmc_report_bp = Blueprint("pmc_report", __name__)
 
