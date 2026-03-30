@@ -164,7 +164,7 @@ class Village:
 
         try:
             with connection.cursor() as cursor:
-                cursor.callproc('GetAllBlocks')
+                cursor.callproc('GetAllBlock')
 
                 for result in cursor.stored_results():
                     blocks.extend(result.fetchall())

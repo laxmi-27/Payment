@@ -373,7 +373,7 @@ class ReportHelper:
             )
             gst_release_map.setdefault(key, []).append(gr)
 
-        print("GST MAP:", gst_release_map)
+        # print("GST MAP:", gst_release_map)
                 # Generate Excel
         # ReportHelper.generate_excel(
         #             contractor_id, contInfo, invoices, hold_types, hold_data,
