@@ -322,9 +322,12 @@ class ReportHelper:
 
     @staticmethod
     def create_contractor_report(contractor_id):
-        DOWNLOAD_FOLDER = os.path.join("static", "download")
-        os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
-        output_file = os.path.join(DOWNLOAD_FOLDER, f"Contractor_Report_{contractor_id}.xlsx")
+        # DOWNLOAD_FOLDER = os.path.join("static", "download")
+        # os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+        fileName=f"Contractor_Report_{contractor_id}.xlsx"
+        # output_file = os.path.join(DOWNLOAD_FOLDER, )
+       
+        output_file = FolderAndFile.get_download_path(filename=fileName)
 
         # Fetch Data
         contInfo = ReportHelper.get_contractor_info(contractor_id)
@@ -335,7 +338,7 @@ class ReportHelper:
         cursor = connection.cursor(dictionary=True, buffered=True)
         
         hold_types = ReportHelper.execute_sp(cursor, 'HoldTypesByContractorId', [contractor_id])
-        invoices = ReportHelper.execute_sp(cursor, 'FetchInvoicesByContractor', [contractor_id])
+        invoices = ReportHelper.execute_sp(cursor, 'GetInvoicesByContractorOrPMCNo', [contractor_id,None])
         hold_amounts = ReportHelper.execute_sp(cursor, 'HoldAmountsByContractorId', [contractor_id])
         hold_data = {}
         for h in hold_amounts:

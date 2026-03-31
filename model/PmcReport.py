@@ -140,7 +140,7 @@ class PmcReport:
             }
 
             invoices = ReportHelper.execute_sp(
-                cursor, 'GetInvoicesAndGstReleaseByPmcNo', [pmc_no]
+                cursor, 'GetInvoicesByContractorOrPMCNo', [None,pmc_no]
             )
 
             credit_notes = ReportHelper.execute_sp(
