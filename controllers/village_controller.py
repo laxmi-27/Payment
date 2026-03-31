@@ -11,14 +11,14 @@ from model.State import State
 
 # Create Blueprint
 village_bp = Blueprint('village', __name__)
-
+village = Village()
 
 # ------------------------- Add Village -------------------------
 @village_bp.route('/add_village', methods=['GET', 'POST'])
 @login_required
 def add_village():
 
-    village = Village()
+    # village = Village()
  
     if request.method == 'POST':
         village.AddVillage(request=request)
@@ -79,14 +79,14 @@ def get_blocks(district_id):
 @village_bp.route('/check_village', methods=['POST'])
 @login_required
 def check_village():
-    village = Village()
+    # village = Village()
     return village.CheckVillage(request=request)
 
 
 @village_bp.route('/delete_village/<int:village_id>')
 @login_required
 def delete_village(village_id):
-    village = Village()
+    # village = Village()
     village.DeleteVillage(request=request, village_id=village_id)
 
     # ✅ Convert resultMessage to string if it's a Response or tuple
@@ -112,7 +112,7 @@ def delete_village(village_id):
 @login_required
 def edit_village(village_id):
 
-    village = Village()
+    # village = Village()
 
     if request.method == 'POST':
 

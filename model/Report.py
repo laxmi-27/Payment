@@ -103,7 +103,7 @@ class ReportHelper:
                 # Hold Release
                 hold_release = ReportHelper.execute_sp(cursor, 'GetHoldRelease', [contractor_id])
                 # Credit Note
-                credit_note = ReportHelper.execute_sp(cursor, 'GetCreditNote', [contractor_id])
+                credit_note = ReportHelper.execute_sp(cursor, 'GetCreditNotesByContractor', [contractor_id])
                 # Payments
                 payments = ReportHelper.execute_sp(cursor, 'GetPayments', [contractor_id])
 
@@ -356,7 +356,7 @@ class ReportHelper:
         for cn in credit_note_raw:
             # key = (
             #     str(cn['PMC_No']).strip(),
-            #     str(cn['Invoice_No']).replace(" ", "") if cn['Invoice_No'] else ""
+            #     str(cn['Invoice_No']).replace(" ",     "") if cn['Invoice_No'] else ""
             # )
             key = (
                 str(cn['PMC_No']).strip()

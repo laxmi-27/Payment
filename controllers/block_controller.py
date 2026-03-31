@@ -7,12 +7,12 @@ from model.Block import Block
 from model.Utilities import HtmlHelper
 
 block_bp = Blueprint('block', __name__)
-
+block = Block()
 # --- Add Block page -------
 @block_bp.route('/add_block', methods=['GET', 'POST'])
 @login_required
 def add_block():
-    block = Block()
+    # block = Block()
 
     if request.method == 'POST':
         block.AddBlock(request)
@@ -62,7 +62,7 @@ def get_districts(state_id):
 @login_required
 def check_block():
 
-    block = Block()
+    # block = Block()
     return block.CheckBlock(request)
 
 
@@ -70,8 +70,8 @@ def check_block():
 @login_required
 def edit_block(block_id):
 
-    block = Block()
-
+    
+#   block = Block()
     if request.method == 'POST':
         block.EditBlock(request, block_id)
         block.resultMessage
@@ -90,7 +90,10 @@ def edit_block(block_id):
     for rs in cursor.stored_results():
         states = rs.fetchall()
 
-    cursor.callproc("GetAllDistrictsData")
+    # cursor.callproc("GetAllDistrictsData")
+    # for rs in cursor.stored_results():
+    #     districts = rs.fetchall()
+    cursor.callproc("GetAllDistricts")
     for rs in cursor.stored_results():
         districts = rs.fetchall()
 
@@ -111,7 +114,7 @@ def edit_block(block_id):
 @login_required
 def delete_block(block_id):
 
-    block = Block()
+    # block = Block()
     block.DeleteBlock(request, block_id)
 
     return redirect(url_for('block.add_block'))

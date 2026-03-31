@@ -5,12 +5,12 @@ from model.GST import GST
 
 hold_bp = Blueprint("hold_types", __name__)
 
-
+hold = HoldTypes()
 # ---------------- ADD HOLD TYPE ----------------
 @hold_bp.route('/add_hold_type', methods=['GET','POST'])
 @login_required
 def add_hold_type():
-    hold = HoldTypes()
+    # hold = HoldTypes()
 
     if request.method == 'POST':
         hold.AddHoldType(request)
@@ -30,7 +30,7 @@ def add_hold_type():
 @login_required
 def check_hold_type():
 
-    hold = HoldTypes()
+    # hold = HoldTypes()
     return hold.CheckHoldType(request)   # if exists
 
 
@@ -39,7 +39,7 @@ def check_hold_type():
 @login_required
 def edit_hold_type(id):
 
-    hold = HoldTypes()
+    # hold = HoldTypes()
 
     if request.method == 'POST':
         hold.EditHoldType(request, id)   # ✅
@@ -58,7 +58,7 @@ def edit_hold_type(id):
 @login_required
 def delete_hold_type(id):
 
-    hold = HoldTypes()
+    # hold = HoldTypes()
     hold.DeleteHoldType(request, id)   # ✅
 
     return redirect(url_for("hold_types.add_hold_type"))

@@ -144,7 +144,7 @@ class Paymentmodel:
         try:
             cursor = connection.cursor(dictionary=True)
             # Fetch PMC & Invoice before deleting
-            cursor.callproc('GetPaymentPMCInvoiceById', [payment_id])
+            cursor.callproc('GetPaymentById', [payment_id])
             record = {}
             for result in cursor.stored_results():
                 record = result.fetchone() or {}

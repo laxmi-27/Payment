@@ -121,7 +121,7 @@ class PmcReport:
             # ================= DATA FETCH =================
 
             contractor_info = ReportHelper.execute_sp(
-                cursor, 'GetContractorDetailsByPMC', [pmc_no]
+                cursor, 'GetContractorInfoByPmcNo', [pmc_no]                        
             )
 
             contractor_info = contractor_info[0] if contractor_info else None

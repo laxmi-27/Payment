@@ -84,7 +84,9 @@ def show_table(filename):
                     subcontractor_data = result.fetchone()
 
                 if not subcontractor_data:
-                    cursor.callproc('InsertSubcontractor', [file_info['Subcontractor']])
+                    # cursor.callproc('InsertSubcontractor', [file_info['Subcontractor']])
+                    # connection.commit()
+                    cursor.callproc('SaveContractor', [file_info.get('Subcontractor'),None,None,None,None,None,None,None,None])
                     connection.commit()
                     cursor.callproc('GetSubcontractorByName', [file_info['Subcontractor']])
                     for result in cursor.stored_results():
@@ -370,21 +372,23 @@ def save_data():
                         # if not invoice_id:
                         print(" extra payment :", PMC_No,Total_Amount,UTR, subcontractor_id)
                         
-                        cursor.execute(
-                            """
-                            INSERT INTO invoice (PMC_No,Contractor_Id) VALUES (%s, %s);
-                            """,
-                            (PMC_No, subcontractor_id)
-                        )
-                        connection.commit()
+                        # cursor.execute(
+                        #     """
+                        #     INSERT INTO invoice (PMC_No,Contractor_Id) VALUES (%s, %s);
+                        #     """,
+                        #     (PMC_No, subcontractor_id)
+                        # )
+                        # connection.commit()
 
-                        cursor.execute(
-                            "SELECT invoice_id FROM invoice WHERE PMC_No=%s AND Contractor_Id =%s ORDER BY invoice_id DESC LIMIT 1",
-                            (PMC_No, subcontractor_id)
-                        )
-                        row = cursor.fetchone()
-                        invoice_id = row[0] if row else None
-
+                        # cursor.execute(
+                        #     "SELECT invoice_id FROM invoice WHERE PMC_No=%s AND Contractor_Id =%s ORDER BY invoice_id DESC LIMIT 1",
+                        #     (PMC_No, subcontractor_id)
+                        # )
+                        # row = cursor.fetchone()
+                        cursor.callproc("insertExtrapaymet",(PMC_No, subcontractor_id))
+                        for result in cursor.stored_results():
+                            row = result.fetchone()
+                            invoice_id = row[0] if row else None
                         # insert payment
                         cursor.callproc(
                             "SavePayment",
@@ -405,8 +409,8 @@ def save_data():
                     # Add  inoice id in payment table
                     # cursor.callproc("SavePayment",(PMC_No, Invoice_No, Payment_Amount, TDS_Payment_Amount, Total_Amount, UTR, invoice_id))
 
-                if not village_id:
-                    village_id = None
+                # if not village_id:
+                #     village_id = None
                 # cursor.callproc('InsertOrUpdateInPayment', (
                 #         PMC_No,
                 #         village_id,

@@ -3,13 +3,13 @@ from flask_login import login_required
 from model.State import State
 
 state_bp = Blueprint('state', __name__)
-
+state = State()
 # ----- State page ------
 @state_bp.route('/add_state', methods=['GET', 'POST'])
 @login_required
 def add_state():
 
-    state = State()
+    # state = State()
 
     if request.method == 'POST':
         state.AddState(request=request)
@@ -24,7 +24,7 @@ def add_state():
 @login_required
 def check_state():
 
-    state = State()
+    # state = State()
 
     return state.CheckState(request=request)
 
@@ -33,7 +33,7 @@ def check_state():
 @login_required
 def deleteState(id):
 
-    state = State()
+    # state = State()
 
     state.DeleteState(request=request, id=id)
 
@@ -47,7 +47,7 @@ def deleteState(id):
 @login_required
 def editState(id):
 
-    state = State()
+    # state = State()
 
     if request.method == 'POST':
 
