@@ -66,7 +66,7 @@ def show_table(filename):
                     errors.append(f"State '{file_info['State']}' is not valid. Please add it.")
 
                 if state_data:
-                    cursor.callproc('GetDistrictByNameAndState', [file_info['District'], state_data['State_ID']])     # Change GetDistrictByNameAndStates to GetDistrictByNameAndState
+                    cursor.callproc('GetDistrictByNameAndState', [file_info['District'], state_data['State_Id']])     # Change GetDistrictByNameAndStates to GetDistrictByNameAndState
                     for result in cursor.stored_results():
                         district_data = result.fetchone()
                     if not district_data:
