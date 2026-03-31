@@ -259,8 +259,9 @@ def save_data():
                         # add subcontarctor id in invoice table
                         results = cursor.callproc('SaveInvoice', args)
                         invoice_id = results[-1]
-
-
+                        print("**************************************************************")
+                        print(invoice_id)
+                        print("**************************************************************")
                         cursor.callproc(
                             "SavePayment",
                             (

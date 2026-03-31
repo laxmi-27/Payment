@@ -11,8 +11,8 @@ class ItemCRUDType(Enum):
     GSTRelease = 7
 
 class RegEx:
-    patternAlphabetOnly = "^[A-Za-z ]+$"
-    allPattern = "^(?!\s*$).+"
+    patternAlphabetOnly = r"^[A-Za-z ]+$"
+    allPattern = r"^(?!\s*$).+"
 
 
 class ResponseHandler:

@@ -71,7 +71,22 @@ def get_all_villages():
 def insert_invoice(data, village_id):
     def operation(cursor):
         # Insert invoice
-        cursor.callproc('InsertInvoice', [
+        # cursor.callproc('InsertInvoice', [
+        #     data.get('pmc_no'),
+        #     village_id,
+        #     data.get('work_type'),
+        #     data.get('invoice_details'),
+        #     data.get('invoice_date'),
+        #     data.get('invoice_no'),
+        #     *get_numeric_values(data),
+        #     data.get('subcontractor_id')
+
+        # ])
+        # invoice_row = fetch_one(cursor)
+        # if not invoice_row:
+        #     raise Exception("Invoice ID not returned")
+        # invoice_id = invoice_row.get('invoice_id')
+        cursor.callproc('SaveInvoice', [
             data.get('pmc_no'),
             village_id,
             data.get('work_type'),
@@ -79,13 +94,14 @@ def insert_invoice(data, village_id):
             data.get('invoice_date'),
             data.get('invoice_no'),
             *get_numeric_values(data),
-            data.get('subcontractor_id')
-
+            data.get('subcontractor_id'),
+            0
         ])
-        invoice_row = fetch_one(cursor)
-        if not invoice_row:
-            raise Exception("Invoice ID not returned")
-        invoice_id = invoice_row.get('invoice_id')
+        invoice_id = None
+        for result in cursor.stored_results():
+            row = result.fetchone()
+            if row:
+                invoice_id = row['invoice_id']
 
         # # Insert inpayment
         # cursor.callproc('InsertInpayment', [
@@ -182,15 +198,15 @@ def delete_invoice_data(invoice_id, user_id):
 
 
 # ------------------- Subcontractor Functions -------------------
-def assign_subcontractor(data, village_id):
-    def operation(cursor):
-        cursor.callproc('AssignSubcontractor', [
-            data.get('pmc_no'),
-            data.get('subcontractor_id'),
-            village_id
-        ])
-        clear_results(cursor)
-    execute_db_operation(operation)
+# def assign_subcontractor(data, village_id):
+#     def operation(cursor):
+#         cursor.callproc('AssignSubcontractor', [
+#             data.get('pmc_no'),
+#             data.get('subcontractor_id'),
+#             village_id
+#         ])
+#         clear_results(cursor)
+#     execute_db_operation(operation)
 
 
 # ------------------- Hold Types Functions -------------------
