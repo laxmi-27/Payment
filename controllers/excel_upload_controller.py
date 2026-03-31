@@ -59,7 +59,7 @@ def show_table(filename):
             try:
                 cursor = connection.cursor(dictionary=True)
 
-                cursor.callproc('GetStateByName', [file_info['State']])
+                cursor.callproc('CheckStateExists', [file_info['State']])
                 for result in cursor.stored_results():
                     state_data = result.fetchone()
                 if not state_data:
