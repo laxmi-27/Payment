@@ -9,6 +9,7 @@ class ItemCRUDType(Enum):
     HoldType = 5
     Subcontractor = 6
     GSTRelease = 7
+    Invoice = 8
 
 class RegEx:
     patternAlphabetOnly = r"^[A-Za-z ]+$"

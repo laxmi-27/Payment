@@ -5,7 +5,7 @@ from model.Report import ReportHelper
 from model.Log import LogHelper
 import os
 
-DOWNLOAD_FOLDER = "static/download"
+# DOWNLOAD_FOLDER = "static/download"
 report_bp = Blueprint("report", __name__)
 
 
@@ -58,6 +58,7 @@ def download_report(contractor_id):
     
     if error:
         return error, 404
+      
 
     # Send the file to the user
     return send_file(output_file, as_attachment=True)

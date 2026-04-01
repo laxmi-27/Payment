@@ -5,12 +5,13 @@ from model.District import District
 from model.State import State
 
 district_bp = Blueprint('district', __name__)
+district = District()
 
 # ------- District page --------
 @district_bp.route('/add_district', methods=['GET', 'POST'])
 @login_required
 def add_district():
-    district = District()
+    # district = District()
 
     if request.method == 'POST':
         district.AddDistrict(request=request)
@@ -32,7 +33,7 @@ def add_district():
 @login_required
 def check_district():
 
-    district = District()
+    # district = District()
 
     return district.CheckDistrict(request=request)
 
@@ -41,7 +42,7 @@ def check_district():
 @login_required
 def delete_district(district_id):
 
-    district = District()
+    # district = District()
 
     district.DeleteDistrict(request=request, district_id=district_id)
 
@@ -56,7 +57,7 @@ def delete_district(district_id):
 @login_required
 def edit_district(district_id):
 
-    district = District()
+    # district = District()
     state = State()
 
     if request.method == 'POST':

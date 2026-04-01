@@ -1,7 +1,6 @@
 import config
 from datetime import datetime
 from flask import send_file
-import os
 import openpyxl
 from openpyxl.styles import Font, PatternFill
 
@@ -199,8 +198,8 @@ class ReportHelper:
                 inv["invoice_no"].replace(" ", "") if inv["invoice_no"] else ""
                 if inv["invoice_no"] not in (None, "", 0)
                 else ""
-            )
-
+            )   
+  
             # key = (pmc_no, invoice_no)
             key = (pmc_no)
 

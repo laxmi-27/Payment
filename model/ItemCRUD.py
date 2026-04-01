@@ -332,7 +332,7 @@ class ItemCRUD:
     # ----------------------------------------------------------
     # GET BY ID
     # ----------------------------------------------------------
-    def GetDataByID(self, id, storedproc):
+    def  GetDataByID(self, id, storedproc):
 
         data = None
         connection = config.get_db_connection()
