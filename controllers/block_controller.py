@@ -90,9 +90,6 @@ def edit_block(block_id):
     for rs in cursor.stored_results():
         states = rs.fetchall()
 
-    # cursor.callproc("GetAllDistrictsData")
-    # for rs in cursor.stored_results():
-    #     districts = rs.fetchall()
     cursor.callproc("GetAllDistricts")
     for rs in cursor.stored_results():
         districts = rs.fetchall()

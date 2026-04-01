@@ -72,24 +72,6 @@ class Paymentmodel:
             if connection:
                 connection.close()
 
-    # @staticmethod
-    # def update_inpayment(subcontractor_id, pmc_no, invoice_no, amount, tds_amount, total_amount, utr):
-    #     connection = Paymentmodel.get_connection()
-    #     if not connection:
-    #         return False
-    #     try:
-    #         cursor = connection.cursor()
-    #         cursor.callproc('UpdateInpaymentRecord', [
-    #             subcontractor_id, pmc_no, invoice_no, amount, tds_amount, total_amount, utr
-    #         ])
-    #         connection.commit()
-    #         return True
-    #     except mysql.connector.Error as e:
-    #         print(f"Error updating inpayment: {e}")
-    #         return False
-    #     finally:
-    #         cursor.close()
-    #         connection.close()
 
     @staticmethod
     def fetch_payment_by_id(payment_id):
@@ -155,9 +137,7 @@ class Paymentmodel:
             # Delete payment
             cursor.callproc("DeletePayment", (payment_id,))
             connection.commit()
-            # Reset inpayment fields
-            # cursor.callproc("ResetInpayment", [pmc_no, invoice_no])
-            # connection.commit()
+
             return True, pmc_no, invoice_no
         except mysql.connector.Error as e:
             print(f"Error deleting payment: {e}")

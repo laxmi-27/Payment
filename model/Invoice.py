@@ -70,22 +70,7 @@ def get_all_villages():
 # ------------------- Invoice Functions -------------------
 def insert_invoice(data, village_id):
     def operation(cursor):
-        # Insert invoice
-        # cursor.callproc('InsertInvoice', [
-        #     data.get('pmc_no'),
-        #     village_id,
-        #     data.get('work_type'),
-        #     data.get('invoice_details'),
-        #     data.get('invoice_date'),
-        #     data.get('invoice_no'),
-        #     *get_numeric_values(data),
-        #     data.get('subcontractor_id')
 
-        # ])
-        # invoice_row = fetch_one(cursor)
-        # if not invoice_row:
-        #     raise Exception("Invoice ID not returned")
-        # invoice_id = invoice_row.get('invoice_id')
         cursor.callproc('SaveInvoice', [
             data.get('pmc_no'),
             village_id,
@@ -103,18 +88,6 @@ def insert_invoice(data, village_id):
             if row:
                 invoice_id = row['invoice_id']
 
-        # # Insert inpayment
-        # cursor.callproc('InsertInpayment', [
-        #     data.get('pmc_no'),
-        #     village_id,
-        #     data.get('work_type'),
-        #     data.get('invoice_details'),
-        #     data.get('invoice_date'),
-        #     data.get('invoice_no'),
-        #     *get_numeric_values(data),
-        #     data.get('subcontractor_id')
-        # ])
-        # clear_results(cursor)
         return invoice_id
 
     return execute_db_operation(operation)
@@ -159,18 +132,6 @@ def update_invoice(data, invoice_id):
         clear_results(cursor)
     execute_db_operation(operation)
 
-# def update_inpayment(data):
-#     def operation(cursor):
-#         cursor.callproc('UpdateInpayment', [
-#             data.get('work_type'),
-#             data.get('invoice_details'),
-#             data.get('invoice_date'),
-#             *get_numeric_values(data),
-#             data.get('pmc_no'),
-#             data.get('invoice_no')
-#         ])
-#         clear_results(cursor)
-#     execute_db_operation(operation)
 
 def delete_invoice_data(invoice_id, user_id):
     def operation(cursor):
@@ -190,23 +151,9 @@ def delete_invoice_data(invoice_id, user_id):
         cursor.callproc("DeleteInvoice", (invoice_id,))
         clear_results(cursor)
 
-        # Delete inpayment
-        # cursor.callproc('DeleteInpaymentByPMCInvoice', (pmc_no, invoice_no))
-        # clear_results(cursor)
 
     execute_db_operation(operation)
 
-
-# ------------------- Subcontractor Functions -------------------
-# def assign_subcontractor(data, village_id):
-#     def operation(cursor):
-#         cursor.callproc('AssignSubcontractor', [
-#             data.get('pmc_no'),
-#             data.get('subcontractor_id'),
-#             village_id
-#         ])
-#         clear_results(cursor)
-#     execute_db_operation(operation)
 
 
 # ------------------- Hold Types Functions -------------------

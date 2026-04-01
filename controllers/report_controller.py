@@ -46,11 +46,6 @@ def contractor_report(contractor_id):
     )
 
 # # ---------------- Contractor Download Report by contractor id ----------------
-# @report_bp.route('/download_report/<int:contractor_id>')
-# @login_required
-# def download_report(contractor_id):
-
-#     return ReportHelper().download_report(contractor_id=contractor_id)
 
 @report_bp.route('/download_report/<int:contractor_id>')
 def download_report(contractor_id):

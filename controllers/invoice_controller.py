@@ -38,10 +38,7 @@ def add_invoice():
         village_id = village_result['Village_Id']
         invoice_id = insert_invoice(data, village_id)
         # assign_subcontractor(data, village_id)
-        print("********************************************************************")
-        print("Manully added invoice id :",invoice_id)
-        print("********************************************************************")
-
+       
         insert_hold_types(data, invoice_id)
 
         log_action("Add invoice", f"added invoice '{data.get('pmc_no')}'")

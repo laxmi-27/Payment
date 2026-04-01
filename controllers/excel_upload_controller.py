@@ -244,12 +244,7 @@ def save_data():
                                 for result in cursor.stored_results():
                                     result = result.fetchone()
                                 village_id = result[0] if result else None
-                        # print("village_id :", village_id)
-                        # print("block_id :", block_id)
-                        # print("invoice :", PMC_No, village_id, work_type, Invoice_Details, Invoice_Date, Invoice_No,
-                        #       Basic_Amount, Debit_Amount, After_Debit_Amount, Amount, GST_Amount, TDS_Amount,
-                            #   SD_Amount, On_Commission, Hydro_Testing, GST_SD_Amount, Final_Amount)
-
+                        
                         args = (
                             PMC_No, village_id, work_type, Invoice_Details, Invoice_Date, Invoice_No,
                             Basic_Amount, Debit_Amount, After_Debit_Amount, Amount, GST_Amount, TDS_Amount,
@@ -261,9 +256,7 @@ def save_data():
                         # add subcontarctor id in invoice table
                         results = cursor.callproc('SaveInvoice', args)
                         invoice_id = results[-1]
-                        print("**************************************************************")
-                        print(invoice_id)
-                        print("**************************************************************")
+
                         cursor.callproc(
                             "SavePayment",
                             (
@@ -308,8 +301,6 @@ def save_data():
                             print("Hold columns data is not a valid list of dictionaries.")
 #---------------------------------------------Credit Note---------------------------------------------------------------------------
                     elif any(keyword in Invoice_Details.lower() for keyword in ['credit note','logging report']):
-                        # print("Credit note found:", PMC_No, Invoice_No, Basic_Amount, Debit_Amount, Final_Amount,
-                        #       After_Debit_Amount, GST_Amount, Amount, Final_Amount, Payment_Amount, Total_Amount, UTR, Invoice_No)
                         cursor.callproc(
                             'AddCreditNoteFromExcel',
                             [
@@ -334,17 +325,14 @@ def save_data():
                     ]
                     # Step 3: Matching condition
                     if any(kw in normalized_details for kw in keywords):
-                        # print("✅ Match found. Inserting hold release for:", Invoice_Details)
                         cursor.callproc(
                             'AddHoldReleaseFromExcel',
                             [PMC_No, Invoice_No, Invoice_Details, Basic_Amount, Final_Amount, UTR, subcontractor_id]
 )
                         connection.commit() 
-                        # print("✅ Hold release inserted for:", PMC_No, Invoice_Details)
                     #------------------------------------------------------------------------------------------------------------------
                     elif Invoice_Details and any(
                             keyword in Invoice_Details.lower() for keyword in ['gst', 'release', 'gst release note']):
-                        # print("Gst rels :", PMC_No, Invoice_No, Basic_Amount, Final_Amount,Total_Amount,UTR, subcontractor_id)
                         cursor.callproc(
                             'AddGSTReleaseFromExcel',
                             [PMC_No, Invoice_No, Basic_Amount, Final_Amount, Total_Amount, UTR, subcontractor_id]
@@ -352,39 +340,13 @@ def save_data():
 
 # --------------------------------------
 # If no village/work detected, only PMC/Payment
-                if not (Invoice_Details and 'village' in Invoice_Details.lower() and 'work' in Invoice_Details.lower()):
-                # if not (Invoice_Details and 'village' in Invoice_Details.lower() and 'work' in Invoice_Details.lower() and 'gst' in Invoice_Details.lower() and 'gst release note' in Invoice_Details.lower() and 'release' in Invoice_Details.lower()):
-                        
+
+                if not (Invoice_Details and 'village' in Invoice_Details.lower() and 'work' in Invoice_Details.lower()):                        
                     # ---------- Only PMC / Payment rows ----------
                     if PMC_No and  not Invoice_No and  UTR :
-                        # print("No village/work, using PMC only :", PMC_No)
-
-                        # check invoice exists
-                        # cursor.execute(
-                        #     "SELECT invoice_id FROM invoice WHERE PMC_No=%s ORDER BY invoice_id DESC LIMIT 1",
-                        #     (PMC_No,)
-                        # )
-                        # row = cursor.fetchone()
-                        # invoice_id = row[0] if row else None
-
-                        # # insert invoice if not exists
-
-                        # if not invoice_id:
+            
                         print(" extra payment :", PMC_No,Total_Amount,UTR, subcontractor_id)
                         
-                        # cursor.execute(
-                        #     """
-                        #     INSERT INTO invoice (PMC_No,Contractor_Id) VALUES (%s, %s);
-                        #     """,
-                        #     (PMC_No, subcontractor_id)
-                        # )
-                        # connection.commit()
-
-                        # cursor.execute(
-                        #     "SELECT invoice_id FROM invoice WHERE PMC_No=%s AND Contractor_Id =%s ORDER BY invoice_id DESC LIMIT 1",
-                        #     (PMC_No, subcontractor_id)
-                        # )
-                        # row = cursor.fetchone()
                         cursor.callproc("insertExtrapaymet",(PMC_No, subcontractor_id))
                         for result in cursor.stored_results():
                             row = result.fetchone()
@@ -403,39 +365,6 @@ def save_data():
                             )
                         )
                    
-                # if PMC_No and Total_Amount and UTR:
-                #     print("Payment :", PMC_No, Invoice_No, Payment_Amount, TDS_Payment_Amount, Total_Amount, UTR )
-
-                    # Add  inoice id in payment table
-                    # cursor.callproc("SavePayment",(PMC_No, Invoice_No, Payment_Amount, TDS_Payment_Amount, Total_Amount, UTR, invoice_id))
-
-                # if not village_id:
-                #     village_id = None
-                # cursor.callproc('InsertOrUpdateInPayment', (
-                #         PMC_No,
-                #         village_id,
-                #         work_type,
-                #         Invoice_Details,
-                #         Invoice_Date,
-                #         Invoice_No,
-                #         Basic_Amount,
-                #         Debit_Amount,
-                #         After_Debit_Amount,
-                #         Amount,
-                #         GST_Amount,
-                #         TDS_Amount,
-                #         SD_Amount,
-                #         On_Commission,
-                #         Hydro_Testing,
-                #         0,
-                #         GST_SD_Amount,
-                #         Final_Amount,
-                #         Payment_Amount,
-                #         TDS_Payment_Amount,
-                #         Total_Amount,
-                #         UTR,f
-                #         subcontractor_id
-                #     ))
             connection.commit()
             return jsonify({"success": "Data saved successfully!"}), 200
         except Exception as e:

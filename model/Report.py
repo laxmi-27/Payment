@@ -154,9 +154,6 @@ class ReportHelper:
         contractor = ContractorInfo(contractor_id)
         return contractor.contInfo if contractor.contInfo else None
 
-    # @staticmethod
-    # def generate_excel(contractor_id, contInfo, invoices, hold_types, hold_data,
-    #                 extra_payments_map, credit_note_map, gst_release_map, output_file):
     @staticmethod
     def generate_excel(contractor_id, contInfo, invoices, hold_types, hold_data,
                  credit_note_map, gst_release_map, output_file):
@@ -249,22 +246,6 @@ class ReportHelper:
 
             sheet.append(row)
 
-            # # Extra Payments
-            # if pmc_no in extra_payments_map:
-            #     for ep in extra_payments_map[pmc_no]:
-            #         extra_row = [pmc_no] + [""] * (len(base_headers) - 1)
-            #         extra_row += [""] * len(hold_headers)
-            #         extra_row += [
-            #             "",
-            #             ep.get("Payment_Amount", ""),
-            #             ep.get("TDS_Payment_Amount", ""),
-            #             ep.get("Total_Amount", ""),
-            #             ep.get("utr", "")
-            #         ]
-            #         sheet.append(extra_row)
-
-            #     del extra_payments_map[pmc_no]
-
             # GST Releases
             if key in gst_release_map and key not in processed_gst_releases:
                 for gr in gst_release_map[key]:
@@ -321,11 +302,8 @@ class ReportHelper:
 
     @staticmethod
     def create_contractor_report(contractor_id):
-        # DOWNLOAD_FOLDER = os.path.join("static", "download")
-        # os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+
         fileName=f"Contractor_Report_{contractor_id}.xlsx"
-        # output_file = os.path.join(DOWNLOAD_FOLDER, )
-       
         output_file = FolderAndFile.get_download_path(filename=fileName)
 
         # Fetch Data
@@ -342,21 +320,12 @@ class ReportHelper:
         hold_data = {}
         for h in hold_amounts:
             hold_data.setdefault(h['Invoice_Id'], {})[h['hold_type_id']] = h['hold_amount']
-        # # # -------- Extra Payments MAP --------
-        # # extra_payments_raw = ReportHelper.execute_sp(cursor, 'GetExtraPayments')
-        # # extra_payments_map = {}
-        # # for ep in extra_payments_raw:
-        # #     pmc = str(ep['pmc_no']).strip()
-        # #     extra_payments_map.setdefault(pmc, []).append(ep)
 
         # -------- Credit Note MAP --------
         credit_note_raw = ReportHelper.execute_sp(cursor, 'GetCreditNotesByContractor', [contractor_id])
         credit_note_map = {}
         for cn in credit_note_raw:
-            # key = (
-            #     str(cn['PMC_No']).strip(),
-            #     str(cn['Invoice_No']).replace(" ",     "") if cn['Invoice_No'] else ""
-            # )
+ 
             key = (
                 str(cn['PMC_No']).strip()
             )
@@ -366,21 +335,11 @@ class ReportHelper:
         gst_release_raw = ReportHelper.execute_sp(cursor, 'GstReleasesByContractorId', [contractor_id])
         gst_release_map = {}
         for gr in gst_release_raw:
-            # key = (
-            #     str(gr['PMC_No']).strip(),
-            #     str(gr['Invoice_No']).replace(" ", "") if gr['Invoice_No'] else ""
-            # )
             key = (
                 str(gr['PMC_No']).strip()
             )
             gst_release_map.setdefault(key, []).append(gr)
 
-        # print("GST MAP:", gst_release_map)
-                # Generate Excel
-        # ReportHelper.generate_excel(
-        #             contractor_id, contInfo, invoices, hold_types, hold_data,
-        #             extra_payments_map, credit_note_map, gst_release_map, output_file
-        #     )
         ReportHelper.generate_excel(
                     contractor_id, contInfo, invoices, hold_types, hold_data,
                     credit_note_map, gst_release_map, output_file
