@@ -3,7 +3,7 @@ from openpyxl.styles import Font, PatternFill
 import config
 from flask_login import current_user
 from model.Log import LogHelper
-
+from model.excel import excel
 from model.Report import ReportHelper
 from model.FolderAndFile import FolderAndFile
 
@@ -169,7 +169,7 @@ class PmcReport:
                 f"User {current_user.id} Download PMC Report '{pmc_no}'"
             )
 
-            ReportHelper.generate_excel(
+            excel.generate_excel(
                     0, contractor_info, invoices, hold_types, hold_data,
                     credit_note_map,gst_release_map, output_file
             )
