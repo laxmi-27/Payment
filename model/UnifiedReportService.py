@@ -58,6 +58,8 @@ class UnifiedReportService:
 
                 payments = ReportHelper.execute_sp(cursor,'GetPayments',[contractor_id]) or []
 
+                print(payments)
+
 
             # ================= HOLD AMOUNTS =================
             hold_amounts = ReportHelper.execute_sp(cursor,'GetHoldAmountsByContractor',[contractor_id]) or []
@@ -97,7 +99,7 @@ class UnifiedReportService:
                 "sum_gst_final_amt": sum(r.get("Final_Amount", 0) or 0 for r in gst_rel),
                 "sum_gst_total_amt": sum(r.get("Total_Amount", 0) or 0 for r in gst_rel),
                 "sum_pay_total_amt": sum(Decimal(r.get("Total_amount") or 0) for r in payments),
-                "sum_pay_payment_amt": sum(Decimal(r.get("Total_amount") or 0) for r in payments),  # same as above if you want
+                "sum_pay_payment_amt": sum(Decimal(r.get("Payment_Amount") or 0) for r in payments),  # same as above if you want
                 "sum_pay_tds_payment_amt": sum(Decimal(r.get("TDS_Payment_Amount") or 0) for r in payments),
 
             }

@@ -178,9 +178,9 @@
                         <th>{{ total.get('sum_invo_on_commission', 0) }}</th>
                         <th>{{ total.get('sum_invo_hydro_test', 0) }}</th>
 
-                        {% for ht in hold_types %}
-                        <th>{{ total.sum_invo_hold_amt}}</th>
-                        {% endfor %}
+                        {% if hold_types %}
+                        <th colspan="{{hold_types|length }}">{{ total.sum_invo_hold_amt}}</th>
+                        {% endif %}
 
                         <th>{{ total.get('sum_invo_gst_sd_amt', 0) }}</th>
                         <th>{{ total.sum_invo_final_amt }}</th>
@@ -326,8 +326,7 @@
 
         <tr>
             <th colspan="2">Total</th>
-            <!-- <th>{{total["sum_pay_payment_amt "]}}</th> -->
-             <th>0.00</th>
+            <th>{{total["sum_pay_payment_amt"]}}</th>
             <th>{{total["sum_pay_tds_payment_amt"]}}</th>
             <th>{{total["sum_pay_total_amt"]}}</th>
             <th></th>
