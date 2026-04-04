@@ -188,7 +188,7 @@ def save_data():
                     "SD_Amount": entry.get("SD_Amount", 0.00),
                     "On_Commission": entry.get("On_Commission", 0.00),
                     "Hydro_Testing": entry.get("Hydro_Testing", 0.00),
-                    "Hold_Amount": 0,
+                    "Hold_Amount": entry.get("Hold_Amount", 0.00),   # change
                     "GST_SD_Amount": entry.get("GST_SD_Amount", 0.00),
                     "Final_Amount": entry.get("Final_Amount", 0.00),
                     "Payment_Amount": entry.get("Payment_Amount", 0.00),
@@ -300,7 +300,8 @@ def save_data():
                         else:
                             print("Hold columns data is not a valid list of dictionaries.")
 #---------------------------------------------Credit Note---------------------------------------------------------------------------
-                    elif any(keyword in Invoice_Details.lower() for keyword in ['credit note','logging report']):
+                    # elif any(keyword in Invoice_Details.lower() for keyword in ['credit note ','credit note details','logging report']):
+                    elif any(keyword in Invoice_Details.lower() for keyword in ['credit', 'logging report']):    
                         cursor.callproc(
                             'AddCreditNoteFromExcel',
                             [

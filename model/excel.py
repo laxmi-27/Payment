@@ -10,16 +10,26 @@ from model.FolderAndFile import FolderAndFile
 class excel:
 
     @staticmethod
-    def generate_excel(contractor_id, contInfo, invoices, hold_types, hold_data,
-                 credit_note_map, gst_release_map, output_file):
-                 
+    # def generate_excel(contractor_id, contInfo, invoices, hold_types, hold_data,
+    #              credit_note_map, gst_release_map, output_file):
+    def generate_excel(
+                contractor_id,
+                info,
+                invoices,
+                hold_types,
+                hold_data,
+                credit_note_map,
+                gst_release_map,
+                payments,
+                output_file
+            ):            
 
         workbook = openpyxl.Workbook()
         sheet = workbook.active
         sheet.title = "Contractor Report"
 
         # Contractor Info
-        for field, value in contInfo.items():
+        for field, value in info.items():
             sheet.append([field.replace("_", " "), value])
         sheet.append([])
 

@@ -83,164 +83,143 @@
 </div>
 
 
-<h3>Invoice Details</h3>
-<table>
-    <thead>
-    <tr>
-        <th>PMC No</th>
-        <th>Village Name</th>
-        <th>Work Type</th>
-        <th>Invoice Details</th>
-        <th>Invoice Date</th>
-        <th>Invoice No</th>
-        <th>Basic Amount</th>
-        <th>Debit</th>
-        <th>After Debit Amt</th>
-        <th>GST (18%)</th>
-        <th>Amount</th>
-        <th>TDS (1%)</th>
-        <th>SD (5%)</th>
-        <th>On Commission</th>
-        <th>Hydro Testing</th>
+    <h3>Invoice Details</h3>
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>PMC No</th>
+                <th>Village Name</th>
+                <th>Work Type</th>
+                <th>Invoice Details</th>
+                <th>Invoice Date</th>
+                <th>Invoice No</th>
+                <th>Basic Amount</th>
+                <th>Debit</th>
+                <th>After Debit Amt</th>
+                <th>GST (18%)</th>
+                <th>Amount</th>
+                <th>TDS (1%)</th>
+                <th>SD (5%)</th>
+                <th>On Commission</th>
+                <th>Hydro Testing</th>
 
-        <!-- Dynamic Hold Types -->
-        {% set hold_types = invoices | map(attribute='hold_type') | reject('none') | unique | list %}
-        {% for hold in hold_types %}
-        <th>{{ hold }}</th>
-        {% endfor %}
+                <!-- Dynamic Hold Types -->
+                {% for ht in hold_types %}
+                <th>{{ ht.hold_type }}</th>
+                {% endfor %}
 
-        <th>GST SD (18%)</th>
-        <th>Final Amount</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% if invoices %}
-    {% for invoice in invoices %}
-    <tr>
-        <td>{{ invoice.PMC_No }}</td>
-        <td>{{ invoice.Village_Name.capitalize() if invoice.Village_Name else '' }}</td>
-        <td>{{ invoice.Work_Type }}</td>
-        <td>{{ invoice.Invoice_Details }}</td>
-        <td>{{ invoice.Invoice_Date }}</td>
-        <td>{{ invoice.Invoice_No }}</td>
-        <td>{{ invoice.Basic_Amount }}</td>
-        <td>{{ invoice.Debit_Amount }}</td>
-        <td>{{ invoice.After_Debit_Amount }}</td>
-        <td>{{ invoice.GST_Amount }}</td>
-        <td>{{ invoice.Amount }}</td>
-        <td>{{ invoice.TDS_Amount }}</td>
-        <td>{{ invoice.SD_Amount }}</td>
-        <td>{{ invoice.On_Commission }}</td>
-        <td>{{ invoice.Hydro_Testing }}</td>
+                <th>GST SD (18%)</th>
+                <th>Final Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if invoices %}
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ invoice.PMC_No }}</td>
+                <td>{{ invoice.Village_Name }}</td>
+                <td>{{ invoice.Work_Type }}</td>
+                <td>{{ invoice.Invoice_Details }}</td>
+                <td>{{ invoice.Invoice_Date }}</td>
+                <td>{{ invoice.invoice_no }}</td>
+                <td>{{ invoice.Basic_Amount }}</td>
+                <td>{{ invoice.Debit_Amount }}</td>
+                <td>{{ invoice.After_Debit_Amount }}</td>
+                <td>{{ invoice.GST_Amount }}</td>
+                <td>{{ invoice.Amount }}</td>
+                <td>{{ invoice.TDS_Amount }}</td>
+                <td>{{ invoice.SD_Amount }}</td>
+                <td>{{ invoice.On_Commission }}</td>
+                <td>{{ invoice.Hydro_Testing }}</td>
 
-        <!-- Dynamic Hold Amounts -->
-        {% for hold in hold_types %}
-        <td>
-            {% if invoice.hold_type == hold %}
-            {{ invoice.hold_amount }}
+                <!-- Hold Amounts -->
+                {% for ht in hold_types %}
+                <td>{{ hold_data.get(invoice.Invoice_Id, {}).get(ht.hold_type_id, 0) }}</td>
+                {% endfor %}
+
+                <td>{{ invoice.GST_SD_Amount }}</td>
+                <td>{{ invoice.Final_Amount }}</td>
+            </tr>
+            {% endfor %}
+
+            <!-- Total Row -->
+            <tr>
+                <th colspan="6">Total</th>
+                <th>{{ total.sum_invo_basic_amt }}</th>
+                <th>{{ total.get('sum_invo_debit_amt', 0) }}</th>
+                <th>{{ total.get('sum_invo_after_debit_amt', 0) }}</th>
+                <th>{{ total.get('sum_invo_gst_amt', 0) }}</th>
+                <th>{{ total.get('sum_invo_amt', 0) }}</th>
+                <th>{{ total.get('sum_invo_tds_amt', 0) }}</th>
+                <th>{{ total.get('sum_invo_ds_amt', 0) }}</th>
+                <th>{{ total.get('sum_invo_on_commission', 0) }}</th>
+                <th>{{ total.get('sum_invo_hydro_test', 0) }}</th>
+
+                {% for ht in hold_types %}
+                <th>{{ total.sum_invo_hold_amt }}</th>
+                {% endfor %}
+
+                <th>{{ total.get('sum_invo_gst_sd_amt', 0) }}</th>
+                <th>{{ total.sum_invo_final_amt }}</th>
+            </tr>
             {% else %}
-            0
+            <tr>
+                <td colspan="{{ 17 + hold_types|length }}">No invoices found.</td>
+            </tr>
             {% endif %}
-        </td>
-        {% endfor %}
-
-        <td>{{ invoice.GST_SD_Amount }}</td>
-        <td>{{ invoice.Final_Amount }}</td>
-    </tr>
-
-    {% endfor %}
-    <tr>
-        <th colspan="6">Total</th>
-        <th>{{total["sum_invo_basic_amt"]}}</th>
-        <th>{{total["sum_invo_debit_amt"]}}</th>
-        <th>{{total["sum_invo_after_debit_amt"]}}</th>
-        <th>{{total["sum_invo_gst_amt"]}}</th>
-        <th>{{total["sum_invo_amt"]}}</th>
-        <th>{{total["sum_invo_tds_amt"]}}</th>
-        <th>{{total["sum_invo_ds_amt"]}}</th>
-        <th>{{total["sum_invo_on_commission"]}}</th>
-        <th>{{total["sum_invo_hydro_test"]}}</th>
-        {% set hold_types = invoices | map(attribute='hold_type') | unique | list %}
-        {% for hold in hold_types %}
-        <th>{{total["sum_invo_hold_amt"]}}</th>
-        {% endfor %}
-        <th>{{total["sum_invo_gst_sd_amt"]}}</th>
-        <th>{{total["sum_invo_final_amt"]}}</th>
-    </tr>
-
-    {% else %}
-    <tr>
-        <td colspan="{{ 17 + hold_types|length }}">No invoices found.</td>
-    </tr>
-    {% endif %}
-    </tbody>
-</table>
-<h3>Hold Release</h3>
-<table>
-    <thead>
-        <tr>
-            <th>PMC No</th>
-            <th>Invoice No</th>
-            <th>Invoice Details</th>
-            <th>Basic Amount</th>
-            <th>Total Amount</th>
-            <th>UTR</th>
-        </tr>
-    </thead>
-    <tbody>
-        {%if hold_release%}
-        {%for hold in hold_release%}
-        <tr>
-           <td>{{ hold['PMC_No'] }}</td>
-            <td>{{ hold['Invoice_No'] }}</td>
-            <td>{{ hold['Invoice_Details'] }}</td>
-            <td>{{ hold['Basic_Amount'] }}</td>
-            <td>{{ hold['Total_Amount'] }}</td>
-            <td>{{ hold['UTR'] }}</td>
-        </tr>
-        {%endfor%}
-        {%else%}
-        <tr>
-              <td colspan="6" style="text-align:center;">No data present</td>
-        </tr>
-        {%endif%}
-    </tbody>
-</table>
+        </tbody>
+    </table>
 
 <br>
-<h3>GST Release Note Details</h3>
-<table>
-    <thead>
-    <tr>
-        <th>PMC No</th>
-        <th>Invoice No</th>
-        <th>Basic Amount</th>
-        <th>Final Amount</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% if gst_rel %}
-    {% for gst in gst_rel %}
-    <tr>
-        <td>{{ gst.pmc_no }}</td>
-        <td>{{ gst.invoice_no }}</td>
-        <td>{{ gst.basic_amount }}</td>
-        <td>{{ gst.final_amount }}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-        <th colspan="2">Total</th>
+    <h3>GST Release Note Details</h3>
 
-        <th>{{total["sum_gst_basic_amt"]}}</th>
-        <th>{{total["sum_gst_final_amt"]}}</th>
-    </tr>
-    {% else %}
-    <tr>
-        <td colspan="4">No GST release found.</td>
-    </tr>
-    {% endif %}
-    </tbody>
-</table>
+            <table>
+            <thead>
+            <tr>
+                <th>PMC No</th>
+                <th>Invoice No</th>
+                <th>Basic Amount</th>
+                <th>Final Amount</th>
+                <th>UTR</th>
+            </tr>
+            </thead>
+
+            <tbody>
+
+            {% if gst_rel %}
+
+            {% for gst in gst_rel %}
+
+            <tr>
+                <td>{{ gst.PMC_No }}</td>
+                <td>{{ gst.invoice_no }}</td>
+                <td>{{ gst.Basic_Amount }}</td>
+                <td>{{ gst.Final_Amount }}</td>
+                <td>{{gst.UTR}}</td></TD>
+            </tr>
+
+            {% endfor %}
+
+            <tr>
+                <th colspan="2">Total</th>
+
+                <th>{{ total["sum_gst_basic_amt"] }}</th>
+
+                <th>{{ total["sum_gst_final_amt"] }}</th>
+                <th></th>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+            <td colspan="5">No GST release found.</td>
+            </tr>
+
+            {% endif %}
+
+            </tbody>
+            </table>
 
  <tr>
         <h3>Credit Details</h3>
