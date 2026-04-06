@@ -5,7 +5,7 @@ from model.Report import ReportHelper
 from model.Log import LogHelper
 import os
 from model.UnifiedReportService import UnifiedReportService
-# DOWNLOAD_FOLDER = "static/download"
+
 report_bp = Blueprint("report", __name__)
 
 
@@ -33,7 +33,6 @@ def search_contractor():
     return jsonify(data)
 
 # ---------------- Contractor Report by contractor id ----------------
-
 @report_bp.route('/contractor_report/<int:contractor_id>')
 @login_required
 def contractor_report(contractor_id):
@@ -47,8 +46,7 @@ def contractor_report(contractor_id):
         **data
     )
 
-# # ---------------- Contractor Download Report by contractor id ----------------
-
+# ---------------- Contractor Download Report by contractor id ----------------
 @report_bp.route('/download_report/<int:contractor_id>')
 def download_report(contractor_id):
 

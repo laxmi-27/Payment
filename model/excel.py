@@ -1,28 +1,13 @@
 import openpyxl
 from openpyxl.styles import Font, PatternFill
-import config
-from flask_login import current_user
-from model.Log import LogHelper
 
-# from model.Report import ReportHelper
+
 from model.FolderAndFile import FolderAndFile
 
 class excel:
 
     @staticmethod
-    # def generate_excel(contractor_id, contInfo, invoices, hold_types, hold_data,
-    #              credit_note_map, gst_release_map, output_file):
-    def generate_excel(
-                contractor_id,
-                info,
-                invoices,
-                hold_types,
-                hold_data,
-                credit_note_map,
-                gst_release_map,
-                payments,
-                output_file
-            ):            
+    def generate_excel(contractor_id,info, invoices, hold_types, hold_data, credit_note_map, gst_release_map, payments,total,output_file):            
 
         workbook = openpyxl.Workbook()
         sheet = workbook.active
@@ -62,7 +47,6 @@ class excel:
                 else ""
             )   
   
-            # key = (pmc_no, invoice_no)
             key = (pmc_no)
 
             # Yellow separator
@@ -160,6 +144,44 @@ class excel:
                     sheet.append(cn_row)
 
                 appended_credit_keys.add(key)
+
+        # total calculation
+        hold_totals = {ht['hold_type_id']: 0 for ht in hold_types}
+
+        for inv in invoices:
+            invoice_holds = hold_data.get(inv["Invoice_Id"], {})
+            for ht_id in hold_totals:
+                hold_totals[ht_id] += invoice_holds.get(ht_id, 0) or 0
+
+        totalrow = ["Total","-","-","-","-","-",total.get('sum_invo_basic_amt', 0)+total.get('sum_gst_basic_amt')+ total.get('sum_credit_basic_amt'),
+                   total.get('sum_invo_debit_amt', 0), total.get('sum_invo_after_debit_amt', 0),total.get('sum_invo_gst_amt', 0),total.get('sum_invo_amt', 0),
+                   total.get('sum_invo_tds_amt', 0),total.get('sum_invo_ds_amt', 0),total.get('sum_invo_on_commission', 0), total.get('sum_invo_hydro_test', 0),
+                   total.get('sum_invo_gst_sd_amt', 0)]
+                   
+        for ht in hold_types:
+            totalrow.append(hold_totals.get(ht['hold_type_id'], 0))
+
+        totalrow += [ total.get('sum_invo_final_amt', 0)+ total.get('sum_gst_final_amt', 0) + total.get('sum_credit_final_amt', 0),"","",
+                     total.get('sum_pay_total_amt', 0)+ total.get('sum_gst_total_amt', 0) + total.get('sum_credit_total_amt', 0)]
+        
+        
+        sheet.append(totalrow)
+        # Apply style (color + bold)
+        for cell in sheet[sheet.max_row]:
+            cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # Yellow
+            cell.font = Font(bold=True)
+
+        # summary report
+        sheet.append([""])
+        sheet.append([""])
+        sheet.append(["","","Summary Report","",""])
+        summary1 = ["", "Advance / Suplus" , total.get('sum_pay_total_amt', 0)+ total.get('sum_gst_total_amt', 0) + total.get('sum_credit_total_amt', 0)]
+        summary2 = ["", "Hold Amt", total["sum_invo_hold_amt"]]
+        summary3 = ["", "Amount With TDS", total["sum_invo_tds_amt"]]
+        sheet.append(summary1)
+        sheet.append(summary2)
+        sheet.append(summary3)
+
 
         # SAVE ONCE AT END
         workbook.save(output_file)

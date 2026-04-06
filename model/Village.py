@@ -13,14 +13,14 @@ class Village:
     def __init__(self):
         self.isSuccess = False
         self.resultMessage = ""
-        self.response = {}  # ✅ ADDED
+        self.response = {}
         self.village = ItemCRUD(itemType=ItemCRUDType.Village)
 
     # 🔹 Helper: sync status
     def _set_status(self, village):
         self.isSuccess = village.isSuccess
 
-        # ✅ UPDATED (safe handling)
+        #  UPDATED (safe handling)
         if hasattr(village, "response"):
             self.response = village.response
             self.resultMessage = village.response.get("message", "")
@@ -75,7 +75,7 @@ class Village:
         block_id, village_name = self._get_form_data(request)
 
         if not village_name:
-            self.response = ResponseHandler.invalid_name("village")  # ✅ UPDATED
+            self.response = ResponseHandler.invalid_name("village")
             self.resultMessage = self.response["message"]
             self.isSuccess = False
             return None
@@ -85,7 +85,7 @@ class Village:
                 request=request,
                 parentid=block_id,
                 childname=village_name,
-                storedprocfetch="GetVillageByNameAndBlock"     # Change GetVillageByNameAndBlocks to GetVillageByNameAndBlock
+                storedprocfetch="GetVillageByNameAndBlock"
             )
             self._set_status(self.village)
             return result
@@ -113,7 +113,7 @@ class Village:
         block_id, village_name = self._get_form_data(request)
 
         if not village_name:
-            self.response = ResponseHandler.invalid_name("village")  # ✅ UPDATED
+            self.response = ResponseHandler.invalid_name("village") 
             self.resultMessage = self.response["message"]
             self.isSuccess = False
             return
@@ -176,7 +176,6 @@ class Village:
             print(f"Error fetching blocks: {e}")
             self.isSuccess = False
 
-            # ✅ FIXED (removed jsonify response)
             self.response = ResponseHandler.fetch_failure("block")
             self.resultMessage = self.response["message"]
 

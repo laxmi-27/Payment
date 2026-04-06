@@ -15,7 +15,6 @@ subcontractor_bp = Blueprint('subcontractor', __name__)
 def subcontract():
 
     sub = Subcontractor()
-
     # ---------------- GET ----------------
     if request.method == 'GET':
         subcontractor = sub.GetAllSubcontractors(request)

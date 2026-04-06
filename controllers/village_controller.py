@@ -1,7 +1,3 @@
-
-
-
-
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required
 
@@ -17,8 +13,6 @@ village = Village()
 @village_bp.route('/add_village', methods=['GET', 'POST'])
 @login_required
 def add_village():
-
-    # village = Village()
  
     if request.method == 'POST':
         village.AddVillage(request=request)
@@ -79,17 +73,17 @@ def get_blocks(district_id):
 @village_bp.route('/check_village', methods=['POST'])
 @login_required
 def check_village():
-    # village = Village()
+
     return village.CheckVillage(request=request)
 
 
 @village_bp.route('/delete_village/<int:village_id>')
 @login_required
 def delete_village(village_id):
-    # village = Village()
+
     village.DeleteVillage(request=request, village_id=village_id)
 
-    # ✅ Convert resultMessage to string if it's a Response or tuple
+    # resultMessage to string if it's a Response or tuple
     raw_msg = village.resultMessage
 
     if isinstance(raw_msg, tuple):
@@ -112,8 +106,6 @@ def delete_village(village_id):
 @login_required
 def edit_village(village_id):
 
-    # village = Village()
-
     if request.method == 'POST':
 
         village.EditVillage(request=request, village_id=village_id)
@@ -135,7 +127,6 @@ def edit_village(village_id):
             )
 
     else:
-        # ✅ FIXED HERE (removed request)
         village_data = village.GetVillageByID(id=village_id)
 
         if not village.isSuccess:

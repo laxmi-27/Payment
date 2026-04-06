@@ -1,14 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
-
 from model.Utilities import RegEx, ResponseHandler, HtmlHelper, ItemCRUDType
-from model.Log import LogData, LogHelper
-
-import os
-import config
-import re
-
-import mysql.connector
-from mysql.connector import Error
 
 from model.ItemCRUD import ItemCRUD, itemCRUDMapping
 

@@ -1,7 +1,6 @@
-
-
 {% extends 'base.html' %}
 {% block content %}
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,79 +8,104 @@
     <!--    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">-->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/subcontractor_report.css') }}">
 </head>
+
 <body>
 
-<div class="container">
-    <h2>PMC Report</h2>
+    <div class="container">
+        <h2>PMC Report</h2>
 
-    <div class="info">
-        <h2>Contractor Details</h2>
-        <div class="row2">
-            <div>
-                <label for="subcontractor">Subcontractor Name:</label>
-                <input type="text" id="subcontractor" name="subcontractor" value="{{ info.Contractor_Name }}"
-                       readonly/>
+        <div class="info">
+            <h2>Contractor Details</h2>
+            <div class="row2">
+                <div>
+                    <label for="subcontractor">Subcontractor Name:</label>
+                    <input type="text" id="subcontractor" name="subcontractor" value="{{ info.Contractor_Name }}"
+                        readonly />
+                </div>
+                <div>
+                    <label for="Address">Address :</label>
+                    <textarea id="Address" name="Address" readonly>{{ info.Address }}</textarea>
+                </div>
             </div>
-            <div>
-                <label for="Address">Address :</label>
-                <textarea id="Address" name="Address" readonly>{{ info.Address }}</textarea>
+            <div class="row3">
+                <div>
+                    <label for="PAN_No">PAN No :</label>
+                    <input type="text" id="PAN_No" name="PAN_No" value="{{ info.PAN_No }}" readonly />
+                </div>
+                <div>
+                    <label for="Mobile_No">Mobile Number :</label>
+                    <input type="text" id="Mobile_No" name="Mobile_No" value="{{ info.Mobile_No }}" readonly />
+                </div>
+                <div>
+                    <label for="Email">Email :</label>
+                    <input type="text" id="Email" name="Email" value="{{ info.Email }}" readonly />
+                </div>
             </div>
-        </div>
-        <div class="row3">
-            <div>
-                <label for="PAN_No">PAN No :</label>
-                <input type="text" id="PAN_No" name="PAN_No" value="{{ info.PAN_No }}" readonly/>
-            </div>
-            <div>
-                <label for="Mobile_No">Mobile Number :</label>
-                <input type="text" id="Mobile_No" name="Mobile_No" value="{{ info.Mobile_No }}" readonly/>
-            </div>
-            <div>
-                <label for="Email">Email :</label>
-                <input type="text" id="Email" name="Email" value="{{ info.Email }}" readonly/>
-            </div>
-        </div>
-        <div class="row2">
-            <div>
-                <label for="GST_Registration_Type">GST Registration Type :</label>
-                <input type="text" id="GST_Registration_Type" name="GST_Registration_Type"
-                       value="{{ info.GST_Registration_Type }}" readonly/>
+            <div class="row2">
+                <div>
+                    <label for="GST_Registration_Type">GST Registration Type :</label>
+                    <input type="text" id="GST_Registration_Type" name="GST_Registration_Type"
+                        value="{{ info.GST_Registration_Type }}" readonly />
 
+                </div>
+                <div>
+                    <label for="GST_No">GST No:</label>
+                    <input type="text" id="GST_No" name="GST_No" value="{{ info.GST_No }}" readonly />
+                </div>
             </div>
-            <div>
-                <label for="GST_No">GST No:</label>
-                <input type="text" id="GST_No" name="GST_No" value="{{ info.GST_No }}" readonly/>
+            <h2>PMC Report for PMC No: {{ info.PMC_No}}</h2>
+            <div class="row3">
+                <div>
+                    <label for="State">State :</label>
+                    <input type="text" id="State" name="State" value="{{ info.State_Name }}" readonly />
+                </div>
+                <div>
+                    <label for="District">District :</label>
+                    <input type="text" id="District" name="District" value="{{ info.District_Name }}" readonly />
+                </div>
+                <div>
+                    <label for="Block">Block :</label>
+                    <input type="text" id="Block" name="Block" value="{{ info.Block_Name }}" readonly />
+                </div>
             </div>
-        </div>
-        <h2>PMC Report for PMC No: {{ info.PMC_No}}</h2>
-        <div class="row3">
-            <div>
-                <label for="State">State :</label>
-                <input type="text" id="State" name="State" value="{{ info.State_Name }}" readonly/>
-            </div>
-            <div>
-                <label for="District">District :</label>
-                <input type="text" id="District" name="District" value="{{ info.District_Name }}" readonly/>
-            </div>
-            <div>
-                <label for="Block">Block :</label>
-                <input type="text" id="Block" name="Block" value="{{ info.Block_Name }}" readonly/>
-            </div>
-        </div>
-        <div class="row2">
-            <div>
-                <label for="PMC_No">PMC No:</label>
-                <input type="text" id="PMC_No" name="PMC_No" value="{{ info.PMC_No }}" readonly/>
-            </div>
-            <div>
-                <label for="Village_Name">Village Name :</label>
-                <input type="text" id="Village_Name" name="Village_Name"
-                       value="{{ info.Village_Name.capitalize() }}" readonly/>
+            <div class="row2">
+                <div>
+                    <label for="PMC_No">PMC No:</label>
+                    <input type="text" id="PMC_No" name="PMC_No" value="{{ info.PMC_No }}" readonly />
+                </div>
+                <div>
+                    <label for="Village_Name">Village Name :</label>
+                    <input type="text" id="Village_Name" name="Village_Name"
+                        value="{{ info.Village_Name.capitalize() }}" readonly />
+                </div>
             </div>
         </div>
     </div>
-</div>
 
+    <table class="total-table">
+        <tr>
+            <th colspan="2">Summary</th>
+        </tr>
+        <tr>
+            <th>Advance / Suplus</th>
+            <td>{{total["sum_invo_final_amt"]+total["sum_gst_final_amt"]-total["sum_pay_total_amt"]}}</td>
+        </tr>
+        {% if hold_types %}
+        <tr>
+            <th>
+                {% for hold in hold_types %}
+                {{ hold.hold_type }} ||
+                {% endfor %}
+            </th>
+            <td colspan="{{hold_types|length }}">{{total["sum_invo_hold_amt"]}}</td>
+
+        </tr>
+        {% endif %}
+        <tr>
+            <th>Amount With TDS</th>
+            <td>{{total["sum_invo_tds_amt"]}}</td>
+        </tr>
+    </table>
 
     <h3>Invoice Details</h3>
     <table border="1" cellpadding="5" cellspacing="0">
@@ -155,9 +179,9 @@
                 <th>{{ total.get('sum_invo_on_commission', 0) }}</th>
                 <th>{{ total.get('sum_invo_hydro_test', 0) }}</th>
 
-                {% for ht in hold_types %}
-                <th>{{ total.sum_invo_hold_amt }}</th>
-                {% endfor %}
+                {% if hold_types %}
+                <th colspan="{{hold_types|length }}">{{ total.sum_invo_hold_amt}}</th>
+                {% endif %}
 
                 <th>{{ total.get('sum_invo_gst_sd_amt', 0) }}</th>
                 <th>{{ total.sum_invo_final_amt }}</th>
@@ -170,11 +194,11 @@
         </tbody>
     </table>
 
-<br>
+    <br>
     <h3>GST Release Note Details</h3>
 
-            <table>
-            <thead>
+    <table>
+        <thead>
             <tr>
                 <th>PMC No</th>
                 <th>Invoice No</th>
@@ -182,22 +206,20 @@
                 <th>Final Amount</th>
                 <th>UTR</th>
             </tr>
-            </thead>
+        </thead>
 
-            <tbody>
+        <tbody>
 
             {% if gst_rel %}
-
             {% for gst in gst_rel %}
-
             <tr>
                 <td>{{ gst.PMC_No }}</td>
                 <td>{{ gst.invoice_no }}</td>
                 <td>{{ gst.Basic_Amount }}</td>
                 <td>{{ gst.Final_Amount }}</td>
-                <td>{{gst.UTR}}</td></TD>
+                <td>{{gst.UTR}}</td>
+                </TD>
             </tr>
-
             {% endfor %}
 
             <tr>
@@ -213,107 +235,107 @@
             {% else %}
 
             <tr>
-            <td colspan="5">No GST release found.</td>
+                <td colspan="5">No GST release found.</td>
             </tr>
 
             {% endif %}
 
-            </tbody>
-            </table>
+        </tbody>
+    </table>
 
- <tr>
+    <tr>
         <h3>Credit Details</h3>
     </tr>
     <table>
         <thead>
-        <tr>
-            <th>PMC No</th>
-            <th>Invoice Details</th>
-            <th>Basic Amount</th>
-            <th>Debit</th>
-            <th>After Debit Amt</th>
-            <th>GST Amount</th>
-            <th>Amount</th>
-            <th>Final Amount</th>
-            <th>Payment Amount</th>
-            <th>Total Amount</th>
-            <th>UTR</th>
+            <tr>
+                <th>PMC No</th>
+                <th>Invoice Details</th>
+                <th>Basic Amount</th>
+                <th>Debit</th>
+                <th>After Debit Amt</th>
+                <th>GST Amount</th>
+                <th>Amount</th>
+                <th>Final Amount</th>
+                <th>Payment Amount</th>
+                <th>Total Amount</th>
+                <th>UTR</th>
 
             </tr>
 
-        {% if credit_note %}
-        {% for credit in credit_note %}
-        <tr>
-            <td>{{ credit["PMC_No"] }}</td>
-            <td>{{ credit["Invoice_Details"] }}</td>
-            <td>{{ credit["Basic_Amount"] }}</td>
-            <td>{{ credit["Debit_Amount"] }}</td>
-            <td>{{ credit["After_Debit_Amount"] }}</td>
-            <td>{{ credit["GST_Amount"] }}</td>
-            <td>{{ credit["Amount"] }}</td>
-            <td>{{ credit["Final_Amount"] }}</td>
-            <td>{{ credit["Payment_Amount"] }}</td>
-            <td>{{ credit["Total_Amount"] }}</td>
-            <td>{{ credit["UTR"] }}</td>
+            {% if credit_note %}
+            {% for credit in credit_note %}
+            <tr>
+                <td>{{ credit["PMC_No"] }}</td>
+                <td>{{ credit["Invoice_Details"] }}</td>
+                <td>{{ credit["Basic_Amount"] }}</td>
+                <td>{{ credit["Debit_Amount"] }}</td>
+                <td>{{ credit["After_Debit_Amount"] }}</td>
+                <td>{{ credit["GST_Amount"] }}</td>
+                <td>{{ credit["Amount"] }}</td>
+                <td>{{ credit["Final_Amount"] }}</td>
+                <td>{{ credit["Payment_Amount"] }}</td>
+                <td>{{ credit["Total_Amount"] }}</td>
+                <td>{{ credit["UTR"] }}</td>
 
 
-        </tr>
-        {% endfor %}
+            </tr>
+            {% endfor %}
 
-        {% else %}
-        <tr>
-            <td colspan="11">No Credit note found.</td>
-        </tr>
-        {% endif %}
+            {% else %}
+            <tr>
+                <td colspan="11">No Credit note found.</td>
+            </tr>
+            {% endif %}
 
 
-         </thead>
+        </thead>
     </table>
 
-<br>
-<h3>Payment Details</h3>
-<table>
-    <thead>
-    <tr>
-        <th>PMC No</th>
-        <th>Invoice No</th>
-        <th>Amount</th>
-        <th>TDS Amount @ 1% on BASIC AMOUNT</th>
-        <th>Total Amount Paid</th>
-        <th>UTR</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% if payments %}
-    {% for pay in payments %}
-    <tr>
-        <td>{{ pay.pmc_no }}</td>
-        <td>{{ pay.invoice_no }}</td>
-        <td>{{ pay.Payment_Amount }}</td>
-        <td>{{ pay.TDS_Payment_Amount }}</td>
-        <td>{{ pay.Total_amount }}</td>
-        <td>{{ pay.UTR}}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-        <th colspan="2">Total</th>
-        <th>{{total["sum_pay_payment_amt"]}}</th>
-        <th>{{total["sum_pay_tds_payment_amt"]}}</th>
-        <th>{{total["sum_pay_total_amt"]}}</th>
-        <th></th>
-    </tr>
-    {% else %}
+    <br>
+    <h3>Payment Details</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>PMC No</th>
+                <th>Invoice No</th>
+                <th>Amount</th>
+                <th>TDS Amount @ 1% on BASIC AMOUNT</th>
+                <th>Total Amount Paid</th>
+                <th>UTR</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if payments %}
+            {% for pay in payments %}
+            <tr>
+                <td>{{ pay.pmc_no }}</td>
+                <td>{{ pay.invoice_no }}</td>
+                <td>{{ pay.Payment_Amount }}</td>
+                <td>{{ pay.TDS_Payment_Amount }}</td>
+                <td>{{ pay.Total_amount }}</td>
+                <td>{{ pay.UTR}}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <th colspan="2">Total</th>
+                <th>{{total["sum_pay_payment_amt"]}}</th>
+                <th>{{total["sum_pay_tds_payment_amt"]}}</th>
+                <th>{{total["sum_pay_total_amt"]}}</th>
+                <th></th>
+            </tr>
+            {% else %}
 
-    <tr>
-        <td colspan="6">No payment found.</td>
-    </tr>
-    {% endif %}
+            <tr>
+                <td colspan="6">No payment found.</td>
+            </tr>
+            {% endif %}
 
-    </tbody>
-</table>
+        </tbody>
+    </table>
 
-<a href="/download_pmc_report/{{ info.PMC_No}}">
-    <button class="download-btn">Download PMC Report</button>
-</a>
+    <a href="/download_pmc_report/{{ info.PMC_No}}">
+        <button class="download-btn">Download PMC Report</button>
+    </a>
 </body>
 {% endblock %}

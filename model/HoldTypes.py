@@ -33,7 +33,7 @@ class HoldTypes:
         self.isSuccess = hold.isSuccess
         self.resultMessage = hold.resultMessage
 
-        # ✅ Convert tuple → dictionary
+        # Convert tuple → dictionary
         data = []
         for row in rows:
             data.append({
@@ -51,7 +51,7 @@ class HoldTypes:
         self.isSuccess = hold.isSuccess
         self.resultMessage = hold.resultMessage
 
-        # ✅ Convert tuple → dictionary
+        #Convert tuple → dictionary
         if row:
             return {
                 "hold_type_id": row[0],

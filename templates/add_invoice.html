@@ -376,10 +376,12 @@
               </a>
             </td>
             <td>
-              <a
+              <!-- <a
                 href="javascript:void(0);"
                 onclick="deleteInvoice({{ invoice.Invoice_Id }}, this)"
-              >
+              > -->
+              <a href="javascript:void(0);"
+                      onclick="deleteInvoice('{{ invoice.Invoice_Id }}', this)">
                 <img
                   src="{{ url_for('static', filename='images/icons/bin_red_icon.png') }}"
                   alt="Delete"

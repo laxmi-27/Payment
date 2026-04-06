@@ -10,11 +10,9 @@ hold = HoldTypes()
 @hold_bp.route('/add_hold_type', methods=['GET','POST'])
 @login_required
 def add_hold_type():
-    # hold = HoldTypes()
-
     if request.method == 'POST':
         hold.AddHoldType(request)
-        # ✅ Always redirect to same page (NO JSON)
+        # Always redirect to same page (NO JSON)
         return redirect(url_for("hold_types.add_hold_type"))
 
     # GET request → show data
@@ -30,7 +28,6 @@ def add_hold_type():
 @login_required
 def check_hold_type():
 
-    # hold = HoldTypes()
     return hold.CheckHoldType(request)   # if exists
 
 
@@ -39,13 +36,11 @@ def check_hold_type():
 @login_required
 def edit_hold_type(id):
 
-    # hold = HoldTypes()
-
     if request.method == 'POST':
-        hold.EditHoldType(request, id)   # ✅
+        hold.EditHoldType(request, id)   
         return hold.resultMessage
 
-    hold_data = hold.GetHoldTypeByID(id)   # ✅
+    hold_data = hold.GetHoldTypeByID(id)  
 
     return render_template(
         "edit_hold_type.html",
@@ -58,9 +53,7 @@ def edit_hold_type(id):
 @login_required
 def delete_hold_type(id):
 
-    # hold = HoldTypes()
-    hold.DeleteHoldType(request, id)   # ✅
-
+    hold.DeleteHoldType(request, id)   
     return redirect(url_for("hold_types.add_hold_type"))
 
 

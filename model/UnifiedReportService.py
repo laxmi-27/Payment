@@ -6,18 +6,18 @@ from decimal import Decimal
 class UnifiedReportService:
 
     # Static variable to cache report data
-    _cached_report_data = None
-    _cached_contractor_id = None
-    _cached_pmc_no = None
+    # _cached_report_data = None
+    # _cached_contractor_id = None
+    # _cached_pmc_no = None
 
     @staticmethod
     def get_report(contractor_id=None, pmc_no=None):
 
         # If cached and same request, return cached data
-        if (UnifiedReportService._cached_report_data and
-            contractor_id == UnifiedReportService._cached_contractor_id and
-            pmc_no == UnifiedReportService._cached_pmc_no):
-            return UnifiedReportService._cached_report_data
+        # if (UnifiedReportService._cached_report_data and
+        #     contractor_id == UnifiedReportService._cached_contractor_id and
+        #     pmc_no == UnifiedReportService._cached_pmc_no):
+        #     return UnifiedReportService._cached_report_data
 
         connection = config.get_db_connection()
         cursor = connection.cursor(dictionary=True, buffered=True)
@@ -42,24 +42,15 @@ class UnifiedReportService:
             # ================= INVOICES =================
             if pmc_no:
                 invoices = ReportHelper.execute_sp(cursor,'GetInvoicesByContractorOrPMCNo',[None, pmc_no]) or []
-
                 credit_notes = ReportHelper.execute_sp(cursor,'NewGetCreditNotesByPMCNo',[pmc_no]) or []
-
                 gst_rel = ReportHelper.execute_sp(cursor,'GetGSTReleaseDetailsByPMC',[pmc_no]) or []
-
                 payments = ReportHelper.execute_sp(cursor,'GetPaymentsByPMC',[pmc_no]) or []
 
             else:
                 invoices = ReportHelper.execute_sp(cursor,'GetInvoicesByContractorOrPMCNo',[contractor_id, None]) or []
-
                 credit_notes = ReportHelper.execute_sp(cursor,'GetCreditNotesByContractor',[contractor_id]) or []
-
                 gst_rel = ReportHelper.execute_sp(cursor,'GstReleasesByContractorId',[contractor_id]) or []
-
                 payments = ReportHelper.execute_sp(cursor,'GetPayments',[contractor_id]) or []
-
-                print(payments)
-
 
             # ================= HOLD AMOUNTS =================
             hold_amounts = ReportHelper.execute_sp(cursor,'GetHoldAmountsByContractor',[contractor_id]) or []
@@ -99,9 +90,11 @@ class UnifiedReportService:
                 "sum_gst_final_amt": sum(r.get("Final_Amount", 0) or 0 for r in gst_rel),
                 "sum_gst_total_amt": sum(r.get("Total_Amount", 0) or 0 for r in gst_rel),
                 "sum_pay_total_amt": sum(Decimal(r.get("Total_amount") or 0) for r in payments),
-                "sum_pay_payment_amt": sum(Decimal(r.get("Payment_Amount") or 0) for r in payments),  # same as above if you want
+                "sum_pay_payment_amt": sum(Decimal(r.get("Payment_Amount") or 0) for r in payments),
                 "sum_pay_tds_payment_amt": sum(Decimal(r.get("TDS_Payment_Amount") or 0) for r in payments),
-
+                "sum_credit_basic_amt": sum(Decimal(c.get("Basic_Amount") or 0) for c in credit_notes),
+                "sum_credit_final_amt": sum(Decimal(c.get("Final_Amount") or 0) for c in credit_notes),
+                "sum_credit_total_amt": sum(Decimal(c.get("Total_Amount") or 0) for c in credit_notes),
             }
 
             # Prepare final report
@@ -119,10 +112,10 @@ class UnifiedReportService:
                 "total": total
             }
 
-            # Cache the report
-            UnifiedReportService._cached_report_data = report_data
-            UnifiedReportService._cached_contractor_id = contractor_id
-            UnifiedReportService._cached_pmc_no = pmc_no
+            # # Cache the report
+            # UnifiedReportService._cached_report_data = report_data
+            # UnifiedReportService._cached_contractor_id = contractor_id
+            # UnifiedReportService._cached_pmc_no = pmc_no
 
             return report_data
 
@@ -155,6 +148,7 @@ class UnifiedReportService:
             report_data["credit_note_map"],
             report_data["gst_release_map"],
             report_data["payments"],
+            report_data["total"],
             output_file
         )
 

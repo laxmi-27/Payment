@@ -84,8 +84,6 @@ def show_table(filename):
                     subcontractor_data = result.fetchone()
 
                 if not subcontractor_data:
-                    # cursor.callproc('InsertSubcontractor', [file_info['Subcontractor']])
-                    # connection.commit()
                     cursor.callproc('SaveContractor', [file_info.get('Subcontractor'),None,None,None,None,None,None,None,None])
                     connection.commit()
                     cursor.callproc('GetSubcontractorByName', [file_info['Subcontractor']])
@@ -252,7 +250,7 @@ def save_data():
                             subcontractor_id, 0
                         )
 
-                        # print("All invoice Details ",args)
+                        
                         # add subcontarctor id in invoice table
                         results = cursor.callproc('SaveInvoice', args)
                         invoice_id = results[-1]
@@ -261,16 +259,16 @@ def save_data():
                             "SavePayment",
                             (
                                 PMC_No,
-                                Invoice_No,            # required
+                                Invoice_No,            
                                 Payment_Amount,
                                 TDS_Payment_Amount,
                                 Total_Amount,
                                 UTR,
-                                invoice_id             # last
+                                invoice_id             
                             )
                         )
                         
-                        # print("invoice id from the excel ", invoice_id)
+                       
                         if isinstance(hold_columns, str):
                             hold_columns = ast.literal_eval(hold_columns)
                         if isinstance(hold_columns, list) and all(isinstance(hold, dict) for hold in hold_columns):
@@ -282,7 +280,7 @@ def save_data():
                                     hold_amount = entry.get(
                                         hold_column_name)  # Get the value for that specific hold column
                                     if hold_amount is not None:
-                                        # print(f"Processing hold type: {hold_column_name}, Hold Amount: {hold_amount}")
+                                       
                                         hold_join_data = {
                                             "Contractor_Id": subcontractor_id,
                                             "Invoice_Id": invoice_id,
@@ -299,8 +297,7 @@ def save_data():
                                     print(f"Invalid hold entry: {hold}")
                         else:
                             print("Hold columns data is not a valid list of dictionaries.")
-#---------------------------------------------Credit Note---------------------------------------------------------------------------
-                    # elif any(keyword in Invoice_Details.lower() for keyword in ['credit note ','credit note details','logging report']):
+                    #-----------------------------------Credit Note----------------------------------------------------------------
                     elif any(keyword in Invoice_Details.lower() for keyword in ['credit', 'logging report']):    
                         cursor.callproc(
                             'AddCreditNoteFromExcel',
@@ -310,7 +307,7 @@ def save_data():
                                 subcontractor_id, Invoice_No
                             ]
                         )
-#-----------------------------------------------Hold Amount----------------------------------------------------------------------
+                    #---------------------------------------Hold Amount-----------------------------------------------------------
                     # Step 1: Normalize Invoice_Details: lowercase, trim, remove extra spaces
                     normalized_details = re.sub(r'\s+', ' ', Invoice_Details.strip()).lower()
                     # Step 2: Define lowercase keywords
@@ -328,8 +325,7 @@ def save_data():
                     if any(kw in normalized_details for kw in keywords):
                         cursor.callproc(
                             'AddHoldReleaseFromExcel',
-                            [PMC_No, Invoice_No, Invoice_Details, Basic_Amount, Final_Amount, UTR, subcontractor_id]
-)
+                            [PMC_No, Invoice_No, Invoice_Details, Basic_Amount, Final_Amount, UTR, subcontractor_id])
                         connection.commit() 
                     #------------------------------------------------------------------------------------------------------------------
                     elif Invoice_Details and any(
@@ -339,15 +335,11 @@ def save_data():
                             [PMC_No, Invoice_No, Basic_Amount, Final_Amount, Total_Amount, UTR, subcontractor_id]
                         )
 
-# --------------------------------------
-# If no village/work detected, only PMC/Payment
-
+                # --------------------------------------
+                # If no village/work detected, only PMC/Payment
                 if not (Invoice_Details and 'village' in Invoice_Details.lower() and 'work' in Invoice_Details.lower()):                        
                     # ---------- Only PMC / Payment rows ----------
                     if PMC_No and  not Invoice_No and  UTR :
-            
-                        print(" extra payment :", PMC_No,Total_Amount,UTR, subcontractor_id)
-                        
                         cursor.callproc("insertExtrapaymet",(PMC_No, subcontractor_id))
                         for result in cursor.stored_results():
                             row = result.fetchone()
@@ -357,7 +349,7 @@ def save_data():
                             "SavePayment",
                             (
                                 PMC_No,
-                                Invoice_No,            # required
+                                Invoice_No,            
                                 Payment_Amount,
                                 TDS_Payment_Amount,
                                 Total_Amount,
@@ -375,4 +367,3 @@ def save_data():
             cursor.close()
             connection.close()
     return render_template('index.html')
-# ---------------------- Report --------------------------------

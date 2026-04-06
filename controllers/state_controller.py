@@ -4,13 +4,11 @@ from model.State import State
 
 state_bp = Blueprint('state', __name__)
 state = State()
+
 # ----- State page ------
 @state_bp.route('/add_state', methods=['GET', 'POST'])
 @login_required
 def add_state():
-
-    # state = State()
-
     if request.method == 'POST':
         state.AddState(request=request)
         return state.resultMessage
@@ -24,16 +22,12 @@ def add_state():
 @login_required
 def check_state():
 
-    # state = State()
-
     return state.CheckState(request=request)
 
 # ----- State delete by state id ------
 @state_bp.route('/delete_state/<int:id>')
 @login_required
 def deleteState(id):
-
-    # state = State()
 
     state.DeleteState(request=request, id=id)
 
@@ -46,8 +40,6 @@ def deleteState(id):
 @state_bp.route('/edit_state/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editState(id):
-
-    # state = State()
 
     if request.method == 'POST':
 

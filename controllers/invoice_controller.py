@@ -1,5 +1,3 @@
-# controllers/invoice_controller.py
-
 from flask import Blueprint, request, jsonify, render_template
 from flask_login import login_required, current_user
 from model.Invoice import *
@@ -37,7 +35,6 @@ def add_invoice():
 
         village_id = village_result['Village_Id']
         invoice_id = insert_invoice(data, village_id)
-        # assign_subcontractor(data, village_id)
        
         insert_hold_types(data, invoice_id)
 
@@ -81,7 +78,6 @@ def edit_invoice(invoice_id):
     if request.method == 'POST':
         data = request.form
         update_invoice(data, invoice_id)
-        # update_inpayment(data)
         log_action("Edit invoice", f"edited invoice '{invoice_id}'")
         return jsonify({"status": "success", "message": "Invoice updated successfully"}), 200
 

@@ -14,12 +14,6 @@ class GSTRelease:
         try:
             gst = ItemCRUD(itemType=ItemCRUDType.GSTRelease)
 
-            # Print the full form data
-            print("===== DEBUG: FORM DATA =====")
-            for key, value in request.form.items():
-                print(f"{key} : {value}")
-            print("=============================")
-
             data = {
                 "PMC_No": request.form.get("PMC_No", "").strip(),
                 "Invoice_No": request.form.get("Invoice_No", "").strip(),
@@ -30,10 +24,6 @@ class GSTRelease:
                 "Contractor_ID": int(request.form.get("Contractor_ID", 0) or 0)
             }
 
-            print("===== DEBUG: PARSED DATA =====")
-            print(data)
-            print("==============================")
-
             # Add GST Release
             gst.AddItem(
                 request=request,
@@ -41,8 +31,6 @@ class GSTRelease:
                 storedprocfetch="CheckGSTReleaseExists",
                 storedprocadd="AddGSTReleaseFromExcel"
             )
-
-            print(f"AddItem result: isSuccess={gst.isSuccess}, message={gst.resultMessage}")
 
             self.isSuccess = gst.isSuccess
             self.resultMessage = str(gst.resultMessage)
@@ -68,10 +56,6 @@ class GSTRelease:
                 "p_utr": request.form.get("UTR", "").strip(),
                 "p_gst_release_id": gst_release_id
             }
-
-            print("===== DEBUG: UPDATE DATA =====")
-            print(data)
-            print("==============================")
 
             # Call your stored procedure
             gst.EditItem(

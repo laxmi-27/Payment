@@ -12,7 +12,6 @@ block = Block()
 @block_bp.route('/add_block', methods=['GET', 'POST'])
 @login_required
 def add_block():
-    # block = Block()
 
     if request.method == 'POST':
         block.AddBlock(request)
@@ -30,7 +29,7 @@ def add_block():
     )
 
 
-# ✅ NEW ROUTE (FIX FOR DISTRICT FETCH)
+# get district
 @block_bp.route('/get_districts/<int:state_id>')
 @login_required
 def get_districts(state_id):
@@ -62,7 +61,6 @@ def get_districts(state_id):
 @login_required
 def check_block():
 
-    # block = Block()
     return block.CheckBlock(request)
 
 
@@ -70,8 +68,6 @@ def check_block():
 @login_required
 def edit_block(block_id):
 
-    
-#   block = Block()
     if request.method == 'POST':
         block.EditBlock(request, block_id)
         block.resultMessage
@@ -111,7 +107,6 @@ def edit_block(block_id):
 @login_required
 def delete_block(block_id):
 
-    # block = Block()
     block.DeleteBlock(request, block_id)
 
     return redirect(url_for('block.add_block'))

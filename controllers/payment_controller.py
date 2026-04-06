@@ -29,8 +29,7 @@ def add_payment():
 
         LogHelper.log_action("Add Payment", f"User {current_user.id} Add Payment '{pmc_no}'")
         Paymentmodel.insert_payment(subcontractor_id,pmc_no, invoice_no, amount, tds_amount, total_amount, utr)
-        # Paymentmodel.update_inpayment(subcontractor_id, pmc_no, invoice_no, amount, tds_amount, total_amount, utr)
-
+        
         return redirect(url_for('payment_bp.add_payment'))
 
     return render_template('add_payment.html', payments=payments)
