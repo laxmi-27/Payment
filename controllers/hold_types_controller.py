@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from flask_login import login_required
 from model.HoldTypes import HoldTypes
-from model.GST import GST
+# from model.GST import GST
 
 hold_bp = Blueprint("hold_types", __name__)
 
@@ -58,13 +58,13 @@ def delete_hold_type(id):
 
 
 # ---------------- GST ----------------
-@hold_bp.route('/unreleased_gst')
-@login_required
-def unreleased_gst():
+# @hold_bp.route('/unreleased_gst')
+# @login_required
+# def unreleased_gst():
 
-    data = GST.get_unreleased_gst()
+#     data = GST.get_unreleased_gst()
 
-    return render_template(
-        "unreleased_gst.html",
-        data=data
-    )
+#     return render_template(
+#         "unreleased_gst.html",  
+#         data=data
+#     )

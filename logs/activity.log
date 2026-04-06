@@ -9761,3 +9761,14 @@ Timestamp: 2026-04-06 10:37:55 | User: Unknown | Action: Delete Payment | Detail
 Timestamp: 2026-04-06 10:38:07 | User: Unknown | Action: Delete GSTRelease | Details: 
 Timestamp: 2026-04-06 10:38:07 | User: Unknown | Action: Delete GST Release | Details: 
 Timestamp: 2026-04-06 10:39:39 | User: Unknown | Action: Get hold type | Details: 
+Timestamp: 2026-04-06 12:03:44 | User: Unknown | Action: Login | Details: 
+Timestamp: 2026-04-06 12:12:33 | User: Unknown | Action: Add Hold Type | Details: 
+Timestamp: 2026-04-06 12:12:42 | User: Unknown | Action: Edit Hold Type | Details: 
+Timestamp: 2026-04-06 12:12:46 | User: Unknown | Action: Delete Hold Type | Details: 
+Timestamp: 2026-04-06 12:14:00 | User: Unknown | Action: Add Hold Type | Details: 
+Timestamp: 2026-04-06 12:14:07 | User: Unknown | Action: Edit Hold Type | Details: 
+Timestamp: 2026-04-06 12:14:10 | User: Unknown | Action: Delete Hold Type | Details: 
+Timestamp: 2026-04-06 12:17:03 | User: Unknown | Action: Login | Details: 
+Timestamp: 2026-04-06 12:17:12 | User: Unknown | Action: Add Hold Type | Details: 
+Timestamp: 2026-04-06 12:17:21 | User: Unknown | Action: Edit Hold Type | Details: 
+Timestamp: 2026-04-06 12:17:30 | User: Unknown | Action: Delete Hold Type | Details: 
