@@ -1,7 +1,7 @@
 import openpyxl
 from openpyxl.styles import Font, PatternFill
-
-
+from datetime import datetime
+from decimal import Decimal
 from model.FolderAndFile import FolderAndFile
 
 class excel:
@@ -98,20 +98,12 @@ class excel:
             # GST Releases
             if key in gst_release_map and key not in processed_gst_releases:
                 for gr in gst_release_map[key]:
-                    gst_row = [
-                        pmc_no, "", "", "GST Release Note", "", gr.get("Invoice_No", ""),
-                        gr.get("Basic_Amount", ""), "", "", "", "", "", "", "", "", ""
-                    ]
+                    gst_row = [pmc_no, "", "", "GST Release Note", "", gr.get("Invoice_No", ""),
+                        gr.get("Basic_Amount", ""), "", "", "", "", "", "", "", "", "" ]
 
                     gst_row += [""] * len(hold_headers)
 
-                    gst_row += [
-                        gr.get("Final_Amount", ""),
-                        "",
-                        "",
-                        gr.get("Total_Amount", ""),
-                        gr.get("UTR", "")
-                    ]
+                    gst_row += [ gr.get("Final_Amount", ""), "", "", gr.get("Total_Amount", ""), gr.get("UTR", "") ]
 
                     sheet.append(gst_row)
 
@@ -120,26 +112,13 @@ class excel:
             # Credit Notes
             if key in credit_note_map and key not in appended_credit_keys:
                 for cn in credit_note_map[key]:
-                    cn_row = [
-                        pmc_no, "", "", cn.get("Invoice_Details", "Credit Note"), "",
-                        cn.get("Invoice_No", ""),
-                        cn.get("Basic_Amount", ""),
-                        cn.get("Debit_Amount", ""),
-                        cn.get("After_Debit_Amount", ""),
-                        cn.get("GST_Amount", ""),
-                        cn.get("Amount", ""),
-                        "", "", "", "", ""
-                    ]
+                    cn_row = [ pmc_no, "", "", cn.get("Invoice_Details", "Credit Note"), "",
+                        cn.get("Invoice_No", ""), cn.get("Basic_Amount", ""),
+                        cn.get("Debit_Amount", ""), cn.get("After_Debit_Amount", ""), cn.get("GST_Amount", ""), cn.get("Amount", ""), "", "", "", "", "" ]
 
                     cn_row += [""] * len(hold_headers)
 
-                    cn_row += [
-                        cn.get("Final_Amount", ""),
-                        "",
-                        "",
-                        cn.get("Total_Amount", ""),
-                        cn.get("UTR", "")
-                    ]
+                    cn_row += [ cn.get("Final_Amount", ""), "", "", cn.get("Total_Amount", ""), cn.get("UTR", "") ]
 
                     sheet.append(cn_row)
 
@@ -153,7 +132,12 @@ class excel:
             for ht_id in hold_totals:
                 hold_totals[ht_id] += invoice_holds.get(ht_id, 0) or 0
 
-        totalrow = ["Total","-","-","-","-","-",total.get('sum_invo_basic_amt', 0)+total.get('sum_gst_basic_amt')+ total.get('sum_credit_basic_amt'),
+        total_basic_amount = total.get('sum_invo_basic_amt', 0)+total.get('sum_gst_basic_amt')+ total.get('sum_credit_basic_amt')
+        total_final_amount  = total.get('sum_invo_final_amt', 0)+ total.get('sum_gst_final_amt', 0) + total.get('sum_credit_final_amt', 0)
+        total_total_amount =  total.get('sum_pay_total_amt', 0)+ total.get('sum_gst_total_amt', 0) + total.get('sum_credit_total_amt', 0)
+
+        # total row insert
+        totalrow = ["Total","-","-","-","-","-",total_basic_amount,
                    total.get('sum_invo_debit_amt', 0), total.get('sum_invo_after_debit_amt', 0),total.get('sum_invo_gst_amt', 0),total.get('sum_invo_amt', 0),
                    total.get('sum_invo_tds_amt', 0),total.get('sum_invo_ds_amt', 0),total.get('sum_invo_on_commission', 0), total.get('sum_invo_hydro_test', 0),
                    total.get('sum_invo_gst_sd_amt', 0)]
@@ -161,27 +145,53 @@ class excel:
         for ht in hold_types:
             totalrow.append(hold_totals.get(ht['hold_type_id'], 0))
 
-        totalrow += [ total.get('sum_invo_final_amt', 0)+ total.get('sum_gst_final_amt', 0) + total.get('sum_credit_final_amt', 0),"","",
-                     total.get('sum_pay_total_amt', 0)+ total.get('sum_gst_total_amt', 0) + total.get('sum_credit_total_amt', 0)]
-        
-        
+        totalrow += [total_final_amount, "","", total_total_amount]
+
         sheet.append(totalrow)
+        
         # Apply style (color + bold)
         for cell in sheet[sheet.max_row]:
             cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")  # Yellow
             cell.font = Font(bold=True)
 
         # summary report
-        sheet.append([""])
-        sheet.append([""])
-        sheet.append(["","","Summary Report","",""])
-        summary1 = ["", "Advance / Suplus" , total.get('sum_pay_total_amt', 0)+ total.get('sum_gst_total_amt', 0) + total.get('sum_credit_total_amt', 0)]
-        summary2 = ["", "Hold Amt", total["sum_invo_hold_amt"]]
-        summary3 = ["", "Amount With TDS", total["sum_invo_tds_amt"]]
-        sheet.append(summary1)
-        sheet.append(summary2)
-        sheet.append(summary3)
+        sheet.append([])
+        sheet.append(["Summary Report"])
+        today_date = datetime.today().strftime('%A, %Y-%m-%d')
+        sheet.append([])
+        sheet.append(["Contractor Name", info["Contractor_Name"]])
+        sheet.append(["Date", today_date])
+        sheet.append(["Description", "Amount"])
+            
+        # Calculate surplus/advance
+        surplus_amount = total_final_amount - total_total_amount
+        sheet.append(["Advance/Surplus", str(surplus_amount)])
 
+        # Get the last appended row
+        current_row = sheet.max_row
+        cell = sheet.cell(row=current_row, column=2)
+
+        # Apply green fill if positive, red fill if negative
+        if surplus_amount >= 0:
+            fill_color = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Light green
+        else:
+            fill_color = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")  # Light red
+
+        cell.fill = fill_color
+        sheet.append(["Total Hold Amount", str(Decimal(total["sum_invo_hold_amt"]))])
+        sheet.append(["Amount With TDS", str(total.get('sum_invo_tds_amt', 0))])
+
+        # Auto adjust column widths
+        for col in sheet.columns:
+            max_length = 0
+            col_letter = openpyxl.utils.get_column_letter(col[0].column)
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            sheet.column_dimensions[col_letter].width = max_length + 2
 
         # SAVE ONCE AT END
         workbook.save(output_file)
