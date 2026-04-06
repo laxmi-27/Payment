@@ -178,7 +178,10 @@ class excel:
             fill_color = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")  # Light red
 
         cell.fill = fill_color
-        sheet.append(["Total Hold Amount", str(Decimal(total["sum_invo_hold_amt"]))])
+        # sheet.append(["Total Hold Amount", str(Decimal(total["sum_invo_hold_amt"]))])
+        for ht in hold_types:
+            sheet.append([ht['hold_type'], hold_totals.get(ht['hold_type_id'], 0)])
+
         sheet.append(["Amount With TDS", str(total.get('sum_invo_tds_amt', 0))])
 
         # Auto adjust column widths
