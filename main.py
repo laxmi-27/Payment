@@ -1,6 +1,6 @@
 # main.py
 from flask import Flask, render_template
-from flask_login import LoginManager
+from flask_login import LoginManager, login_required
 from model.Auth import User
 
 # Import Blueprints / Controllers
@@ -40,6 +40,7 @@ def load_user(user_id):
 
 # ---------------- Home Route ----------------
 @app.route('/')
+@login_required
 def index():
     return render_template("index.html")
 

@@ -298,7 +298,9 @@ def save_data():
                         else:
                             print("Hold columns data is not a valid list of dictionaries.")
                     #-----------------------------------Credit Note----------------------------------------------------------------
-                    elif any(keyword in Invoice_Details.lower() for keyword in ['credit', 'logging report']):    
+                    # elif any(keyword in Invoice_Details.lower() for keyword in ['credit', 'logging report']):
+                    elif any(keyword in Invoice_Details.lower() for keyword in ['credit','debit', 'logging report']):    
+    
                         cursor.callproc(
                             'AddCreditNoteFromExcel',
                             [
