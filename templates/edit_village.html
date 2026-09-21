@@ -1,44 +1,177 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Village</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-<body>
-<div class="container">
-    <div class="form-block">
-        <h2>Edit Village</h2>
-        <form id="editVillageForm" method="POST">
-            <label for="block_Id">Select Block:</label>
-            <select id="block_Id" name="block_Id" required>
-                <option value="" disabled>Select Block</option>
-                {% for block in blocks %}
-                    <option value="{{ block[0] }}" {% if block[0] == village_data[1] %}selected{% endif %}>
-                        {{ block[1] }}
-                    </option>
-                {% endfor %}
-            </select>
 
-            <label for="Village_Name">Enter Village Name:</label>
-            <input type="text" id="Village_Name" name="Village_Name" value="{{ village_data[0] }}" required>
-            <span id="villageMessage"></span>
+<style>
 
-            <button type="submit">Update Village</button>
-        </form>
-  <!-- Flash Messages (hidden, used for JS popup) -->
-<div id="flash-messages-container" style="display:none;">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash-message" data-category="{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+.edit-page{
+max-width:760px;
+margin:auto;
+padding-top:20px;
+}
+
+.edit-card{
+background:#fff;
+padding:42px;
+border-radius:24px;
+box-shadow:0 8px 30px rgba(0,0,0,.06);
+}
+
+.edit-card h2{
+font-size:32px;
+color:#1d3e73;
+margin-bottom:30px;
+text-align:center;
+}
+
+label{
+display:block;
+font-weight:600;
+margin-bottom:10px;
+color:#344054;
+}
+
+select,
+input{
+width:100%;
+padding:14px 16px;
+border:1px solid #d8dfeb;
+border-radius:12px;
+background:#fafcff;
+outline:none;
+margin-bottom:22px;
+}
+
+select:focus,
+input:focus{
+border-color:#2d73d5;
+background:#fff;
+box-shadow:0 0 0 4px rgba(45,115,213,.08);
+}
+
+#villageMessage{
+display:block;
+margin-bottom:18px;
+font-weight:600;
+}
+
+.update-btn{
+width:100%;
+background:linear-gradient(90deg,#183b70,#2f68bb);
+color:#fff;
+border:none;
+padding:15px;
+border-radius:14px;
+font-weight:600;
+font-size:16px;
+cursor:pointer;
+transition:.3s;
+}
+
+.update-btn:hover{
+transform:translateY(-2px);
+box-shadow:0 8px 18px rgba(0,0,0,.12);
+}
+
+.back-btn{
+display:inline-block;
+margin-top:20px;
+text-decoration:none;
+background:#eef4ff;
+color:#1d3e73;
+padding:12px 20px;
+border-radius:12px;
+font-weight:600;
+}
+
+@media(max-width:768px){
+.edit-card{
+padding:24px;
+}
+
+.edit-card h2{
+font-size:26px;
+}
+}
+
+</style>
+
+
+<script>
+window.onload=function(){
+let flashes=document.querySelectorAll('.flash-message');
+flashes.forEach(function(msg){
+alert(msg.innerText);
+});
+}
+</script>
+
+
+<div class="edit-page">
+
+<div class="edit-card">
+
+<h2>Edit Village</h2>
+
+<form id="editVillageForm" method="POST">
+
+<label for="block_Id">
+Select Block
+</label>
+
+<select id="block_Id" name="block_Id" required>
+<option value="" disabled>Select Block</option>
+
+{% for block in blocks %}
+<option value="{{ block[0] }}"
+{% if block[0] == village_data[1] %} selected {% endif %}>
+{{ block[1] }}
+</option>
+{% endfor %}
+
+</select>
+
+
+<label for="Village_Name">
+Village Name
+</label>
+
+<input
+type="text"
+id="Village_Name"
+name="Village_Name"
+value="{{ village_data[0] }}"
+required>
+
+<span id="villageMessage"></span>
+
+
+<button type="submit" class="update-btn">
+Update Village
+</button>
+
+</form>
+
+<a href="{{ url_for('village.add_village') }}" class="back-btn">
+← Back
+</a>
+
+</div>
+
 </div>
 
 
-</body>
+
+<!-- Flash Messages -->
+<div id="flash-messages-container" style="display:none;">
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="flash-message" data-category="{{ category }}">
+{{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+</div>
+
 {% endblock %}

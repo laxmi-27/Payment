@@ -1,141 +1,227 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
+{% block title %}Dashboard — Payment Reconciliation{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Reconciliation </title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/index.css') }}">
-    <style>
-        .logout-button {
-            position: absolute;
-            top: 2cm;
-            right: 20px;
-        }
+{% block extra_css %}
+<style>
+.page-title { font-size: 22px; color: #1e3c72; font-weight: 700; margin-bottom: 28px; }
 
-        .logout-button a {
-            background-color: #e74c3c;
-            color: white;
-            padding: 8px 14px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-        }
+/* Section Groups */
+.section-group { margin-bottom: 40px; }
+.group-header  { margin-bottom: 16px; }
+.group-title {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: #6b7fa3;
+  display: flex; align-items: center; gap: 8px;
+}
+.group-title::before {
+  content: ''; display: inline-block; width: 14px; height: 3px;
+  background: linear-gradient(90deg,#2a5298,#4facfe); border-radius: 2px;
+}
 
-        .logout-button a:hover {
-            background-color: #c0392b;
-        }
-    </style>
-</head>
+/* Master Card */
+.master-card {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  padding: 28px 32px; text-decoration: none; color: inherit;
+  display: flex; align-items: center; gap: 28px;
+  transition: .25s; position: relative; overflow: hidden;
+}
+.master-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  height: 3px; width: 100%;
+  background: linear-gradient(90deg,#2a5298,#4facfe);
+}
+.master-card:hover {
+  background: #f5f8ff;
+  box-shadow: 0 8px 28px rgba(42,82,152,.12);
+  transform: translateY(-3px);
+}
+.master-card-icon { font-size: 38px; color: #2a5298; flex-shrink: 0; }
+.master-card-body { flex: 1; }
+.master-card-body h3 { font-size: 17px; color: #1e3c72; font-weight: 700; margin-bottom: 6px; }
+.master-card-body p  { font-size: 13px; color: #6b7fa3; line-height: 1.5; margin-bottom: 12px; }
+.master-card-flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.flow-pill {
+  background: #eef3fc; color: #2a5298; font-size: 11.5px;
+  font-weight: 600; padding: 4px 12px; border-radius: 20px;
+}
+.flow-arrow { color: #a0aec0; font-size: 12px; }
+.master-card-cta {
+  font-size: 13px; color: #2a5298; font-weight: 700;
+  padding: 9px 20px; background: #eef3fc; border-radius: 10px;
+  flex-shrink: 0; white-space: nowrap;
+}
+.master-card:hover .master-card-cta { background: #dce8fb; }
 
-<body>
-    <div class="logout-button">
-        <a href="/logout">Logout</a>
+@media(max-width:700px){
+  .master-card { flex-direction: column; align-items: flex-start; }
+  .master-card-cta { align-self: flex-start; }
+}
+
+/* Cards Grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 22px;
+}
+.card {
+  background: #fff; padding: 28px 24px; border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.05); transition: .25s;
+  position: relative; overflow: hidden; text-decoration: none;
+  color: inherit; display: block; border: 1px solid #edf1f7;
+}
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  height: 3px; width: 100%;
+  background: linear-gradient(90deg,#2a5298,#4facfe);
+}
+.card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px rgba(42,82,152,.12); }
+.card i { font-size: 30px; color: #2a5298; margin-bottom: 14px; display: block; }
+.card h3 { font-size: 15px; color: #1e3c72; font-weight: 700; margin-bottom: 6px; }
+.card p  { font-size: 12.5px; color: #6b7fa3; margin-bottom: 16px; line-height: 1.5; }
+.card-cta { font-size: 13px; color: #2a5298; font-weight: 700; }
+.card:hover .card-cta { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<p class="page-title">Management Modules</p>
+
+<!-- MASTER DATA -->
+<div class="section-group">
+  <div class="group-header">
+    <p class="group-title">Master Data Management</p>
+  </div>
+  <a href="/master_data" class="master-card">
+    <i class="fas fa-sitemap master-card-icon"></i>
+    <div class="master-card-body">
+      <h3>Master Data Management</h3>
+      <p>Manage the complete geographic hierarchy from a single page — add, activate, deactivate, and organise records at every level.</p>
+      <div class="master-card-flow">
+        <span class="flow-pill"><i class="fas fa-map" style="margin-right:4px"></i>State</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-pill"><i class="fas fa-city" style="margin-right:4px"></i>District</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-pill"><i class="fas fa-layer-group" style="margin-right:4px"></i>Block</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-pill"><i class="fas fa-location-dot" style="margin-right:4px"></i>Village</span>
+      </div>
     </div>
-    <div class="sidebar">
-        <img src="http://lceplpmprod.btltech.xyz/assets/images/lcpl.png" alt="logo-image" class="logo">
+    <span class="master-card-cta">Open Master Data →</span>
+  </a>
+</div>
 
-        <ul class="nav-menu">
-            <li class="nav-item">
-                <a href="#" class="nav-link active">
-                    <i class="fas fa-home"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/upload_excel_file" class="nav-link">
-                    <i class="fas fa-book"></i> Import Excel
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/report" class="nav-link">
-                    <i class="fas fa-cog"></i> Report Details
-                </a>
-            </li>
-            <!-- <li class="nav-item">
-            <a href="/work_order_report" class="nav-link">
-                <i class="fas fa-cog"></i> Work Order Report Details
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="/purchase_order_report" class="nav-link">
-                <i class="fas fa-cog"></i>Purchase Order Report Details
-            </a>
-        </li> -->
-            <li class="nav-item">
-                <a href="{{ url_for('log.activity_log') }}" class="nav-link">
-                    <i class="fas fa-cog"></i> Logs
-                </a>
-            </li>
+<!-- FINANCIAL OPERATIONS -->
+<div class="section-group">
+  <div class="group-header">
+    <p class="group-title">Financial Operations</p>
+  </div>
+  <div class="cards-grid">
 
-        </ul>
-        <div class="user-section">
-            <img src="{{ url_for('static', filename='images/icons/male_profile.jpeg') }}" alt="User Avatar">
-            <div class="user-info">
-                <span>admin</span>
-            </div>
-        </div>
-    </div>
-    <div class="company-info">
-        <marquee behavior="scroll" direction="left">
-            <h2 class="company-name">Laxmi Civil Engineering Services Pvt. Ltd.</h2>
-        </marquee>
-        <p class="app-name">Payment Reconciliation</p>
-    </div>
-    <div class="content">
-        <div class="menu">
-            <div class="card">
-                <h2>Profile</h2>
-                <a class="btn" href="#">Go ➜</a>
-            </div>
+    <a href="/subcontractor" class="card">
+      <i class="fas fa-users"></i>
+      <h3>Sub-Contractor</h3>
+      <p>Manage registered sub-contractors</p>
+      <span class="card-cta">Manage →</span>
+    </a>
 
-            <div class="card">
-                <h2>States</h2>
-                <a class="btn" href="/add_state">Go ➜</a>
-            </div>
+    <a href="/add_invoice" class="card">
+      <i class="fas fa-file-invoice"></i>
+      <h3>Invoice</h3>
+      <p>Add and manage invoices</p>
+      <span class="card-cta">Manage →</span>
+    </a>
 
-            <div class="card">
-                <h2>District</h2>
-                <a class="btn" href="/add_district">Go ➜</a>
-            </div>
+    <a href="/add_payment" class="card">
+      <i class="fas fa-money-check-dollar"></i>
+      <h3>Payment</h3>
+      <p>Track and record payments</p>
+      <span class="card-cta">Manage →</span>
+    </a>
 
-            <div class="card">
-                <h2>Blocks</h2>
-                <a class="btn" href="/add_block">Go ➜</a>
-            </div>
+    <a href="/add_gst_release" class="card">
+      <i class="fas fa-percent"></i>
+      <h3>GST Release</h3>
+      <p>Manage GST release records</p>
+      <span class="card-cta">Manage →</span>
+    </a>
 
-            <div class="card">
-                <h2>Village</h2>
-                <a class="btn" href="/add_village">Go ➜</a>
-            </div>
+    <a href="/add_hold_type" class="card">
+      <i class="fas fa-pause-circle"></i>
+      <h3>Hold Types</h3>
+      <p>Define and manage hold categories</p>
+      <span class="card-cta">Manage →</span>
+    </a>
 
-            <div class="card">
-                <h2>Sub-Contractor</h2>
-                <a class="btn" href="/subcontractor">Go ➜</a>
-            </div>
+    <a href="/add_credit_note" class="card">
+      <i class="fas fa-file-contract"></i>
+      <h3>Credit / Debit Note</h3>
+      <p>Record and manage credit and debit notes</p>
+      <span class="card-cta">Manage →</span>
+    </a>
 
-            <div class="card">
-                <h2>Invoice</h2>
-                <a class="btn" href="/add_invoice">Go ➜</a>
-            </div>
+    <a href="/hold_release" class="card">
+      <i class="fas fa-lock-open"></i>
+      <h3>Hold Release</h3>
+      <p>Record and manage hold release payments</p>
+      <span class="card-cta">Manage →</span>
+    </a>
 
-            <div class="card">
-                <h2>Payment</h2>
-                <a class="btn" href="/add_payment">Go ➜</a>
-            </div>
+  </div>
+</div>
 
-            <div class="card">
-                <h2>GST Release</h2>
-                <a class="btn" href="/add_gst_release">Go ➜</a>
-            </div>
+<!-- ADMIN TOOLS -->
+<div class="section-group">
+  <div class="group-header">
+    <p class="group-title">Admin Tools</p>
+  </div>
+  <div class="cards-grid">
 
-            <div class="card">
-                <h2>Hold Types</h2>
-                <a class="btn" href="/add_hold_type">Go ➜</a>
-            </div>
-           
-        </div>
+    <a href="/delete_pmc" class="card" style="border-top-color:#e74c3c;">
+      <i class="fas fa-trash-alt" style="color:#e74c3c;"></i>
+      <h3>Delete PMC Records</h3>
+      <p>Permanently remove all records for selected PMC numbers</p>
+      <span class="card-cta" style="color:#e74c3c;">Open →</span>
+    </a>
 
-</body>
+  </div>
+</div>
 
-</html>
+<!-- REPORTS & SYSTEM -->
+<div class="section-group">
+  <div class="group-header">
+    <p class="group-title">Reports &amp; System</p>
+  </div>
+  <div class="cards-grid">
+
+    <a href="/upload_excel_file" class="card">
+      <i class="fas fa-file-excel"></i>
+      <h3>Import Excel</h3>
+      <p>Upload and process Excel data files</p>
+      <span class="card-cta">Open →</span>
+    </a>
+
+    <a href="/report" class="card">
+      <i class="fas fa-chart-bar"></i>
+      <h3>Reports</h3>
+      <p>View contractor and payment reports</p>
+      <span class="card-cta">Open →</span>
+    </a>
+
+    <a href="/activity_log" class="card">
+      <i class="fas fa-history"></i>
+      <h3>Logs</h3>
+      <p>View system activity logs</p>
+      <span class="card-cta">Open →</span>
+    </a>
+
+    <a href="/profile" class="card">
+      <i class="fas fa-user-circle"></i>
+      <h3>Profile</h3>
+      <p>View account details and change password</p>
+      <span class="card-cta">Open →</span>
+    </a>
+
+  </div>
+</div>
+
+{% endblock %}

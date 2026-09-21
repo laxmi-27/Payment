@@ -1,0 +1,289 @@
+```html
+{% extends "base.html" %}
+{% block title %}Changelog{% endblock %}
+
+{% block content %}
+<style>
+  .cl-wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 28px 16px 60px;
+  }
+
+  .cl-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .cl-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #1d3e73;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .cl-header-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1d3e73;
+    margin: 0;
+  }
+
+  .cl-header-sub {
+    font-size: 13px;
+    color: #64748b;
+    margin: 2px 0 0;
+  }
+
+  .cl-version {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+
+  .cl-version-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .cl-badge {
+    background: #1d3e73;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+
+  .cl-badge.latest {
+    background: #059669;
+  }
+
+  .cl-version-date {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: auto;
+  }
+
+  .cl-version-body {
+    padding: 16px 20px;
+  }
+
+  .cl-section {
+    margin-bottom: 14px;
+  }
+
+  .cl-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .cl-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .cl-section-label.fixed {
+    color: #dc2626;
+  }
+
+  .cl-section-label.added {
+    color: #059669;
+  }
+
+  .cl-section-label.changed {
+    color: #d97706;
+  }
+
+  .cl-list {
+    margin: 0;
+    padding: 0 0 0 18px;
+  }
+
+  .cl-list li {
+    font-size: 13.5px;
+    color: #374151;
+    margin-bottom: 5px;
+    line-height: 1.55;
+  }
+
+  .cl-list li:last-child {
+    margin-bottom: 0;
+  }
+
+  .cl-list li strong {
+    color: #1d3e73;
+  }
+</style>
+
+<div class="cl-wrap">
+
+  <div class="cl-header">
+    <div class="cl-header-icon">
+      <i class="fas fa-code-branch"></i>
+    </div>
+
+    <div>
+      <h1 class="cl-header-title">Changelog</h1>
+      <p class="cl-header-sub">
+        Release history for the Payment Reconciliation System
+      </p>
+    </div>
+  </div>
+
+  <!-- V1 -->
+  <div class="cl-version">
+
+    <div class="cl-version-head">
+      <span class="cl-badge latest">V1</span>
+
+      <span style="font-size:14px;font-weight:600;color:#1d3e73;">
+        Payment Module Overhaul &amp; New Features
+      </span>
+
+      <span class="cl-version-date">2026-06-02</span>
+    </div>
+
+    <div class="cl-version-body">
+
+      <!-- Fixed -->
+      <div class="cl-section">
+
+        <div class="cl-section-label fixed">Fixed</div>
+
+        <ul class="cl-list">
+
+          <li>
+            <strong>Hold Release Note misrouted as GST Release Note</strong>
+            - keyword "release" in GST branch was catching "Hold Release Note";
+            added explicit hold keywords and excluded "hold" from GST match
+          </li>
+
+          <li>
+            <strong>Paid amount showing 0 in report</strong>
+            - <code>_row_paid</code> was looking for renamed columns
+            (<code>Amount_after_TDS_Deduction</code>) but SQL still aliased them as
+            <code>Total_Amount</code>; fixed all aliases in UNION query
+          </li>
+
+          <li>
+            <strong>Amount with TDS showing 0</strong>
+            for contractors whose Excel had no explicit Payment_Amount column
+            - backfilled existing rows and fixed import logic
+          </li>
+
+          <li>
+            <strong>Paid amount mismatch</strong>
+            - SP was using Payment_Amount when TDS=0 instead of the correct
+            Total_Amount; fixed all payment SPs to always prefer Total_Amount
+            when &gt; 0
+          </li>
+
+          <li>
+            <strong>GST Release history not loading</strong>
+            after re-import - incorrect table/column references in
+            <code>GetGSTReleaseByIDWithName</code>
+          </li>
+
+          <li>
+            <strong>Invoice save failing</strong>
+            - <code>SaveInvoice</code> SP expects 20 params but was receiving
+            19 (missing <code>sort_order</code>)
+          </li>
+
+          <li>
+            <strong>GST Release add failing (500 error)</strong>
+            - <code>AddGSTReleaseFromExcel</code> SP expects 8 params but was
+            receiving 7 (missing <code>sort_order</code>)
+          </li>
+
+        </ul>
+      </div>
+
+      <!-- Added -->
+      <div class="cl-section">
+
+        <div class="cl-section-label added">Added</div>
+
+        <ul class="cl-list">
+
+          <li>
+            <strong>GST Date column</strong>
+            - new <code>Invoice_Date</code> field added to GST Release table,
+            form, history table, view modal, and downloaded Excel report
+          </li>
+
+          <li>
+            <strong>Balance to Debit page</strong>
+            - new standalone page to manage per-contractor debit balances;
+            value appears as "Balance to Debit" in the Summary section of the
+            output Excel (replaces "Total Debit")
+          </li>
+
+          <li>
+            <strong>Debit notes in filtered Excel report</strong>
+            - debit note rows from <code>credit_note</code> table now included
+            in the main report UNION query and exported Excel
+          </li>
+
+          <li>
+            <strong>Universal payment TDS resolution</strong>
+            - import now correctly computes <code>Amount_with_TDS</code> and
+            <code>TDS_Payment_Amount</code> for all Excel formats:
+            explicit Payment_Amount column, TDS_Amount-only column, or no TDS
+          </li>
+
+        </ul>
+      </div>
+
+      <!-- Changed -->
+      <div class="cl-section">
+
+        <div class="cl-section-label changed">Changed</div>
+
+        <ul class="cl-list">
+
+          <li>
+            <strong>Payment columns renamed</strong>
+            - "Amount (₹)" → <strong>Amount with TDS</strong>;
+            "Total (₹)" → <strong>Amount after TDS Deduction</strong>;
+            DB columns renamed accordingly
+            (<code>Payment_Amount</code> → <code>Amount_with_TDS</code>,
+            <code>Total_Amount</code> → <code>Amount_after_TDS_Deduction</code>)
+          </li>
+
+          <li>
+            <strong>TDS % column removed</strong>
+            from Payment Module - TDS Amount is now directly editable;
+            Total auto-calculates as Amount − TDS
+          </li>
+
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+```

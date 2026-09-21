@@ -4,7 +4,7 @@ services:
   flask-app:
     build: .
     ports:
-      - "5000:5000"
+      - "5020:5020"  
     depends_on:
       - mysql
     environment:
@@ -22,7 +22,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
     ports:
-      - "3306:3306"
+      - "3320:3306"   
     volumes:
       - mysql-data:/var/lib/mysql
     networks:

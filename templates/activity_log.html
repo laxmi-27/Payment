@@ -1,116 +1,350 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
+{% block content %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Activity Logs</title>
-    <style>
-        body {
-            font-family: "Segoe UI", Tahoma, sans-serif;
-            background-color: #f8f9fa;
-            margin: 20px;
-        }
+{# ── Badge class helper ── #}
+{% macro badge_cls(action) -%}
+  {%- set a = (action or '')|lower -%}
+  {%- if 'login' in a %}ab-login
+  {%- elif 'logout' in a %}ab-logout
+  {%- elif 'search' in a %}ab-search
+  {%- elif 'upload' in a %}ab-upload
+  {%- elif 'save' in a %}ab-save
+  {%- elif 'download' in a %}ab-download
+  {%- else %}ab-default{%- endif -%}
+{% endmacro %}
 
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+<style>
+/* ── Activity Log Page ───────────────────────────────────────── */
+.al-page { max-width: 1300px; margin: 0 auto; }
 
-        form {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
+.al-title {
+  font-size: 21px; font-weight: 700; color: #1d3e73;
+  margin: 0 0 18px; display: flex; align-items: center; gap: 10px;
+}
 
-        input,
-        button {
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-        }
+/* Filter card */
+.al-filter-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 22px 26px; margin-bottom: 20px;
+}
+.al-filter-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px;
+}
+.al-fg label {
+  display: block; font-size: 11px; font-weight: 700; color: #6b7a99;
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px;
+}
+.al-fg input, .al-fg select {
+  width: 100%; padding: 9px 12px; border: 1.5px solid #e0e8f5; border-radius: 9px;
+  background: #f8fbff; font-size: 13.5px; color: #2d3748; outline: none;
+  transition: .2s; box-sizing: border-box;
+}
+.al-fg input:focus, .al-fg select:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.09);
+}
+.al-btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.al-btn {
+  padding: 9px 20px; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  cursor: pointer; border: none; display: inline-flex; align-items: center;
+  gap: 7px; transition: .15s; text-decoration: none;
+}
+.al-btn-primary { background: linear-gradient(90deg,#183b70,#2f68bb); color:#fff; }
+.al-btn-primary:hover { opacity:.9; }
+.al-btn-ghost { background:#f0f4ff; color:#1d3e73; border:1.5px solid #c9d9f5; }
+.al-btn-ghost:hover { background:#e4ecff; }
 
-        button {
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-        }
+/* Table card */
+.al-table-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); overflow: hidden;
+}
+.al-table-header {
+  padding: 14px 20px; border-bottom: 1.5px solid #eef2f7;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.al-table-title { font-size: 14px; font-weight: 700; color: #1d3e73; display: flex; align-items: center; gap: 8px; }
+.al-controls { display: flex; align-items: center; gap: 10px; }
+.al-search-inp {
+  padding: 7px 12px; border: 1.5px solid #e0e8f5; border-radius: 8px;
+  font-size: 13px; outline: none; width: 200px; transition: .2s;
+}
+.al-search-inp:focus { border-color: #2d73d5; }
+.al-badge {
+  background: #eef4ff; color: #1d3e73; padding: 5px 14px;
+  border-radius: 20px; font-size: 12px; font-weight: 700;
+}
 
-        button:hover {
-            background-color: #0056b3;
-        }
+/* Table */
+.al-tbl-outer { overflow-x: auto; max-height: 520px; overflow-y: auto; }
+.al-tbl { width: 100%; border-collapse: collapse; min-width: 860px; }
+.al-tbl thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: linear-gradient(90deg,#183b70,#2f68bb); color: #fff;
+  padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 700;
+  white-space: nowrap; text-transform: uppercase; letter-spacing: .04em;
+}
+.al-tbl tbody tr { transition: background .1s; }
+.al-tbl tbody tr:nth-child(even) { background: #fafcff; }
+.al-tbl tbody tr:hover { background: #f2f7ff; }
+.al-tbl tbody td {
+  padding: 10px 14px; font-size: 13px; color: #374151;
+  border-bottom: 1px solid #eef2f8; vertical-align: middle;
+}
+.al-tbl tbody tr:last-child td { border-bottom: none; }
+.al-empty td { text-align: center; color: #aab; padding: 42px; font-style: italic; }
 
-        table {
-            width: 90%;
-            margin: auto;
-            border-collapse: collapse;
-            background: white;
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-        }
+/* Badges */
+.action-badge {
+  display: inline-block; padding: 3px 11px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 700; white-space: nowrap;
+}
+.ab-login    { background: #d1fae5; color: #065f46; }
+.ab-logout   { background: #fee2e2; color: #991b1b; }
+.ab-search   { background: #dbeafe; color: #1e40af; }
+.ab-upload   { background: #fef3c7; color: #92400e; }
+.ab-save     { background: #ede9fe; color: #5b21b6; }
+.ab-download { background: #ffedd5; color: #9a3412; }
+.ab-default  { background: #eef4ff; color: #1d3e73; }
 
-        th,
-        td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
+/* Details cell */
+.al-details {
+  max-width: 340px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; cursor: default; color: #4b5563;
+}
+.al-details:hover { white-space: normal; overflow: visible; background: #fff; z-index: 10; position: relative; }
 
-        th {
-            background-color: #007bff;
-            color: white;
-        }
+/* Pagination */
+.al-pagination {
+  padding: 13px 20px; border-top: 1.5px solid #eef2f7;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.al-pg-info { font-size: 12px; color: #7a8fa8; }
+.al-pg-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+.al-pg-btn {
+  padding: 5px 11px; border: 1.5px solid #d9e4f5; border-radius: 7px;
+  background: #fff; color: #1d3e73; font-size: 13px; cursor: pointer;
+  transition: .15s; font-weight: 600; line-height: 1;
+}
+.al-pg-btn:hover   { background: #eef4ff; }
+.al-pg-btn.active  { background: #183b70; color: #fff; border-color: #183b70; }
+.al-pg-btn:disabled { opacity: .38; cursor: default; pointer-events: none; }
 
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-    </style>
-</head>
+@media (max-width: 900px) {
+  .al-filter-grid { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 540px) {
+  .al-filter-grid { grid-template-columns: 1fr; }
+}
+</style>
 
-<body>
-    <h2>Activity Logs</h2>
+<div class="al-page">
 
-    <form method="get" action="{{ url_for('log.activity_log') }}" class="filter-form">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" placeholder="Enter username" value="{{ username or '' }}">
+  <div class="al-title">
+    <i class="fa fa-clock-rotate-left"></i> Activity Logs
+  </div>
 
-        <label for="start_date">Start Date:</label>
-        <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}">
+  <!-- Filters -->
+  <form method="get" action="{{ url_for('log.activity_log') }}" class="al-filter-card" id="alForm">
+    <div class="al-filter-grid">
+      <div class="al-fg">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="Enter username" value="{{ username or '' }}">
+      </div>
+      <div class="al-fg">
+        <label>Action</label>
+        <select name="action_filter">
+          <option value="">— All Actions —</option>
+          {% for act in unique_actions %}
+          <option value="{{ act }}" {% if action_filter == act %}selected{% endif %}>{{ act }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="al-fg">
+        <label>Start Date</label>
+        <input type="date" name="start_date" value="{{ start_date or '' }}">
+      </div>
+      <div class="al-fg">
+        <label>End Date</label>
+        <input type="date" name="end_date" value="{{ end_date or '' }}">
+      </div>
+    </div>
+    <div class="al-btn-row">
+      <button type="submit" class="al-btn al-btn-primary">
+        <i class="fa fa-filter"></i> Filter
+      </button>
+      <button type="button" class="al-btn al-btn-ghost" onclick="alReset()">
+        <i class="fa fa-rotate-left"></i> Reset
+      </button>
+    </div>
+  </form>
 
-        <label for="end_date">End Date:</label>
-        <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}">
+  <!-- Table Card -->
+  <div class="al-table-card">
+    <div class="al-table-header">
+      <span class="al-table-title">
+        <i class="fa fa-list-ul"></i> System Activity History
+      </span>
+      <div class="al-controls">
+        <input type="text" class="al-search-inp" id="alSearch" placeholder="Search logs…" oninput="alApplySearch()">
+        <span class="al-badge" id="alBadge">{{ logs|length }} Records</span>
+      </div>
+    </div>
 
-        <button type="submit" class="btn btn-primary">Filter</button>
-        <button type="button" style="background-color: #6c757d;" onclick="resetFilter()">Reset</button>
-    </form>
-
-    <table>
-        <tr>
-            <th>Timestamp</th>
-            <th>User</th>
-            <th>Action</th>
+    <div class="al-tbl-outer">
+      <table class="al-tbl">
+        <thead>
+          <tr>
+            <th style="width:160px;">Timestamp</th>
+            <th style="width:130px;">User</th>
+            <th style="width:160px;">Action</th>
             <th>Details</th>
-        </tr>
-        {% for log in logs %}
-        <tr>
-            <td>{{ log.timestamp }}</td>
-            <td>{{ log.user }}</td>
-            <td>{{ log.action }}</td>
-            <td>{{ log.details }}</td>
-        </tr>
-        {% endfor %}
-        {% if logs|length == 0 %}
-        <tr>
-            <td colspan="4">No logs found</td>
-        </tr>
-        {% endif %}
-    </table>
+          </tr>
+        </thead>
+        <tbody id="alTbody">
+          {% if logs %}
+            {% for log in logs %}
+            <tr class="al-data-row"
+                data-ts="{{ log.timestamp }}"
+                data-user="{{ log.user }}"
+                data-action="{{ log.action }}"
+                data-details="{{ log.details }}">
+              <td style="font-size:12px;color:#6b7a99;white-space:nowrap;">{{ log.timestamp }}</td>
+              <td>
+                <span style="font-weight:600;color:#374151;">
+                  {% if log.user and log.user != 'Unknown' %}
+                    <i class="fa fa-user" style="color:#9aadcc;margin-right:5px;"></i>{{ log.user }}
+                  {% else %}
+                    <i class="fa fa-user-slash" style="color:#ccc;margin-right:5px;"></i><span style="color:#bbb;">Unknown</span>
+                  {% endif %}
+                </span>
+              </td>
+              <td>
+                <span class="action-badge {{ badge_cls(log.action) }}">{{ log.action }}</span>
+              </td>
+              <td class="al-details" title="{{ log.details }}">{{ log.details }}</td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr class="al-empty"><td colspan="4">No logs found for the selected filters</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
 
-    <script>
-        function resetFilter() {
-            window.location.href = "{{ url_for('log.activity_log') }}";
-        }
-    </script>
-</body>
+    <div class="al-pagination">
+      <span class="al-pg-info" id="alPgInfo"></span>
+      <div class="al-pg-btns" id="alPgBtns"></div>
+    </div>
+  </div>
 
-</html>
+</div>
+
+<script>
+// Badge class helper (mirrors server-side logic)
+function alBadgeClass(action) {
+  if (!action) return 'ab-default';
+  const a = action.toLowerCase();
+  if (a.includes('login'))    return 'ab-login';
+  if (a.includes('logout'))   return 'ab-logout';
+  if (a.includes('search'))   return 'ab-search';
+  if (a.includes('upload'))   return 'ab-upload';
+  if (a.includes('save'))     return 'ab-save';
+  if (a.includes('download')) return 'ab-download';
+  return 'ab-default';
+}
+
+// Fix badge classes for server-rendered rows
+document.querySelectorAll('.al-data-row').forEach(tr => {
+  const action = tr.dataset.action || '';
+  const badge  = tr.querySelector('.action-badge');
+  if (badge) {
+    badge.className = 'action-badge ' + alBadgeClass(action);
+  }
+});
+
+// ── Client-side pagination ─────────────────────────────────────
+const PAGE_SIZE = 25;
+let _allRows    = Array.from(document.querySelectorAll('.al-data-row'));
+let _filtered   = [..._allRows];
+let _page       = 1;
+
+function alApplySearch() {
+  const q = document.getElementById('alSearch').value.toLowerCase().trim();
+  _filtered = q
+    ? _allRows.filter(tr =>
+        (tr.dataset.ts      || '').toLowerCase().includes(q) ||
+        (tr.dataset.user    || '').toLowerCase().includes(q) ||
+        (tr.dataset.action  || '').toLowerCase().includes(q) ||
+        (tr.dataset.details || '').toLowerCase().includes(q)
+      )
+    : [..._allRows];
+  _page = 1;
+  alRender();
+}
+
+function alRender() {
+  const total  = _filtered.length;
+  const pages  = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (_page > pages) _page = pages;
+  const start  = (_page - 1) * PAGE_SIZE;
+  const end    = Math.min(start + PAGE_SIZE, total);
+
+  document.getElementById('alBadge').textContent = total + ' Record' + (total !== 1 ? 's' : '');
+  document.getElementById('alPgInfo').textContent = total
+    ? `Showing ${start + 1} to ${end} of ${total} records`
+    : 'No records found';
+
+  // Show/hide rows
+  _allRows.forEach(tr => { tr.style.display = 'none'; });
+  _filtered.slice(start, end).forEach(tr => { tr.style.display = ''; });
+
+  // Empty state
+  const existingEmpty = document.querySelector('.al-tbl .al-empty');
+  if (existingEmpty) existingEmpty.remove();
+  if (!_filtered.length) {
+    const tbody = document.getElementById('alTbody');
+    const tr = document.createElement('tr');
+    tr.className = 'al-empty';
+    tr.innerHTML = '<td colspan="4">No records match your search</td>';
+    tbody.appendChild(tr);
+  }
+
+  alRenderPgBtns(pages);
+}
+
+function alRenderPgBtns(pages) {
+  const c = document.getElementById('alPgBtns');
+  if (pages <= 1) { c.innerHTML = ''; return; }
+  const rng = buildRange(_page, pages);
+  let h = `<button class="al-pg-btn" ${_page===1?'disabled':''} onclick="alGoPage(${_page-1})">‹</button>`;
+  rng.forEach(p => {
+    if (p === '…') h += `<button class="al-pg-btn" disabled>…</button>`;
+    else h += `<button class="al-pg-btn ${p===_page?'active':''}" onclick="alGoPage(${p})">${p}</button>`;
+  });
+  h += `<button class="al-pg-btn" ${_page===pages?'disabled':''} onclick="alGoPage(${_page+1})">›</button>`;
+  c.innerHTML = h;
+}
+function buildRange(cur, total) {
+  if (total <= 7) return Array.from({length:total}, (_,i) => i+1);
+  const r = [1];
+  if (cur > 3) r.push('…');
+  for (let i = Math.max(2,cur-1); i <= Math.min(total-1,cur+1); i++) r.push(i);
+  if (cur < total-2) r.push('…');
+  r.push(total);
+  return r;
+}
+function alGoPage(p) {
+  const pages = Math.ceil(_filtered.length / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  _page = p; alRender();
+}
+
+function alReset() {
+  window.location.href = "{{ url_for('log.activity_log') }}";
+}
+
+// Init
+alRender();
+</script>
+
+{% endblock %}

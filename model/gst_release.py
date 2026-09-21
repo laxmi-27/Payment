@@ -2,6 +2,7 @@
 from flask import request, jsonify
 from model.ItemCRUD import ItemCRUD
 from model.Utilities import ItemCRUDType
+import config
 
 class GSTRelease:
 
@@ -17,6 +18,7 @@ class GSTRelease:
             data = {
                 "PMC_No": request.form.get("PMC_No", "").strip(),
                 "Invoice_No": request.form.get("Invoice_No", "").strip(),
+                "Invoice_Date": request.form.get("Invoice_Date", "") or None,
                 "Basic_Amount": float(request.form.get("Basic_Amount", 0) or 0),
                 "Final_Amount": float(request.form.get("Final_Amount", 0) or 0),
                 "Total_Amount": float(request.form.get("Total_Amount", 0) or 0),
@@ -54,7 +56,8 @@ class GSTRelease:
                 "p_final_amount": float(request.form.get("Final_Amount", 0) or 0),
                 "p_total_amount": float(request.form.get("Total_Amount", 0) or 0),
                 "p_utr": request.form.get("UTR", "").strip(),
-                "p_gst_release_id": gst_release_id
+                "p_gst_release_id": gst_release_id,
+                "p_invoice_date": request.form.get("Invoice_Date", "") or None
             }
 
             # Call your stored procedure
@@ -134,7 +137,8 @@ class GSTRelease:
                     "final_amount": row[4],
                     "total_amount": row[5],
                     "utr": row[6],
-                    "contractor_id": row[7]
+                    "contractor_id": row[7],
+                    "invoice_date": row[8]
                 }
 
             return None
@@ -142,3 +146,52 @@ class GSTRelease:
         except Exception as e:
             print("ERROR in GetGSTReleaseByID:", e)
             return None
+
+    # ------------------- Get All GST Releases With Contractor Names -------------------
+    def GetAllGSTReleasesWithNames(self):
+        try:
+            connection = config.get_db_connection()
+            if not connection:
+                return []
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT g.GST_Release_Id, g.PMC_No, g.Invoice_No,
+                       g.Basic_Amount, g.Final_Amount, g.Total_Amount,
+                       g.UTR, g.Contractor_ID, g.Invoice_Date,
+                       COALESCE(s.Contractor_Name, '') AS Contractor_Name
+                FROM gst_releases g
+                LEFT JOIN subcontractors s ON g.Contractor_ID = s.Contractor_Id
+                WHERE g.UTR IS NOT NULL AND g.UTR != ''
+                ORDER BY g.GST_Release_Id DESC
+            """)
+            return cursor.fetchall()
+        except Exception as e:
+            print("ERROR in GetAllGSTReleasesWithNames:", e)
+            return []
+        finally:
+            cursor.close()
+            connection.close()
+
+    # ------------------- Get GST Release By ID With Contractor Name -------------------
+    def GetGSTReleaseByIDWithName(self, gst_release_id):
+        try:
+            connection = config.get_db_connection()
+            if not connection:
+                return None
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT g.GST_Release_Id, g.PMC_No, g.Invoice_No,
+                       g.Basic_Amount, g.Final_Amount, g.Total_Amount,
+                       g.UTR, g.Contractor_ID, g.Invoice_Date,
+                       COALESCE(s.Contractor_Name, '') AS Contractor_Name
+                FROM gst_releases g
+                LEFT JOIN subcontractors s ON g.Contractor_ID = s.Contractor_Id
+                WHERE g.GST_Release_Id = %s
+            """, (gst_release_id,))
+            return cursor.fetchone()
+        except Exception as e:
+            print("ERROR in GetGSTReleaseByIDWithName:", e)
+            return None
+        finally:
+            cursor.close()
+            connection.close()

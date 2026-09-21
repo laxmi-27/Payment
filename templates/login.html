@@ -1,90 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>LCEPL Payment Reconciliation</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background: #f3f3f3;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-      }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Login — LCEPL Payment Reconciliation</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; }
 
-      .login-container {
-        background: white;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-        width: 300px;
-      }
+body {
+  min-height: 100vh;
+  display: flex;
+  background: #f0f4fa;
+}
 
-      h2 {
-        text-align: center;
-        margin-bottom: 1.5rem;
-      }
+/* ── Left branding panel ── */
+.lp-left {
+  width: 52%;
+  background: linear-gradient(145deg, #0b1f45 0%, #1a3e8c 55%, #2563cc 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 70px 64px;
+  position: relative;
+  overflow: hidden;
+}
 
-      input[type="text"],
-      input[type="password"] {
-        width: 100%;
-        padding: 0.5rem;
-        margin-bottom: 1rem;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-      }
+/* Decorative circles */
+.lp-left::before {
+  content: '';
+  position: absolute;
+  width: 420px; height: 420px;
+  border-radius: 50%;
+  border: 70px solid rgba(255,255,255,.05);
+  top: -120px; right: -120px;
+}
+.lp-left::after {
+  content: '';
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  border: 50px solid rgba(255,255,255,.05);
+  bottom: -80px; left: -60px;
+}
 
-      button {
-        width: 100%;
-        padding: 0.5rem;
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
+.lp-brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 48px;
+  position: relative; z-index: 1;
+}
+.lp-logo-box {
+  width: 70px; height: 70px;
+  background: #fff;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  flex-shrink: 0;
+}
+.lp-logo-box img {
+  width: 100%; height: 100%; object-fit: contain;
+}
+.lp-logo-fallback {
+  width: 100%; height: 100%; border-radius: 10px;
+  background: linear-gradient(135deg,#2563cc,#1d4ed8);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 800; color: #fff; letter-spacing: .02em;
+}
+.lp-brand-text {}
+.lp-brand-name {
+  font-size: 18px; font-weight: 800; color: #fff;
+  line-height: 1.25; letter-spacing: -.01em;
+}
+.lp-brand-sub {
+  font-size: 12px; color: rgba(255,255,255,.55);
+  margin-top: 4px; letter-spacing: .03em;
+}
 
-      .flash {
-        color: red;
-        text-align: center;
-        margin-bottom: 1rem;
-      }
-      .title {
-        text-align: center;
-        color: #007bff;
-      }
+.lp-headline {
+  font-size: 38px; font-weight: 800; color: #fff;
+  line-height: 1.25; margin-bottom: 18px;
+  position: relative; z-index: 1;
+  letter-spacing: -.02em;
+}
+.lp-headline span { color: #60a5fa; }
 
-      .subtitle {
-        text-align: center;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="login-container">
-      <h1 class="title">Laxmi Civil Engineering Services</h1>
-      <h4 class="subtitle">LOGIN</h4>
+.lp-desc {
+  font-size: 15px; color: rgba(255,255,255,.72);
+  line-height: 1.75; margin-bottom: 44px;
+  max-width: 420px;
+  position: relative; z-index: 1;
+}
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="flash flash-{{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+.lp-features { display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+.lp-feat {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px; padding: 14px 18px;
+  backdrop-filter: blur(6px);
+}
+.lp-feat-icon {
+  width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #fff;
+}
+.lp-feat-text { font-size: 13.5px; font-weight: 600; color: rgba(255,255,255,.9); }
+.lp-feat-sub  { font-size: 11.5px; color: rgba(255,255,255,.5); margin-top: 2px; }
 
+/* ── Right login panel ── */
+.lp-right {
+  width: 48%;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 60px 56px;
+  background: #fff;
+}
 
+.lp-form-wrap { width: 100%; max-width: 380px; }
 
-      <form method="post">
-        <input type="text" name="username" placeholder="Username" required />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          required
-        />
-        <button type="submit">Login</button>
-      </form>
+.lp-form-logo {
+  display: flex; flex-direction: column; align-items: center;
+  margin-bottom: 36px;
+}
+.lp-form-logo-img {
+  width: 72px; height: 72px; background: #f0f6ff;
+  border-radius: 18px; display: flex; align-items: center; justify-content: center;
+  padding: 10px; margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(37,99,204,.12);
+}
+.lp-form-logo-img img { width: 100%; height: 100%; object-fit: contain; }
+.lp-form-logo-fallback {
+  width: 100%; height: 100%; border-radius: 12px;
+  background: linear-gradient(135deg,#2563cc,#1d4ed8);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 800; color: #fff;
+}
+.lp-form-title {
+  font-size: 22px; font-weight: 800; color: #0f1f3d;
+  text-align: center; margin-bottom: 4px;
+}
+.lp-form-sub {
+  font-size: 13.5px; color: #8fa3c4; text-align: center;
+}
+
+/* Flash message */
+.lp-flash {
+  background: #fff5f5; border: 1.5px solid #fca5a5;
+  color: #b91c1c; border-radius: 10px;
+  padding: 12px 16px; margin-bottom: 22px;
+  font-size: 13.5px; font-weight: 600;
+  display: flex; align-items: center; gap: 9px;
+}
+.lp-flash i { font-size: 15px; flex-shrink: 0; }
+
+/* Form fields */
+.lp-field { margin-bottom: 20px; }
+.lp-field label {
+  display: block; font-size: 13px; font-weight: 700;
+  color: #344054; margin-bottom: 8px;
+}
+.lp-input-wrap { position: relative; }
+.lp-input-wrap > i {
+  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  color: #9aadcc; font-size: 14px; pointer-events: none;
+}
+.lp-input-wrap input {
+  width: 100%; padding: 13px 44px 13px 44px;
+  border: 1.5px solid #d8dfeb; border-radius: 12px;
+  font-size: 14px; outline: none; background: #fafcff;
+  color: #1a2a4a; transition: border-color .15s, box-shadow .15s;
+}
+.lp-input-wrap input:focus {
+  border-color: #2563cc;
+  box-shadow: 0 0 0 4px rgba(37,99,204,.1);
+  background: #fff;
+}
+.lp-input-wrap input::placeholder { color: #b0bec5; }
+
+/* Toggle password */
+.lp-pw-toggle {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; outline: none; appearance: none;
+  color: #9aadcc; cursor: pointer;
+  width: 28px; height: 28px; display: flex;
+  align-items: center; justify-content: center; z-index: 2;
+  border-radius: 6px; padding: 0;
+}
+.lp-pw-toggle:hover { color: #2563cc; background: rgba(37,99,204,.07); }
+.lp-pw-toggle i { font-size: 15px; color: inherit; line-height: 1; display: block; }
+
+/* Submit */
+.lp-submit {
+  width: 100%; padding: 14px;
+  background: linear-gradient(90deg, #0f1f3d, #2563cc);
+  color: #fff; border: none; border-radius: 12px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  margin-top: 6px;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  box-shadow: 0 4px 16px rgba(37,99,204,.28);
+}
+.lp-submit:hover { opacity: .92; transform: translateY(-1px); }
+.lp-submit:active { transform: translateY(0); }
+
+.lp-footer {
+  margin-top: 32px; text-align: center;
+  font-size: 12px; color: #b0bec5;
+  border-top: 1px solid #eef2f7; padding-top: 22px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  body { flex-direction: column; }
+  .lp-left  { width: 100%; padding: 42px 28px; }
+  .lp-right { width: 100%; padding: 42px 28px; }
+  .lp-headline { font-size: 28px; }
+  .lp-features { display: none; }
+  .lp-desc { margin-bottom: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Left Panel ── -->
+<div class="lp-left">
+
+  <div class="lp-brand">
+    <div class="lp-logo-box">
+      <img src="http://lceplpmprod.btltech.xyz/assets/images/lcpl.png" alt="LCEPL"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="lp-logo-fallback" style="display:none;">LC</div>
     </div>
-  </body>
+    <div class="lp-brand-text">
+      <div class="lp-brand-name">Laxmi Civil Engineering<br>Services Pvt. Ltd.</div>
+      <div class="lp-brand-sub">LCEPL &bull; Est. since inception</div>
+    </div>
+  </div>
+
+  <h1 class="lp-headline">SOLAPUR<br><span>Payment</span><br><span>Reconciliation</span><br>System</h1>
+
+  <p class="lp-desc">
+    A unified platform to manage invoices, payments, GST releases,
+    hold types, and complete reconciliation records — securely and efficiently.
+  </p>
+
+  <div class="lp-features">
+    <div class="lp-feat">
+      <div class="lp-feat-icon" style="background:rgba(96,165,250,.25);">
+        <i class="fas fa-file-invoice"></i>
+      </div>
+      <div>
+        <div class="lp-feat-text">Invoice &amp; Payment Tracking</div>
+        <div class="lp-feat-sub">End-to-end transaction management</div>
+      </div>
+    </div>
+    <div class="lp-feat">
+      <div class="lp-feat-icon" style="background:rgba(52,211,153,.2);">
+        <i class="fas fa-percent"></i>
+      </div>
+      <div>
+        <div class="lp-feat-text">GST Release Management</div>
+        <div class="lp-feat-sub">Accurate tax release reconciliation</div>
+      </div>
+    </div>
+    <div class="lp-feat">
+      <div class="lp-feat-icon" style="background:rgba(251,191,36,.2);">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <div>
+        <div class="lp-feat-text">Reports &amp; Analytics</div>
+        <div class="lp-feat-sub">Contractor-wise payment insights</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ── Right Panel ── -->
+<div class="lp-right">
+  <div class="lp-form-wrap">
+
+    <div class="lp-form-logo">
+      <div class="lp-form-logo-img">
+        <img src="http://lceplpmprod.btltech.xyz/assets/images/lcpl.png" alt="LCEPL"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="lp-form-logo-fallback" style="display:none;">LC</div>
+      </div>
+      <div class="lp-form-title">Welcome Back</div>
+      <div class="lp-form-sub">Sign in to your account to continue</div>
+      <div style="margin-top:7px;font-size:11px;color:#c0cfe8;background:#f0f6ff;border-radius:20px;padding:3px 12px;font-weight:700;letter-spacing:.05em;">v1</div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="lp-flash">
+        <i class="fas fa-circle-exclamation"></i> {{ message }}
+      </div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="post">
+
+      <div class="lp-field">
+        <label for="username">Username</label>
+        <div class="lp-input-wrap">
+          <i class="fas fa-user"></i>
+          <input type="text" id="username" name="username"
+                 placeholder="Enter your username" required autocomplete="username">
+        </div>
+      </div>
+
+      <div class="lp-field">
+        <label for="password">Password</label>
+        <div class="lp-input-wrap">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" name="password"
+                 placeholder="Enter your password" required autocomplete="current-password">
+          <button type="button" class="lp-pw-toggle" onclick="lpTogglePw()" title="Show/hide password">
+            <i class="fas fa-eye" id="lpPwIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="lp-submit">
+        <i class="fas fa-right-to-bracket"></i> Sign In
+      </button>
+
+    </form>
+
+    <div class="lp-footer">
+      &copy; {{ 2026 }} Laxmi Civil Engineering Services Pvt. Ltd.<br>
+      Payment Reconciliation System &mdash; All rights reserved.
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+function lpTogglePw() {
+  var inp  = document.getElementById('password');
+  var icon = document.getElementById('lpPwIcon');
+  if (inp.type === 'password') {
+    inp.type  = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    inp.type  = 'password';
+    icon.className = 'fas fa-eye';
+  }
+}
+</script>
+
+</body>
 </html>

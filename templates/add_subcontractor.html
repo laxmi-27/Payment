@@ -1,127 +1,1117 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <title>SubContractor</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/subcontractor.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/search_on_table.js') }}"></script>
 
-</head>
-<body>
+<style>
+/* ── Sub Contractor Management ──────────────────────────────────── */
+.sc-page { max-width: 1200px; margin: 0 auto; }
 
-<!-- Button Container to Center Buttons -->
-<div class="button-container">
-    <button id="addButton" class="action-button">Add</button>
-    <button id="displayButton" class="action-button">Display</button>
-</div>
+/* Header */
+.sc-header {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px;
+  padding: 26px 32px;
+  margin-bottom: 22px;
+  color: #fff;
+}
+.sc-header h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; }
+.sc-header p  { margin: 0; font-size: 13.5px; opacity: .82; }
 
-<div id="addForm" style="display: none;">
+/* Tabs */
+.sc-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.sc-tab-btn {
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid #d0dff5;
+  background: #fff;
+  color: #1d3e73;
+  transition: .2s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.sc-tab-btn.active {
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(24,59,112,.18);
+}
+.sc-tab-btn:hover:not(.active) { background: #f0f7ff; border-color: #b3cff0; }
 
-    <h2>Add Sub-Contractor</h2>
-    <form name="subcontractorForm" method="POST">
+/* Panels */
+.sc-panel { display: none; }
+.sc-panel.active { display: block; }
 
-        <label>Enter Contractor Name :</label>
-        <input type="text" id="Contractor_Name" name="Contractor_Name" required onkeyup="validateInput()"><br>
+/* ── Add Form ────────────────────────────────────────────────────── */
+.sc-form-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+  padding: 32px 36px;
+  max-width: 860px;
+}
+.sc-err-banner {
+  display: none;
+  background: #fff0f0;
+  border: 1px solid #ffc0c0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #c62828;
+  font-size: 13.5px;
+  margin-bottom: 18px;
+}
+.sc-section { margin-bottom: 26px; }
+.sc-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #2a5298;
+  background: #f0f7ff;
+  border-left: 3px solid #2a5298;
+  padding: 5px 12px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 16px;
+  display: inline-block;
+}
+.sc-form-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+.sc-full { grid-column: 1 / -1; }
+.sc-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+  margin-bottom: 6px;
+}
+.sc-req { color: #d32f2f; margin-left: 2px; }
+.sc-field input,
+.sc-field select,
+.sc-field textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #d8dfeb;
+  border-radius: 10px;
+  background: #fafcff;
+  font-size: 13.5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s;
+}
+.sc-field textarea { min-height: 84px; resize: vertical; }
+.sc-field input:focus,
+.sc-field select:focus,
+.sc-field textarea:focus {
+  border-color: #2d73d5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+}
+.sc-err-msg { font-size: 12px; color: #d32f2f; margin-top: 4px; min-height: 15px; display: block; }
+.sc-form-actions { display: flex; gap: 12px; margin-top: 8px; }
+.sc-submit-btn {
+  padding: 12px 34px;
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.sc-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+.sc-cancel-btn {
+  padding: 12px 22px;
+  background: #f0f4fa;
+  color: #1d3e73;
+  border: 1.5px solid #d0dff5;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sc-cancel-btn:hover { background: #e4edf8; }
 
-        <label>Address :</label>
-<!--        <input type="text" name="Address" required>-->
-        <textarea id="Address" name="Address" required></textarea>
-        <br>
+/* ── Contractor List ──────────────────────────────────────────────── */
+.sc-list-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+  overflow: hidden;
+}
+.sc-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px 14px;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid #edf1f7;
+}
+.sc-list-header h2 { font-size: 16px; font-weight: 700; color: #1d3e73; margin: 0; }
+.sc-list-count     { font-size: 12px; color: #8fa3c4; font-weight: 500; }
+.sc-search-row     { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+.sc-search-wrap    { position: relative; }
+.sc-search-wrap input {
+  padding: 8px 13px 8px 33px;
+  border: 1.5px solid #d8dfeb;
+  border-radius: 8px;
+  font-size: 13px;
+  width: 210px;
+  outline: none;
+  background: #fafcff;
+}
+.sc-search-wrap input:focus { border-color: #2d73d5; box-shadow: 0 0 0 3px rgba(45,115,213,.08); }
+.sc-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #8fa3c4; font-size: 12px; }
+.sc-filter-sel {
+  padding: 8px 11px;
+  border: 1.5px solid #d8dfeb;
+  border-radius: 8px;
+  background: #fafcff;
+  font-size: 13px;
+  color: #344054;
+  outline: none;
+}
 
-        <label>Mobile No :</label>
-        <input type="text" id="Mobile_No" name="Mobile_No" required onkeyup="validateInput()" maxlength="10" placeholder="Ex - 9091012011">
-        <span class="error" id="mobileError" style="color: red;"></span><br>
+.sc-table-wrap { overflow-x: auto; }
+.sc-table { width: 100%; border-collapse: collapse; min-width: 820px; }
+.sc-truncate { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-mono-sm  { font-family: monospace; font-size: 12.5px; color: #5a7aa3; }
+.sc-table thead tr {
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.sc-table th {
+  padding: 12px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+  text-align: left;
+  white-space: nowrap;
+}
+.sc-table td {
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: #344054;
+  border-bottom: 1px solid #edf1f7;
+  vertical-align: middle;
+}
+.sc-table tbody tr:hover { background: #f8fbff; }
+.sc-name-cell { font-weight: 600; color: #1d3e73; }
 
-        <label>PAN No :</label>
-        <input type="text" id="PAN_No" name="PAN_No" required onkeyup="validateInput()" maxlength="10" placeholder="Ex - ABCDE1234F">
-        <span class="error" id="panError" style="color: red;"></span><br>
+/* Status badge */
+.sc-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.sc-badge.active   { background: #e6f9ee; color: #1a7a3f; }
+.sc-badge.inactive { background: #fde8e8; color: #c62828; }
 
-        <label>Email :</label>
-        <input type="email" id="Email" name="Email" required onkeyup="validateInput()" placeholder="Ex - user@example.com">
-        <span class="error" id="emailError" style="color: red;"></span><br>
+/* Actions */
+.sc-act-btn {
+  padding: 6px 12px;
+  background: #f0f4fa;
+  border: 1.5px solid #d0dff5;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d3e73;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.sc-act-btn:hover { background: #e4edf8; }
 
-        <label>Gender :</label>
-        <select name="Gender" required>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-        </select><br>
+/* Floating action menu */
+.sc-act-menu {
+  display: none;
+  position: fixed;
+  background: #fff;
+  border: 1px solid #dce8f8;
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.13);
+  min-width: 162px;
+  z-index: 9999;
+  overflow: hidden;
+}
+.sc-act-menu.open { display: block; }
+.sc-act-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #344054;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  transition: background .13s;
+}
+.sc-act-item:hover { background: #f0f7ff; color: #1d3e73; }
+.sc-act-item.sc-danger { color: #c62828; }
+.sc-act-item.sc-danger:hover { background: #fff0f0; }
+.sc-act-div { height: 1px; background: #edf1f7; margin: 3px 0; }
 
-        <label>GST Registration Type :</label>
-        <input type="text" name="GST_Registration_Type" ><br>
+/* Empty */
+.sc-empty { text-align: center; padding: 48px 24px; color: #8fa3c4; }
+.sc-empty i { font-size: 34px; margin-bottom: 10px; display: block; }
+.sc-empty p { margin: 4px 0; font-size: 13.5px; }
 
-        <label>GST No :</label>
-        <input type="text" id="GST_No" name="GST_No" placeholder="Ex - 27AAACL5602N1ZE"  ><br>
+/* ── View Details Modal sections ──────────────────────────────────── */
+.sc-modal-sec-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 4px 11px; border-radius: 0 8px 8px 0; margin-bottom: 14px; display: inline-block;
+}
+.sc-modal-body .sc-detail-grid { margin-bottom: 20px; }
 
-        <label>Generated Password :</label>
-        <input type="text" id="Contractor_password" name="Contractor_password" >
-        <span class="error" id="passwordError" style="color: red;"></span><br>
+/* ── View Details Modal ────────────────────────────────────────────── */
+.sc-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(20,35,70,.45);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+.sc-overlay.open { display: flex; }
+.sc-modal {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  width: 640px;
+  max-width: calc(100vw - 32px);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sc-modal-head {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  padding: 20px 26px;
+  border-radius: 20px 20px 0 0;
+  color: #fff;
+}
+.sc-modal-head h3 { margin: 0 0 3px; font-size: 17px; }
+.sc-modal-head p  { margin: 0; font-size: 12.5px; opacity: .8; }
+.sc-modal-body    { padding: 22px 26px; }
+.sc-detail-grid   { display: grid; grid-template-columns: repeat(2,1fr); gap: 15px; }
+.sc-detail-item label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #8fa3c4;
+  display: block;
+  margin-bottom: 3px;
+}
+.sc-detail-val { font-size: 14px; font-weight: 500; color: #1d3e73; word-break: break-word; }
+.sc-detail-full { grid-column: 1 / -1; }
+.sc-modal-foot {
+  padding: 14px 26px 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  border-top: 1px solid #edf1f7;
+}
+.sc-modal-close {
+  padding: 9px 20px;
+  background: #f0f4fa;
+  border: 1.5px solid #d0dff5;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d3e73;
+  cursor: pointer;
+}
+.sc-modal-edit {
+  padding: 9px 20px;
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-        <button type="submit" id="submitBtn" disabled>Submit</button>
-    </form>
+/* ── Confirm modal ────────────────────────────────────────────────── */
+.sc-confirm-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(20,35,70,.45);
+  z-index: 10001;
+  align-items: center;
+  justify-content: center;
+}
+.sc-confirm-overlay.open { display: flex; }
+.sc-confirm-box {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.2);
+  padding: 28px 30px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+.sc-confirm-icon { font-size: 34px; margin-bottom: 10px; }
+.sc-confirm-box h4 { margin: 0 0 8px; color: #1d3e73; font-size: 16px; }
+.sc-confirm-box p  { font-size: 13px; color: #6b7a99; margin: 0 0 20px; }
+.sc-confirm-btns   { display: flex; gap: 10px; justify-content: center; }
+.sc-confirm-ok {
+  padding: 10px 22px;
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+.sc-confirm-cancel {
+  padding: 10px 22px;
+  background: #f0f4fa;
+  border: 1.5px solid #d0dff5;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #1d3e73;
+  cursor: pointer;
+  font-size: 13.5px;
+}
 
-</div>
+/* ── Toast ────────────────────────────────────────────────────────── */
+.sc-toast {
+  position: fixed;
+  bottom: 26px;
+  right: 26px;
+  background: #1a7a3f;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0,0,0,.15);
+  z-index: 20000;
+  transform: translateY(70px);
+  opacity: 0;
+  transition: transform .28s ease, opacity .28s ease;
+  pointer-events: none;
+}
+.sc-toast.show  { transform: translateY(0); opacity: 1; }
+.sc-toast.error { background: #c62828; }
 
-<div id="addTable" style="display: none;">
-    <div class="search-container">
-        <h2>Display SubContractor</h2>
-        <input type="text" id="searchBar" placeholder="Searching..." onkeyup="searchTable()">
+@media (max-width: 768px) {
+  .sc-form-card { padding: 20px 16px; }
+  .sc-form-grid { grid-template-columns: 1fr; }
+  .sc-detail-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+
+<div class="sc-page">
+
+  <!-- ── Header ────────────────────────────────────────────────── -->
+  <div class="sc-header">
+    <h1><i class="fas fa-hard-hat" style="margin-right:10px;opacity:.9;"></i>Sub Contractor Management</h1>
+    <p>Register, verify, and manage subcontractors</p>
+  </div>
+
+  <!-- ── Tabs ──────────────────────────────────────────────────── -->
+  <div class="sc-tabs">
+    <button class="sc-tab-btn" id="tabAddBtn" onclick="switchTab('add')">
+      <i class="fas fa-plus"></i> Add Contractor
+    </button>
+    <button class="sc-tab-btn active" id="tabListBtn" onclick="switchTab('list')">
+      <i class="fas fa-list"></i> Contractor List
+    </button>
+  </div>
+
+  <!-- ── Add Panel ──────────────────────────────────────────────── -->
+  <div class="sc-panel" id="scAddPanel">
+    <div class="sc-form-card">
+
+      <div class="sc-err-banner" id="scErrBanner"></div>
+
+      <form id="scAddForm" onsubmit="submitAdd(event)">
+
+        <!-- Basic Details -->
+        <div class="sc-section">
+          <div class="sc-section-title"><i class="fas fa-user" style="margin-right:6px;"></i>Basic Details</div>
+          <div class="sc-form-grid">
+
+            <div class="sc-field">
+              <label>Contractor Name <span class="sc-req">*</span></label>
+              <input type="text" id="f_name" name="Contractor_Name" placeholder="Full contractor name" autocomplete="off">
+              <span class="sc-err-msg" id="e_name"></span>
+            </div>
+
+            <div class="sc-field">
+              <label>Mobile No <span class="sc-req">*</span></label>
+              <input type="text" id="f_mobile" name="Mobile_No" maxlength="10" placeholder="10-digit number">
+              <span class="sc-err-msg" id="e_mobile"></span>
+            </div>
+
+            <div class="sc-field">
+              <label>Email</label>
+              <input type="email" id="f_email" name="Email" placeholder="user@example.com">
+              <span class="sc-err-msg" id="e_email"></span>
+            </div>
+
+            <div class="sc-field">
+              <label>Gender</label>
+              <select id="f_gender" name="Gender">
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+              <span class="sc-err-msg" id="e_gender"></span>
+            </div>
+
+            <div class="sc-field sc-full">
+              <label>Address</label>
+              <textarea id="f_address" name="Address" placeholder="Full address"></textarea>
+              <span class="sc-err-msg" id="e_address"></span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Business Details -->
+        <div class="sc-section">
+          <div class="sc-section-title"><i class="fas fa-briefcase" style="margin-right:6px;"></i>Business Details</div>
+          <div class="sc-form-grid">
+
+            <div class="sc-field">
+              <label>PAN No <span class="sc-req">*</span></label>
+              <input type="text" id="f_pan" name="PAN_No" maxlength="10" placeholder="ABCDE1234F" style="text-transform:uppercase">
+              <span class="sc-err-msg" id="e_pan"></span>
+            </div>
+
+            <div class="sc-field">
+              <label>GST Registration Type</label>
+              <select id="f_gst_type" name="GST_Registration_Type" onchange="toggleGstField('f_gst_type','gst_no_wrap')">
+                <option value="">Not Registered</option>
+                <option value="Registered">Registered</option>
+                <option value="Composition">Composition</option>
+                <option value="Unregistered">Unregistered</option>
+              </select>
+            </div>
+
+            <div class="sc-field" id="gst_no_wrap">
+              <label>GST No <span class="sc-req" id="gst_no_req" style="display:none;">*</span></label>
+              <input type="text" id="f_gst_no" name="GST_No" maxlength="15" placeholder="Enter GST number (required if Registered)" style="text-transform:uppercase">
+              <span class="sc-err-msg" id="e_gst"></span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Login Details -->
+        <div class="sc-section">
+          <div class="sc-section-title"><i class="fas fa-key" style="margin-right:6px;"></i>Login Details</div>
+          <div class="sc-form-grid">
+            <div class="sc-field">
+              <label>Generated Password</label>
+              <input type="text" id="f_password" name="Contractor_password" placeholder="Leave blank to set later" autocomplete="off">
+              <span class="sc-err-msg" id="e_password"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sc-form-actions">
+          <button type="submit" class="sc-submit-btn" id="scSubmitBtn">Add Contractor</button>
+          <button type="button" class="sc-cancel-btn" onclick="switchTab('list')">Cancel</button>
+        </div>
+
+      </form>
     </div>
-    <table id="sortableTable" border="1">
+  </div>
 
-        <tr>
-            <th>Contractor ID</th>
-            <th class="sortable-header">Contractor Name
-                <span class="sort-buttons">
-                        <span class="sort-asc">⬆️</span>
-                        <span class="sort-desc">⬇️</span>
-                    </span>
+  <!-- ── List Panel ─────────────────────────────────────────────── -->
+  <div class="sc-panel active" id="scListPanel">
+    <div class="sc-list-card">
 
-            </th>
-            <th>Address</th>
-            <th>Mobile No</th>
-            <th>PAN No</th>
-            <th>Email</th>
-            <th>Gender</th>
-            <th>GST Registration Type</th>
-            <th class="sortable-header">GST No
-                <span class="sort-buttons">
-                        <span class="sort-asc">⬆️</span>
-                        <span class="sort-desc">⬇️</span>
-                    </span>
-            </th>
-            <th>Update Contractor</th>
-            <th>Delete Contractor</th>
-        </tr>
-        {% for subc in subcontractor %}
-        <tr>
-            <td>{{ subc[0] }}</td>
-            <td>{{ subc[1] }}</td>
-            <td>{{ subc[2] }}</td>
-            <td>{{ subc[3] }}</td>
-            <td>{{ subc[4] }}</td>
-            <td>{{ subc[5] }}</td>
-            <td>{{ subc[6] }}</td>
-            <td>{{ subc[7] }}</td>
-            <td>{{ subc[8] }}</td>
-            <td>
-                <a href="{{ url_for('subcontractor.edit_subcontractor', id=subc[0]) }}">
-                    <img src="{{ url_for('static', filename='images/icons/pen_blue_icon.png') }}" alt="Edit"
-                         class="icon">
-                </a>
-            </td>
-             <td>
-{#                <a href="{{ url_for('subcontractor.deleteSubContractor', id=subc[0]) }}"#}
-{#                   onclick="return confirm('Are you sure you want to delete?')">#}
-{#                    <img src="{{ url_for('static', filename='images/icons/bin_red_icon.png') }}" alt="Delete"#}
-{#                         class="icon">#}
-{#                </a>#}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+      <div class="sc-list-header">
+        <div>
+          <h2>All Contractors</h2>
+          <span class="sc-list-count" id="scCount">{{ subcontractors|length }} contractor(s)</span>
+        </div>
+        <div class="sc-search-row">
+          <div class="sc-search-wrap">
+            <i class="fas fa-search sc-search-icon"></i>
+            <input type="text" id="scSearch" placeholder="Search contractor…" oninput="filterTable()">
+          </div>
+          <select class="sc-filter-sel" id="scStatusF" onchange="filterTable()">
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
 
+      <div class="sc-table-wrap">
+        <table class="sc-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Contractor Name</th>
+              <th>Mobile</th>
+              <th>PAN No</th>
+              <th>GST Type</th>
+              <th>GST No</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="scTbody">
+            {% if subcontractors %}
+              {% for subc in subcontractors %}
+              {% set st = (subc[10] if subc|length > 10 and subc[10] else 'Active') %}
+              {% set info = {
+                'id':       subc[0],
+                'name':     (subc[1] or ''),
+                'address':  (subc[2] or ''),
+                'mobile':   (subc[3] or ''),
+                'pan':      (subc[4] or ''),
+                'email':    (subc[5] or ''),
+                'gender':   (subc[6] or ''),
+                'gst_type': (subc[7] or ''),
+                'gst_no':   (subc[8] or ''),
+                'password': (subc[9] or ''),
+                'status':   st,
+                'created':  (subc[11]|string if subc|length > 11 and subc[11] else '')
+              } %}
+              <tr data-id="{{ subc[0] }}" data-info='{{ info | tojson }}' data-status="{{ st }}">
+                <td class="sc-mono-sm">{{ subc[0] }}</td>
+                <td class="sc-name-cell">{{ subc[1] or '—' }}</td>
+                <td>{{ subc[3] or '—' }}</td>
+                <td class="sc-mono-sm">{{ subc[4] or '—' }}</td>
+                <td>{{ subc[7] or 'Not Registered' }}</td>
+                <td class="sc-mono-sm">{{ subc[8] or '—' }}</td>
+                <td>
+                  <span class="sc-badge {{ 'active' if st == 'Active' else 'inactive' }}">{{ st }}</span>
+                </td>
+                <td>
+                  <button class="sc-act-btn" onclick="openMenu(this)">
+                    Actions <i class="fas fa-chevron-down" style="font-size:9px;"></i>
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="8">
+                  <div class="sc-empty">
+                    <i class="fas fa-users"></i>
+                    <p><strong>No contractors found</strong></p>
+                    <p>Click "Add Contractor" to register the first subcontractor.</p>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div><!-- .sc-page -->
+
+
+<!-- ── Floating Actions Menu ──────────────────────────────────────── -->
+<div id="scActMenu" class="sc-act-menu">
+  <button class="sc-act-item" onclick="doView()">
+    <i class="fas fa-eye" style="width:15px;color:#2a5298;"></i> View Details
+  </button>
+  <button class="sc-act-item" onclick="doEdit()">
+    <i class="fas fa-pen" style="width:15px;color:#2a5298;"></i> Edit
+  </button>
+  <div class="sc-act-div"></div>
+  <button class="sc-act-item" id="actStatusBtn" onclick="doToggleStatus()">
+    <i class="fas fa-toggle-off" style="width:15px;" id="actStatusIcon"></i>
+    <span id="actStatusLabel">Deactivate</span>
+  </button>
+  <div class="sc-act-div"></div>
+  <button class="sc-act-item sc-danger" onclick="doDelete()">
+    <i class="fas fa-trash" style="width:15px;"></i> Delete
+  </button>
 </div>
-</body>
+
+
+<!-- ── View Details Modal ─────────────────────────────────────────── -->
+<div class="sc-overlay" id="scDetailOverlay">
+  <div class="sc-modal">
+    <div class="sc-modal-head">
+      <h3 id="md_name">—</h3>
+      <p id="md_sub">Contractor Details</p>
+    </div>
+    <div class="sc-modal-body">
+
+      <!-- Basic Details -->
+      <div class="sc-modal-sec-title"><i class="fas fa-id-card" style="margin-right:5px;"></i>Basic Details</div>
+      <div class="sc-detail-grid">
+        <div class="sc-detail-item">
+          <label>Contractor ID</label>
+          <div class="sc-detail-val sc-mono-sm" id="md_id">—</div>
+        </div>
+        <div class="sc-detail-item">
+          <label>Status</label>
+          <div class="sc-detail-val" id="md_status">—</div>
+        </div>
+        <div class="sc-detail-item sc-detail-full">
+          <label>Contractor Name</label>
+          <div class="sc-detail-val" id="md_cname">—</div>
+        </div>
+      </div>
+
+      <!-- Contact Details -->
+      <div class="sc-modal-sec-title"><i class="fas fa-address-card" style="margin-right:5px;"></i>Contact Details</div>
+      <div class="sc-detail-grid">
+        <div class="sc-detail-item">
+          <label>Mobile No</label>
+          <div class="sc-detail-val" id="md_mobile">—</div>
+        </div>
+        <div class="sc-detail-item">
+          <label>Email</label>
+          <div class="sc-detail-val" id="md_email" style="word-break:break-all;">—</div>
+        </div>
+        <div class="sc-detail-item">
+          <label>Gender</label>
+          <div class="sc-detail-val" id="md_gender">—</div>
+        </div>
+        <div class="sc-detail-item sc-detail-full">
+          <label>Address</label>
+          <div class="sc-detail-val" id="md_address">—</div>
+        </div>
+      </div>
+
+      <!-- GST & Business Details -->
+      <div class="sc-modal-sec-title"><i class="fas fa-briefcase" style="margin-right:5px;"></i>GST &amp; Business Details</div>
+      <div class="sc-detail-grid">
+        <div class="sc-detail-item">
+          <label>PAN No</label>
+          <div class="sc-detail-val sc-mono-sm" id="md_pan">—</div>
+        </div>
+        <div class="sc-detail-item">
+          <label>GST Registration Type</label>
+          <div class="sc-detail-val" id="md_gst_type">—</div>
+        </div>
+        <div class="sc-detail-item sc-detail-full">
+          <label>GST No</label>
+          <div class="sc-detail-val sc-mono-sm" id="md_gst_no">—</div>
+        </div>
+      </div>
+
+      <!-- Account Details -->
+      <div class="sc-modal-sec-title"><i class="fas fa-key" style="margin-right:5px;"></i>Account Details</div>
+      <div class="sc-detail-grid" style="margin-bottom:0;">
+        <div class="sc-detail-item">
+          <label>Password Status</label>
+          <div class="sc-detail-val" id="md_password">—</div>
+        </div>
+        <div class="sc-detail-item">
+          <label>Registered On</label>
+          <div class="sc-detail-val" id="md_created">—</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="sc-modal-foot">
+      <button class="sc-modal-close" onclick="closeDetail()">Close</button>
+      <button class="sc-modal-edit" onclick="doEditFromModal()">
+        <i class="fas fa-pen" style="margin-right:5px;"></i>Edit Contractor
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Confirm Modal ──────────────────────────────────────────────── -->
+<div class="sc-confirm-overlay" id="scConfirmOverlay">
+  <div class="sc-confirm-box">
+    <div class="sc-confirm-icon" id="cfIcon">⚠️</div>
+    <h4 id="cfTitle">Confirm Action</h4>
+    <p id="cfMsg">This action cannot be undone.</p>
+    <div class="sc-confirm-btns">
+      <button class="sc-confirm-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="sc-confirm-ok" id="cfOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────────────────────── -->
+<div class="sc-toast" id="scToast"></div>
+
+
+<script>
+// ── State ────────────────────────────────────────────────────────
+let _row  = null;   // currently-targeted TR
+let _info = null;   // parsed data-info of that row
+let _pendingDeleteId = null;
+
+// ── Tab switching ─────────────────────────────────────────────────
+function switchTab(t) {
+  document.getElementById('scAddPanel').classList.toggle('active',  t === 'add');
+  document.getElementById('scListPanel').classList.toggle('active', t === 'list');
+  document.getElementById('tabAddBtn').classList.toggle('active',   t === 'add');
+  document.getElementById('tabListBtn').classList.toggle('active',  t === 'list');
+}
+
+// ── GST No — always visible, asterisk appears when required ──────
+function toggleGstField(selId, wrapId) {
+  const v    = document.getElementById(selId).value;
+  const req  = v === 'Registered' || v === 'Composition';
+  const mark = document.getElementById('gst_no_req');
+  if (mark) mark.style.display = req ? 'inline' : 'none';
+}
+
+// ── Validation helpers ────────────────────────────────────────────
+function setErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg;
+}
+
+function validateAdd() {
+  let ok = true;
+  const name   = document.getElementById('f_name').value.trim();
+  const mobile = document.getElementById('f_mobile').value.trim();
+  const email  = document.getElementById('f_email').value.trim();
+  const gender = document.getElementById('f_gender').value;
+  const addr   = document.getElementById('f_address').value.trim();
+  const pan    = document.getElementById('f_pan').value.trim().toUpperCase();
+  const gstT   = document.getElementById('f_gst_type').value;
+  const gstWrap = document.getElementById('gst_no_wrap');
+  const gstEl  = document.getElementById('f_gst_no');
+  const gstNo  = gstEl ? gstEl.value.trim() : '';
+
+  if (!name)   { setErr('e_name', 'Contractor Name is required.');     ok = false; } else setErr('e_name', '');
+  if (!/^[0-9]{10}$/.test(mobile)) { setErr('e_mobile', 'Must be exactly 10 digits.'); ok = false; } else setErr('e_mobile', '');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setErr('e_email', 'Enter a valid email address.'); ok = false; } else setErr('e_email', '');
+  setErr('e_gender', '');
+  setErr('e_address', '');
+  if (!/^[A-Z0-9]{10}$/.test(pan)) { setErr('e_pan', 'PAN must be 10 uppercase letters/digits.'); ok = false; } else setErr('e_pan', '');
+
+  const gstRequired = gstT === 'Registered' || gstT === 'Composition';
+  if (gstRequired && gstNo.length !== 15) { setErr('e_gst', 'GST No must be exactly 15 characters.'); ok = false; } else setErr('e_gst', '');
+
+  return ok;
+}
+
+// ── Add form submit ───────────────────────────────────────────────
+async function submitAdd(e) {
+  e.preventDefault();
+  if (!validateAdd()) return;
+
+  // uppercase PAN / GST
+  const panEl = document.getElementById('f_pan');
+  panEl.value = panEl.value.toUpperCase();
+  const gstEl = document.getElementById('f_gst_no');
+  if (gstEl) gstEl.value = gstEl.value.toUpperCase();
+
+  const banner = document.getElementById('scErrBanner');
+  banner.style.display = 'none';
+  const btn = document.getElementById('scSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const res  = await fetch('/subcontractor', { method: 'POST', body: new FormData(document.getElementById('scAddForm')) });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message || 'Contractor added successfully!');
+      setTimeout(() => window.location.href = '/subcontractor', 900);
+    } else {
+      banner.textContent = data.message || 'Failed to add contractor.';
+      banner.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Add Contractor';
+    }
+  } catch (err) {
+    banner.textContent = 'Network error. Please try again.';
+    banner.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Add Contractor';
+  }
+}
+
+// ── Search / filter ───────────────────────────────────────────────
+function filterTable() {
+  const q  = document.getElementById('scSearch').value.toLowerCase();
+  const sf = document.getElementById('scStatusF').value;
+  let vis = 0;
+  document.querySelectorAll('#scTbody tr[data-info]').forEach(row => {
+    const d = JSON.parse(row.dataset.info);
+    const mt = !q  || (d.name||'').toLowerCase().includes(q)
+                    || (d.mobile||'').includes(q)
+                    || (d.pan||'').toLowerCase().includes(q)
+                    || (d.email||'').toLowerCase().includes(q)
+                    || (d.address||'').toLowerCase().includes(q)
+                    || (d.gender||'').toLowerCase().includes(q)
+                    || (d.gst_no||'').toLowerCase().includes(q)
+                    || (d.gst_type||'').toLowerCase().includes(q);
+    const ms = !sf || d.status === sf;
+    row.style.display = (mt && ms) ? '' : 'none';
+    if (mt && ms) vis++;
+  });
+  document.getElementById('scCount').textContent = vis + ' contractor(s)';
+}
+
+// ── Actions menu (fixed-position, escape overflow) ─────────────────
+function closeMenu() {
+  const m = document.getElementById('scActMenu');
+  m.classList.remove('open');
+  m.style.cssText = '';
+}
+
+function openMenu(btn) {
+  const menu = document.getElementById('scActMenu');
+  const row  = btn.closest('tr');
+  const info = JSON.parse(row.dataset.info);
+
+  // toggle off same button
+  if (_row === row && menu.classList.contains('open')) { closeMenu(); return; }
+  closeMenu();
+
+  _row  = row;
+  _info = info;
+
+  // update status action label
+  const isActive = info.status === 'Active';
+  document.getElementById('actStatusLabel').textContent = isActive ? 'Deactivate' : 'Activate';
+  document.getElementById('actStatusIcon').className    = isActive
+    ? 'fas fa-toggle-off' : 'fas fa-toggle-on';
+  document.getElementById('actStatusIcon').style.color  = isActive ? '#c62828' : '#1a7a3f';
+
+  // measure & position
+  menu.style.visibility = 'hidden';
+  menu.style.position   = 'fixed';
+  menu.style.display    = 'block';
+  const mH = menu.offsetHeight;
+  menu.style.display    = '';
+  menu.style.visibility = '';
+
+  const r = btn.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - r.bottom - 8;
+  const openUp     = spaceBelow < mH;
+  const rightOff   = window.innerWidth - r.right;
+
+  menu.style.position = 'fixed';
+  menu.style.zIndex   = '9999';
+  menu.style.right    = rightOff + 'px';
+  menu.style.left     = 'auto';
+  if (openUp) {
+    menu.style.top    = 'auto';
+    menu.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+  } else {
+    menu.style.top    = (r.bottom + 4) + 'px';
+    menu.style.bottom = 'auto';
+  }
+  menu.classList.add('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.sc-act-btn') && !e.target.closest('#scActMenu')) closeMenu();
+});
+window.addEventListener('scroll', closeMenu, { passive: true });
+
+// ── View Details ──────────────────────────────────────────────────
+function _fillModal(d) {
+  // Header
+  document.getElementById('md_name').textContent = d.name || '—';
+  document.getElementById('md_sub').textContent  = 'Contractor ID: ' + (d.id || '—');
+
+  // Basic Details
+  document.getElementById('md_id').textContent    = d.id   || '—';
+  document.getElementById('md_cname').textContent = d.name || '—';
+
+  const statusEl = document.getElementById('md_status');
+  statusEl.innerHTML = '';
+  if (d.status) {
+    const b = document.createElement('span');
+    b.className   = 'sc-badge ' + d.status.toLowerCase();
+    b.textContent = d.status;
+    statusEl.appendChild(b);
+  } else { statusEl.textContent = '—'; }
+
+  // Contact Details
+  document.getElementById('md_mobile').textContent  = d.mobile  || '—';
+  document.getElementById('md_email').textContent   = d.email   || '—';
+  document.getElementById('md_gender').textContent  = d.gender  || '—';
+  document.getElementById('md_address').textContent = d.address || '—';
+
+  // GST & Business Details
+  document.getElementById('md_pan').textContent      = d.pan      || '—';
+  document.getElementById('md_gst_type').textContent = d.gst_type || 'Not Registered';
+  document.getElementById('md_gst_no').textContent   = d.gst_no   || '—';
+
+  // Account Details
+  document.getElementById('md_password').textContent = d.password ? 'Set' : 'Not set';
+  document.getElementById('md_created').textContent  = d.created  || '—';
+}
+
+async function doView() {
+  if (!_info) return;
+  const id = _info.id;
+
+  // show modal immediately with name from table row, then fetch full data
+  document.getElementById('md_name').textContent = _info.name || '—';
+  document.getElementById('md_sub').textContent  = 'Loading…';
+  document.getElementById('scDetailOverlay').classList.add('open');
+  closeMenu();
+
+  try {
+    const res  = await fetch('/api/subcontractor/' + id);
+    const data = await res.json();
+    if (data.success) {
+      _fillModal(data);
+    } else {
+      document.getElementById('md_sub').textContent = 'Failed to load details.';
+    }
+  } catch (err) {
+    document.getElementById('md_sub').textContent = 'Network error.';
+  }
+}
+
+function closeDetail() { document.getElementById('scDetailOverlay').classList.remove('open'); }
+document.getElementById('scDetailOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
+function doEditFromModal() {
+  if (!_info) return;
+  window.location.href = '/edit_subcontractor/' + _info.id;
+}
+
+// ── Edit ──────────────────────────────────────────────────────────
+function doEdit() {
+  if (!_info) return;
+  window.location.href = '/edit_subcontractor/' + _info.id;
+}
+
+// ── Status toggle ─────────────────────────────────────────────────
+async function doToggleStatus() {
+  if (!_info) return;
+  const info = _info;
+  const row  = _row;
+  const newStatus = info.status === 'Active' ? 'Inactive' : 'Active';
+  closeMenu();
+
+  try {
+    const res  = await fetch('/api/subcontractor/status_change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contractor_id: info.id, status: newStatus })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const newInfo = Object.assign({}, info, { status: newStatus });
+      row.dataset.info   = JSON.stringify(newInfo);
+      row.dataset.status = newStatus;
+      const badge = row.querySelector('.sc-badge');
+      badge.textContent = newStatus;
+      badge.className   = 'sc-badge ' + newStatus.toLowerCase();
+      showToast('Status updated to ' + newStatus + '.');
+    } else {
+      showToast(data.message || 'Failed to update status.', true);
+    }
+  } catch (err) { showToast('Network error.', true); }
+}
+
+// ── Delete ────────────────────────────────────────────────────────
+function doDelete() {
+  if (!_info) return;
+  _pendingDeleteId = _info.id;
+  closeMenu();
+  showConfirm('⚠️', 'Delete "' + _info.name + '"?', 'This action cannot be undone.', '#d32f2f', 'Delete', runDelete);
+}
+
+function showConfirm(icon, title, msg, color, okLabel, okFn) {
+  document.getElementById('cfIcon').textContent = icon;
+  document.getElementById('cfTitle').textContent = title;
+  document.getElementById('cfMsg').textContent   = msg;
+  const btn = document.getElementById('cfOkBtn');
+  btn.textContent   = okLabel;
+  btn.style.background = color;
+  btn.onclick = okFn;
+  document.getElementById('scConfirmOverlay').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('scConfirmOverlay').classList.remove('open');
+  _pendingDeleteId = null;
+}
+
+async function runDelete() {
+  const id = _pendingDeleteId;
+  if (!id) return;
+  closeConfirm();
+  try {
+    const res  = await fetch('/deleteSubContractor/' + id, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      const row = document.querySelector('#scTbody tr[data-id="' + id + '"]');
+      if (row) row.remove();
+      filterTable();
+      showToast('Contractor deleted.');
+    } else if (data.linked) {
+      _pendingDeleteId = id;
+      showConfirm('🔒', 'Cannot Delete', data.message, '#e67e22', 'Deactivate Instead', runDeactivateInstead);
+    } else {
+      showToast(data.message || 'Failed to delete.', true);
+    }
+  } catch (err) { showToast('Network error.', true); }
+}
+
+async function runDeactivateInstead() {
+  const id = _pendingDeleteId;
+  closeConfirm();
+  try {
+    const res  = await fetch('/api/subcontractor/status_change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contractor_id: id, status: 'Inactive' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const row = document.querySelector('#scTbody tr[data-id="' + id + '"]');
+      if (row) {
+        const info = JSON.parse(row.dataset.info);
+        const newInfo = Object.assign({}, info, { status: 'Inactive' });
+        row.dataset.info   = JSON.stringify(newInfo);
+        row.dataset.status = 'Inactive';
+        const badge = row.querySelector('.sc-badge');
+        badge.textContent = 'Inactive';
+        badge.className   = 'sc-badge inactive';
+      }
+      showToast('Contractor deactivated.');
+    } else {
+      showToast('Failed to deactivate.', true);
+    }
+  } catch (err) { showToast('Network error.', true); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function showToast(msg, isError) {
+  const t = document.getElementById('scToast');
+  t.textContent = msg;
+  t.className = 'sc-toast' + (isError ? ' error' : '');
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ── URL-based tab init ────────────────────────────────────────────
+if (new URLSearchParams(window.location.search).get('tab') === 'add') switchTab('add');
+</script>
+
 {% endblock %}

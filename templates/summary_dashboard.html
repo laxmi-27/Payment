@@ -1,0 +1,611 @@
+{% extends 'base.html' %}
+{% block title %}Summary Dashboard{% endblock %}
+{% block content %}
+
+<style>
+.sd-page { max-width: 1600px; margin: 0 auto; }
+.sd-title {
+  font-size: 21px; font-weight: 700; color: #1d3e73;
+  margin: 0 0 18px; display: flex; align-items: center; gap: 10px;
+}
+
+/* Filter card */
+.sd-filter-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 22px 26px; margin-bottom: 20px;
+}
+.sd-filter-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 16px;
+}
+.sd-fg label {
+  display: block; font-size: 11px; font-weight: 700; color: #6b7a99;
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px;
+}
+.sd-fg input, .sd-fg select {
+  width: 100%; padding: 9px 12px; border: 1.5px solid #e0e8f5; border-radius: 9px;
+  background: #f8fbff; font-size: 13.5px; color: #2d3748; outline: none; transition: .2s;
+  box-sizing: border-box;
+}
+.sd-fg input:focus, .sd-fg select:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.09);
+}
+.sd-fg select {
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a99' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px;
+}
+.sd-fg select:disabled { opacity: .5; cursor: not-allowed; }
+.sd-btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.sd-btn {
+  padding: 9px 20px; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 7px; transition: .15s;
+}
+.sd-btn-primary { background: linear-gradient(90deg,#183b70,#2f68bb); color: #fff; }
+.sd-btn-primary:hover { opacity: .9; }
+.sd-btn-ghost   { background: #f0f4ff; color: #1d3e73; border: 1.5px solid #c9d9f5; }
+.sd-btn-ghost:hover   { background: #e4ecff; }
+.sd-btn-success { background: linear-gradient(90deg,#1a7a4a,#28a46a); color: #fff; }
+.sd-btn-success:hover { opacity: .9; }
+.sd-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* KPI cards */
+.sd-kpi-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 20px;
+}
+.sd-kpi {
+  background: #fff; border-radius: 14px; box-shadow: 0 2px 14px rgba(0,0,0,.05);
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  border-left: 4px solid var(--kc,#2f68bb);
+}
+.sd-kpi-icon {
+  width: 40px; height: 40px; border-radius: 10px; background: var(--kb,#eef4ff);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--kc,#2f68bb); font-size: 17px; flex-shrink: 0;
+}
+.sd-kpi-lbl { font-size: 10px; color: #9aadcc; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+.sd-kpi-val { font-size: 17px; font-weight: 700; color: #1d3e73; margin-top: 2px; line-height: 1.2; }
+
+/* Table card */
+.sd-table-card {
+  background: #fff; border-radius: 18px; box-shadow: 0 4px 24px rgba(0,0,0,.06); overflow: hidden;
+}
+.sd-table-header {
+  padding: 14px 20px; border-bottom: 1.5px solid #eef2f7;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.sd-table-title { font-size: 14px; font-weight: 700; color: #1d3e73; display: flex; align-items: center; gap: 8px; }
+.sd-tbl-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sd-search-inp {
+  padding: 7px 12px; border: 1.5px solid #e0e8f5; border-radius: 8px;
+  font-size: 13px; outline: none; width: 220px; transition: .2s;
+}
+.sd-search-inp:focus { border-color: #2d73d5; }
+.sd-badge {
+  background: #eef4ff; color: #1d3e73; padding: 5px 14px;
+  border-radius: 20px; font-size: 12px; font-weight: 700;
+}
+
+/* Table */
+.sd-tbl-outer { overflow-x: auto; max-height: 560px; overflow-y: auto; }
+.sd-tbl { width: 100%; border-collapse: collapse; }
+.sd-tbl thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: linear-gradient(90deg,#183b70,#2f68bb); color: #fff;
+  padding: 11px 13px; text-align: left; font-size: 11px; font-weight: 700;
+  white-space: nowrap; text-transform: uppercase; letter-spacing: .04em;
+  cursor: pointer; user-select: none;
+}
+.sd-tbl thead th:hover { background: linear-gradient(90deg,#142f5a,#2558a3); }
+.th-in { display: flex; align-items: center; gap: 5px; }
+.sic { font-size: 10px; opacity: .55; width: 12px; display: inline-block; text-align: center; }
+th.asc  .sic::after { content: '▲'; opacity: 1; }
+th.desc .sic::after { content: '▼'; opacity: 1; }
+th:not(.asc):not(.desc) .sic::after { content: '⇅'; }
+
+.sd-tbl tbody tr { transition: background .1s; }
+.sd-tbl tbody tr:hover { background: #f5f9ff; }
+.sd-tbl tbody td {
+  padding: 10px 13px; font-size: 12.5px; color: #374151;
+  border-bottom: 1px solid #eef2f8; white-space: nowrap; vertical-align: middle;
+}
+.sd-tbl tbody tr:last-child td { border-bottom: none; }
+.td-num { text-align: right; font-weight: 600; color: #1d3e73; font-family: monospace; font-size: 12px; }
+.td-pos { color: #059669 !important; }
+.td-neg { color: #dc2626 !important; }
+.td-zero { color: #9aadcc !important; }
+
+/* Total row */
+.sd-tbl tfoot td {
+  padding: 11px 13px; font-size: 12px; font-weight: 700;
+  background: #fffde7; border-top: 2px solid #f0c040;
+  white-space: nowrap; vertical-align: middle;
+}
+.sd-tbl tfoot .td-num { color: #183b70; }
+
+/* Name cell */
+.sd-name-link { color: #2d73d5; text-decoration: none; font-weight: 600; }
+.sd-name-link:hover { text-decoration: underline; }
+.sd-loc { font-size: 11px; color: #9aadcc; margin-top: 2px; }
+
+/* Surplus badge */
+.surp-pos { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; background: #d1fae5; color: #065f46; }
+.surp-neg { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; background: #fee2e2; color: #991b1b; }
+.surp-zero{ display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; background: #f3f4f6; color: #6b7280; }
+
+/* Empty + loading */
+.sd-empty { text-align: center; color: #aab; padding: 50px; font-size: 14px; font-style: italic; }
+.sd-loading { text-align: center; padding: 40px; color: #6b7a99; font-size: 14px; }
+
+@media (max-width: 1300px) { .sd-kpi-grid { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 900px)  {
+  .sd-filter-grid { grid-template-columns: repeat(2,1fr); }
+  .sd-kpi-grid    { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 600px)  {
+  .sd-filter-grid { grid-template-columns: 1fr; }
+  .sd-kpi-grid    { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="sd-page">
+
+  <!-- Title -->
+  <div class="sd-title">
+    <i class="fa fa-table-columns"></i> Subcontractor Summary Dashboard
+  </div>
+
+  <!-- Filter Card -->
+  <div class="sd-filter-card">
+    <form id="sdForm" autocomplete="off">
+      <div class="sd-filter-grid">
+        <div class="sd-fg">
+          <label>Subcontractor Name</label>
+          <input type="text" name="subcontractor_name" id="sdName" placeholder="Search contractor…">
+        </div>
+        <div class="sd-fg">
+          <label>State</label>
+          <select name="state" id="sdState">
+            <option value="">-- All States --</option>
+          </select>
+        </div>
+        <div class="sd-fg">
+          <label>District</label>
+          <select name="district" id="sdDistrict" disabled>
+            <option value="">-- All Districts --</option>
+          </select>
+        </div>
+        <div class="sd-fg">
+          <label>Block</label>
+          <select name="block" id="sdBlock" disabled>
+            <option value="">-- All Blocks --</option>
+          </select>
+        </div>
+        <div class="sd-fg">
+          <label>Village</label>
+          <select name="village" id="sdVillage" disabled>
+            <option value="">-- All Villages --</option>
+          </select>
+        </div>
+      </div>
+      <div class="sd-btn-row">
+        <button type="submit" class="sd-btn sd-btn-primary">
+          <i class="fa fa-magnifying-glass"></i> Load Summary
+        </button>
+        <button type="button" class="sd-btn sd-btn-ghost" id="sdReset">
+          <i class="fa fa-rotate-left"></i> Reset
+        </button>
+        <button type="button" class="sd-btn sd-btn-success" id="sdExport" disabled>
+          <i class="fa fa-file-excel"></i> Export Excel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="sd-kpi-grid">
+    <div class="sd-kpi" style="--kc:#2f68bb;--kb:#eef4ff;">
+      <div class="sd-kpi-icon"><i class="fa fa-users"></i></div>
+      <div><div class="sd-kpi-lbl">Contractors</div><div class="sd-kpi-val" id="kpi-ct">—</div></div>
+    </div>
+    <div class="sd-kpi" style="--kc:#d97706;--kb:#fef3c7;">
+      <div class="sd-kpi-icon"><i class="fa fa-file-invoice-dollar"></i></div>
+      <div><div class="sd-kpi-lbl">Total Final Amt</div><div class="sd-kpi-val" id="kpi-final">—</div></div>
+    </div>
+    <div class="sd-kpi" style="--kc:#059669;--kb:#d1fae5;">
+      <div class="sd-kpi-icon"><i class="fa fa-circle-check"></i></div>
+      <div><div class="sd-kpi-lbl">Total Paid</div><div class="sd-kpi-val" id="kpi-paid">—</div></div>
+    </div>
+    <div class="sd-kpi" style="--kc:#dc2626;--kb:#fee2e2;">
+      <div class="sd-kpi-icon"><i class="fa fa-clock"></i></div>
+      <div><div class="sd-kpi-lbl">Total Balance</div><div class="sd-kpi-val" id="kpi-bal">—</div></div>
+    </div>
+    <div class="sd-kpi" style="--kc:#7c3aed;--kb:#f3eeff;">
+      <div class="sd-kpi-icon"><i class="fa fa-hand"></i></div>
+      <div><div class="sd-kpi-lbl">Total Hold</div><div class="sd-kpi-val" id="kpi-hold">—</div></div>
+    </div>
+    <div class="sd-kpi" style="--kc:#0891b2;--kb:#e0f5fa;">
+      <div class="sd-kpi-icon"><i class="fa fa-percent"></i></div>
+      <div><div class="sd-kpi-lbl">GST Remaining</div><div class="sd-kpi-val" id="kpi-gst">—</div></div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="sd-table-card">
+    <div class="sd-table-header">
+      <span class="sd-table-title">
+        <i class="fa fa-list-check"></i> Per-Contractor Summary
+      </span>
+      <div class="sd-tbl-controls">
+        <input type="text" class="sd-search-inp" id="sdSearch" placeholder="Search table…">
+        <span class="sd-badge" id="sdBadge">0 Records</span>
+      </div>
+    </div>
+
+    <div class="sd-tbl-outer">
+      <table class="sd-tbl" id="sdTable">
+        <thead id="sdThead"><tr></tr></thead>
+        <tbody id="sdTbody">
+          <tr><td class="sd-empty" colspan="20">Click "Load Summary" to fetch data</td></tr>
+        </tbody>
+        <tfoot id="sdTfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /.sd-page -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let _rows = [], _filtered = [], _holdTypes = [];
+let _sortCol = null, _sortDir = 'asc';
+
+// ── Helpers ────────────────────────────────────────────────────────
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtAmt(v){
+  const n = parseFloat(v);
+  if(isNaN(n)||n===0) return '<span class="td-zero">—</span>';
+  return '₹' + Math.abs(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtAmtShort(v){
+  const n = parseFloat(v); if(isNaN(n)) return '—';
+  if(n>=1e7) return '₹'+(n/1e7).toFixed(2)+' Cr';
+  if(n>=1e5) return '₹'+(n/1e5).toFixed(2)+' L';
+  return '₹'+n.toLocaleString('en-IN',{maximumFractionDigits:0});
+}
+function fmtSurplus(v){
+  const n = parseFloat(v)||0;
+  const s = '₹'+Math.abs(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(n>0.01)  return `<span class="surp-neg">−${s}</span>`;  // still owed
+  if(n<-0.01) return `<span class="surp-pos">+${s} Adv</span>`;
+  return `<span class="surp-zero">Settled</span>`;
+}
+function sum(arr, key){ return arr.reduce((a,r)=>a+(parseFloat(r[key])||0),0); }
+
+// ── Build thead ────────────────────────────────────────────────────
+function buildHead(){
+  const cols = baseCols().concat(_holdTypes.map(ht=>({key:'ht_'+ht.hold_type_id, label:ht.hold_type, num:true})));
+  cols.push({key:'surplus', label:'Advance / Surplus', num:true, nosort:true});
+  const html = cols.map(c=>`
+    <th data-col="${esc(c.key)}" ${c.nosort?'style="cursor:default;"':''}>
+      <div class="th-in">${esc(c.label)}<span class="sic"></span></div>
+    </th>`).join('');
+  document.getElementById('sdThead').innerHTML = `<tr>${html}</tr>`;
+  attachSort();
+}
+
+function baseCols(){
+  return [
+    {key:'Contractor_Name', label:'Contractor'},
+    {key:'states',          label:'State'},
+    {key:'districts',       label:'District'},
+    {key:'total_basic',     label:'Basic Amt',   num:true},
+    {key:'total_debit_col', label:'Debit (Row)',  num:true},
+    {key:'total_gst',       label:'GST Amt',      num:true},
+    {key:'total_tds',       label:'TDS Amt',      num:true},
+    {key:'total_sd',        label:'SD Amt',        num:true},
+    {key:'total_oc',        label:'On Commission', num:true},
+    {key:'total_ht',        label:'Hydro Testing', num:true},
+    {key:'hold',            label:'Hold (SD+OC+HT)',num:true},
+    {key:'total_debit_notes',label:'Total Debit',  num:true},
+    {key:'total_final',     label:'Final Amt',     num:true},
+    {key:'gst_final',       label:'GST Final',     num:true},
+    {key:'total_paid',      label:'Invoice Paid',  num:true},
+    {key:'gst_paid',        label:'GST Paid',      num:true},
+    {key:'gst_remaining',   label:'GST Remaining', num:true},
+  ];
+}
+
+function allCols(){
+  return baseCols().concat(_holdTypes.map(ht=>({key:'ht_'+ht.hold_type_id,label:ht.hold_type,num:true})))
+         .concat([{key:'surplus',label:'Advance / Surplus',num:true,nosort:true}]);
+}
+
+// ── Sort ───────────────────────────────────────────────────────────
+function attachSort(){
+  document.querySelectorAll('#sdThead th[data-col]').forEach(th=>{
+    if(th.style.cursor==='default') return;
+    th.addEventListener('click',()=>{
+      const col = th.dataset.col;
+      _sortDir = (_sortCol===col && _sortDir==='asc') ? 'desc' : 'asc';
+      _sortCol = col;
+      document.querySelectorAll('#sdThead th').forEach(h=>h.classList.remove('asc','desc'));
+      th.classList.add(_sortDir);
+      sortFiltered(); render();
+    });
+  });
+}
+function sortFiltered(){
+  if(!_sortCol) return;
+  _filtered.sort((a,b)=>{
+    let va = _cellVal(a,_sortCol), vb = _cellVal(b,_sortCol);
+    const na=parseFloat(va), nb=parseFloat(vb);
+    if(!isNaN(na)&&!isNaN(nb)){va=na;vb=nb;}
+    if(va<vb) return _sortDir==='asc'?-1:1;
+    if(va>vb) return _sortDir==='asc'?1:-1;
+    return 0;
+  });
+}
+function _cellVal(r, col){
+  if(col.startsWith('ht_')) return (r.custom_holds||{})[col.slice(3)]||0;
+  if(col==='surplus') return r.surplus||0;
+  return r[col]??'';
+}
+
+// ── Fetch ──────────────────────────────────────────────────────────
+document.getElementById('sdForm').addEventListener('submit', e=>{ e.preventDefault(); fetchData(); });
+
+function fetchData(){
+  const tbody = document.getElementById('sdTbody');
+  tbody.innerHTML = `<tr><td class="sd-loading" colspan="20"><i class="fa fa-spinner fa-spin"></i> Loading…</td></tr>`;
+  document.getElementById('sdExport').disabled = true;
+
+  const fd = new FormData(document.getElementById('sdForm'));
+  fetch('/api/summary_dashboard', {method:'POST', body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+      _rows      = d.rows       || [];
+      _holdTypes = d.hold_types || [];
+      _filtered  = [..._rows];
+      _sortCol   = null;
+      buildHead();
+      applySearch();
+      updateKpis();
+      document.getElementById('sdExport').disabled = _rows.length === 0;
+    })
+    .catch(err=>{
+      tbody.innerHTML = `<tr><td class="sd-empty" colspan="20">Error loading data. Please try again.</td></tr>`;
+      console.error(err);
+    });
+}
+
+// ── Search ─────────────────────────────────────────────────────────
+document.getElementById('sdSearch').addEventListener('input', applySearch);
+function applySearch(){
+  const q = document.getElementById('sdSearch').value.toLowerCase().trim();
+  _filtered = q
+    ? _rows.filter(r=>
+        (r.Contractor_Name||'').toLowerCase().includes(q) ||
+        (r.states||'').toLowerCase().includes(q) ||
+        (r.districts||'').toLowerCase().includes(q)
+      )
+    : [..._rows];
+  sortFiltered();
+  render();
+}
+
+// ── KPI Cards ──────────────────────────────────────────────────────
+function updateKpis(){
+  const totalFinal = sum(_rows,'total_final') + sum(_rows,'gst_final');
+  const totalPaid  = sum(_rows,'total_paid')  + sum(_rows,'gst_paid');
+  const totalBal   = totalFinal - totalPaid;
+  const totalHold  = sum(_rows,'hold');
+  const totalGstRem= sum(_rows,'gst_remaining');
+  document.getElementById('kpi-ct'   ).textContent = _rows.length;
+  document.getElementById('kpi-final').textContent = fmtAmtShort(totalFinal);
+  document.getElementById('kpi-paid' ).textContent = fmtAmtShort(totalPaid);
+  document.getElementById('kpi-bal'  ).textContent = fmtAmtShort(Math.abs(totalBal));
+  document.getElementById('kpi-hold' ).textContent = fmtAmtShort(totalHold);
+  document.getElementById('kpi-gst'  ).textContent = fmtAmtShort(totalGstRem);
+}
+
+// ── Render ─────────────────────────────────────────────────────────
+function render(){
+  document.getElementById('sdBadge').textContent = _filtered.length + ' Record' + (_filtered.length!==1?'s':'');
+  const tbody = document.getElementById('sdTbody');
+  if(!_filtered.length){
+    tbody.innerHTML = `<tr><td class="sd-empty" colspan="${allCols().length}">No records found</td></tr>`;
+    document.getElementById('sdTfoot').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = _filtered.map((r,i)=>{
+    const htCells = _holdTypes.map(ht=>{
+      const net = (r.custom_holds||{})[ht.hold_type_id]||0;
+      return `<td class="td-num ${net>0?'':'td-zero'}">${net>0?fmtAmt(net):'—'}</td>`;
+    }).join('');
+
+    const surp = parseFloat(r.surplus)||0;
+    const surpCell = `<td class="td-num">${fmtSurplus(surp)}</td>`;
+
+    return `<tr>
+      <td>
+        <a class="sd-name-link" href="/contractor_report/${r.Contractor_Id}" target="_blank">${esc(r.Contractor_Name||'—')}</a>
+        <div class="sd-loc">${esc(r.states||'')}${r.districts?(' / '+esc(r.districts)):''}</div>
+      </td>
+      <td>${esc(r.states||'—')}</td>
+      <td>${esc(r.districts||'—')}</td>
+      <td class="td-num">${fmtAmt(r.total_basic)}</td>
+      <td class="td-num">${fmtAmt(r.total_debit_col)}</td>
+      <td class="td-num">${fmtAmt(r.total_gst)}</td>
+      <td class="td-num">${fmtAmt(r.total_tds)}</td>
+      <td class="td-num">${fmtAmt(r.total_sd)}</td>
+      <td class="td-num">${fmtAmt(r.total_oc)}</td>
+      <td class="td-num">${fmtAmt(r.total_ht)}</td>
+      <td class="td-num" style="background:#fffef0;">${fmtAmt(r.hold)}</td>
+      <td class="td-num">${fmtAmt(r.total_debit_notes)}</td>
+      <td class="td-num" style="background:#f0f7ff;">${fmtAmt(r.total_final)}</td>
+      <td class="td-num">${fmtAmt(r.gst_final)}</td>
+      <td class="td-num td-pos">${fmtAmt(r.total_paid)}</td>
+      <td class="td-num td-pos">${fmtAmt(r.gst_paid)}</td>
+      <td class="td-num">${r.gst_remaining>0.01?fmtAmt(r.gst_remaining):'<span class="td-zero">—</span>'}</td>
+      ${htCells}
+      ${surpCell}
+    </tr>`;
+  }).join('');
+
+  renderFoot();
+}
+
+function renderFoot(){
+  if(!_filtered.length){ document.getElementById('sdTfoot').innerHTML=''; return; }
+
+  function colSum(key){
+    if(key.startsWith('ht_')){
+      const htid = key.slice(3);
+      return _filtered.reduce((a,r)=>a+(parseFloat((r.custom_holds||{})[htid])||0),0);
+    }
+    if(key==='surplus') return _filtered.reduce((a,r)=>a+(parseFloat(r.surplus)||0),0);
+    return sum(_filtered, key);
+  }
+
+  const cols = allCols();
+  let html = '<tr>';
+  cols.forEach((c,i)=>{
+    if(i===0){ html+=`<td style="font-weight:700;">TOTAL (${_filtered.length})</td>`; return; }
+    if(c.key==='states'||c.key==='districts'){ html+=`<td></td>`; return; }
+    if(c.num){
+      const s = colSum(c.key);
+      if(c.key==='surplus'){
+        html+=`<td class="td-num">${fmtSurplus(s)}</td>`;
+      } else {
+        html+=`<td class="td-num">${s!==0?fmtAmt(s):'—'}</td>`;
+      }
+    } else {
+      html+=`<td></td>`;
+    }
+  });
+  html+='</tr>';
+  document.getElementById('sdTfoot').innerHTML = html;
+}
+
+// ── Reset ──────────────────────────────────────────────────────────
+document.getElementById('sdReset').addEventListener('click',()=>{
+  document.getElementById('sdForm').reset();
+  document.getElementById('sdSearch').value = '';
+  ['sdDistrict','sdBlock','sdVillage'].forEach(id=>{
+    const s=document.getElementById(id); s.innerHTML='<option value="">-- Select --</option>'; s.disabled=true;
+  });
+  _rows=[]; _filtered=[]; _holdTypes=[]; _sortCol=null;
+  document.getElementById('sdTbody').innerHTML=`<tr><td class="sd-empty" colspan="20">Click "Load Summary" to fetch data</td></tr>`;
+  document.getElementById('sdTfoot').innerHTML='';
+  document.getElementById('sdBadge').textContent='0 Records';
+  document.getElementById('sdExport').disabled=true;
+  ['kpi-ct','kpi-final','kpi-paid','kpi-bal','kpi-hold','kpi-gst'].forEach(id=>document.getElementById(id).textContent='—');
+});
+
+// ── Export Excel (client-side SheetJS) ────────────────────────────
+document.getElementById('sdExport').addEventListener('click', exportExcel);
+function exportExcel(){
+  if(!_filtered.length) return;
+  // Load SheetJS on demand
+  if(typeof XLSX === 'undefined'){
+    const s=document.createElement('script');
+    s.src='https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+    s.onload=_doExport; document.head.appendChild(s);
+  } else { _doExport(); }
+}
+function _doExport(){
+  const cols = allCols();
+  const header = cols.map(c=>c.label);
+  const data = _filtered.map(r=>{
+    return cols.map(c=>{
+      if(c.key.startsWith('ht_')){
+        const htid=c.key.slice(3); return (r.custom_holds||{})[htid]||0;
+      }
+      if(c.key==='states') return r.states||'';
+      if(c.key==='districts') return r.districts||'';
+      if(c.key==='Contractor_Name') return r.Contractor_Name||'';
+      return r[c.key]??'';
+    });
+  });
+
+  // Totals row
+  const totals = cols.map((c,i)=>{
+    if(i===0) return 'TOTAL';
+    if(c.key==='states'||c.key==='districts') return '';
+    if(!c.num) return '';
+    if(c.key.startsWith('ht_')){
+      const htid=c.key.slice(3);
+      return _filtered.reduce((a,r)=>a+(parseFloat((r.custom_holds||{})[htid])||0),0);
+    }
+    return sum(_filtered, c.key);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...data, totals]);
+  // Style totals row (limited support in xlsx)
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Summary Dashboard');
+  const fname = 'summary_dashboard_' + new Date().toISOString().slice(0,10) + '.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+// ── Cascading dropdowns ────────────────────────────────────────────
+function _pop(selId, items, idKey, nameKey, placeholder){
+  const sel=document.getElementById(selId);
+  sel.innerHTML=`<option value="">${placeholder}</option>`;
+  items.forEach(item=>{
+    const o=document.createElement('option');
+    o.value=item[nameKey]; o.dataset.id=item[idKey]; o.textContent=item[nameKey];
+    sel.appendChild(o);
+  });
+  sel.disabled=items.length===0;
+}
+function _resetSel(selId, placeholder){
+  const sel=document.getElementById(selId);
+  sel.innerHTML=`<option value="">${placeholder}</option>`; sel.disabled=true;
+}
+
+async function _loadStates(){
+  try{
+    const r=await fetch('/api/report/states'); const d=await r.json();
+    _pop('sdState', d.states||[], 'id','name','-- All States --');
+  } catch(e){}
+}
+document.getElementById('sdState').addEventListener('change', async function(){
+  _resetSel('sdDistrict','-- All Districts --');
+  _resetSel('sdBlock','-- All Blocks --');
+  _resetSel('sdVillage','-- All Villages --');
+  const opt=this.options[this.selectedIndex];
+  const sid=opt&&opt.dataset.id?opt.dataset.id:null; if(!sid) return;
+  try{
+    const r=await fetch(`/state_districts/${sid}`); const d=await r.json();
+    _pop('sdDistrict', d.districts||[], 'id','name','-- All Districts --');
+  } catch(e){}
+});
+document.getElementById('sdDistrict').addEventListener('change', async function(){
+  _resetSel('sdBlock','-- All Blocks --');
+  _resetSel('sdVillage','-- All Villages --');
+  const opt=this.options[this.selectedIndex];
+  const did=opt&&opt.dataset.id?opt.dataset.id:null; if(!did) return;
+  try{
+    const r=await fetch(`/district_blocks/${did}`); const d=await r.json();
+    _pop('sdBlock', d.blocks||[], 'id','name','-- All Blocks --');
+  } catch(e){}
+});
+document.getElementById('sdBlock').addEventListener('change', async function(){
+  _resetSel('sdVillage','-- All Villages --');
+  const opt=this.options[this.selectedIndex];
+  const bid=opt&&opt.dataset.id?opt.dataset.id:null; if(!bid) return;
+  try{
+    const r=await fetch(`/block_villages/${bid}`); const d=await r.json();
+    _pop('sdVillage', d.villages||[], 'id','name','-- All Villages --');
+  } catch(e){}
+});
+
+_loadStates();
+
+// Auto-load on page open
+fetchData();
+</script>
+
+{% endblock %}

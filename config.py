@@ -1,9 +1,9 @@
 import mysql.connector
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 
-# Load environment variables from .env file
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).parent / ".env", override=True)
 
 # Get MySQL credentials from environment variables
 MYSQL_HOST = os.getenv("MYSQL_HOST")

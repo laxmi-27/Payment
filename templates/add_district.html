@@ -1,85 +1,713 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <title>Add District</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/district.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/search_on_table.js') }}"></script>
-</head>
-<body>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+.dm-page { max-width: 1200px; margin: 0 auto; }
 
-<!-- Button Container to Center Buttons -->
-<div class="button-container">
-    <button id="addButton" class="action-button">Add</button>
-    <button id="displayButton" class="action-button">Display</button>
+.dm-header {
+  background: #fff; border-radius: 16px; padding: 22px 28px;
+  margin-bottom: 22px; box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  border: 1px solid #e8edf5; display: flex;
+  justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 14px;
+}
+.dm-header-left { display: flex; align-items: center; gap: 16px; }
+.dm-header-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: linear-gradient(135deg,#183b70,#2f68bb);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dm-header-icon i { font-size: 22px; color: #fff; }
+.dm-header-title { font-size: 20px; font-weight: 700; color: #1d3e73; margin: 0 0 3px; }
+.dm-header-sub   { font-size: 12.5px; color: #6b7fa3; margin: 0; }
+.dm-header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.dm-nav-links { display:flex; gap:6px; flex-wrap:wrap; margin-left:6px; padding-left:12px; border-left:1px solid #e2e8f0; }
+.dm-nav-link {
+  font-size:12px; padding:5px 12px; border-radius:8px;
+  background:#eef3fc; color:#2a5298; text-decoration:none;
+  font-weight:600; border:1px solid #d0dff5; transition:.2s;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.dm-nav-link:hover { background:#2a5298; color:#fff; border-color:#2a5298; }
+.dm-nav-link.active { background:#1d3e73; color:#fff; border-color:#1d3e73; pointer-events:none; }
+
+.dm-btn {
+  padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: .2s; white-space: nowrap;
+}
+.dm-btn-primary   { background: linear-gradient(90deg,#183b70,#2f68bb); color: #fff; }
+.dm-btn-primary:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(24,59,112,.3); }
+.dm-btn-secondary { background: #eef3fc; color: #2a5298; border: 1.5px solid #d0dff5; }
+.dm-btn-secondary:hover { background: #dce8fb; }
+.dm-btn-outline   { background: #fff; color: #4a5568; border: 1.5px solid #d1d5db; }
+.dm-btn-outline:hover { background: #f3f4f6; }
+
+.dm-section { display: none; }
+.dm-section.active { display: block; }
+
+.dm-card {
+  background: #fff; border-radius: 16px; padding: 28px 32px;
+  box-shadow: 0 3px 16px rgba(0,0,0,.06); border: 1px solid #edf1f7;
+  margin-bottom: 16px;
+}
+.dm-card-head {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 18px; margin-bottom: 22px;
+  border-bottom: 1px solid #edf1f7;
+}
+.dm-card-head-icon  { font-size: 16px; color: #2a5298; }
+.dm-card-head-title { font-size: 15px; font-weight: 700; color: #1d3e73; }
+.dm-card-head-sub   { font-size: 12.5px; color: #6b7fa3; margin-left: auto; }
+
+.dm-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .dm-form-row { grid-template-columns: 1fr; } }
+.dm-form-group { margin-bottom: 16px; }
+.dm-label { display: block; font-size: 12.5px; font-weight: 700; color: #344054; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+.dm-req { color: #dc2626; margin-left: 2px; }
+.dm-helper { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+.dm-input, .dm-select {
+  width: 100%; padding: 11px 14px; border: 1.5px solid #d8dfeb;
+  border-radius: 10px; background: #fafcff; font-size: 14px;
+  outline: none; transition: .2s; color: #2d3748;
+}
+.dm-input:focus, .dm-select:focus {
+  border-color: #2d73d5; background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.08);
+}
+
+.check-bar {
+  padding: 12px 16px; border-radius: 10px; font-size: 13.5px;
+  font-weight: 600; margin: 12px 0; display: none;
+}
+.check-bar.available { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.check-bar.warn      { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.check-bar.error-bar { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+.dm-save-btn {
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff; border: none; padding: 12px 30px; border-radius: 10px;
+  font-weight: 700; font-size: 14px; cursor: pointer; transition: .2s; margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.dm-save-btn:hover { opacity: .9; transform: translateY(-1px); }
+.dm-save-btn:disabled { background: #9eb1cf; cursor: not-allowed; transform: none; }
+
+.dm-controls {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+  margin-bottom: 16px; padding: 14px 18px;
+  background: #f8faff; border-radius: 10px; border: 1px solid #e8edf5;
+}
+.dm-ctrl-group { display: flex; flex-direction: column; gap: 5px; }
+.dm-ctrl-label { font-size: 11px; font-weight: 700; color: #6b7fa3; text-transform: uppercase; letter-spacing: .5px; }
+.dm-search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 300px; }
+.dm-search-wrap i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px; }
+.dm-search-input {
+  width: 100%; padding: 9px 12px 9px 34px; border: 1.5px solid #d8dfeb;
+  border-radius: 9px; background: #fff; font-size: 13.5px; outline: none; transition: .2s;
+}
+.dm-search-input:focus { border-color: #2d73d5; }
+.dm-filter-select {
+  padding: 9px 12px; border: 1.5px solid #d8dfeb; border-radius: 9px;
+  background: #fff; font-size: 13.5px; outline: none; min-width: 130px;
+}
+.dm-result-pill {
+  margin-left: auto; background: #eef3fc; color: #2a5298; border-radius: 20px;
+  padding: 4px 12px; font-size: 12px; font-weight: 700; white-space: nowrap; align-self: center;
+}
+
+.dm-table-wrap {
+  overflow-x: auto; max-height: 60vh; overflow-y: auto;
+  border-radius: 10px; border: 1px solid #edf1f7;
+}
+#sortableTable {
+  width: 100%; border-collapse: collapse; min-width: 720px; font-size: 13.5px;
+}
+#sortableTable thead tr {
+  background: linear-gradient(90deg, #183b70, #2f68bb); position: sticky; top: 0; z-index: 5;
+}
+#sortableTable thead th {
+  padding: 13px 16px; text-align: left; font-weight: 600;
+  color: #fff; font-size: 12.5px; white-space: nowrap; letter-spacing: .3px;
+}
+#sortableTable thead th.sortable-header { cursor: pointer; user-select: none; }
+#sortableTable thead th.sortable-header:hover { background: rgba(255,255,255,.1); }
+#sortableTable tbody tr { border-bottom: 1px solid #edf1f7; transition: .12s; }
+#sortableTable tbody tr:hover { background: #f5f8ff; }
+#sortableTable tbody td { padding: 12px 16px; vertical-align: middle; color: #2d3748; }
+
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+.badge-active   { background: #dcfce7; color: #166534; }
+.badge-inactive { background: #fee2e2; color: #991b1b; }
+
+.act-drop { position: relative; display: inline-block; }
+.act-drop-btn {
+  padding: 6px 14px; background: #f1f5fb; border: 1.5px solid #d1d8e8;
+  border-radius: 8px; cursor: pointer; font-size: 12.5px; font-weight: 700;
+  color: #1d3e73; white-space: nowrap; transition: .15s;
+}
+.act-drop-btn:hover { background: #dce8f8; }
+.act-drop-menu {
+  display: none; position: absolute; right: 0; top: calc(100% + 4px);
+  background: #fff; border: 1.5px solid #e0e8f5; border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14); z-index: 200; min-width: 200px; overflow: hidden;
+}
+.act-drop-menu.open { display: block; }
+.act-drop-item {
+  display: block; padding: 10px 16px; font-size: 13px; color: #2d3748;
+  text-decoration: none; cursor: pointer; border: none; border-bottom: 1px solid #f3f4f6;
+  background: none; width: 100%; text-align: left; transition: .1s;
+}
+.act-drop-item:last-child { border-bottom: none; }
+.act-drop-item:hover { background: #f0f7ff; color: #1d3e73; }
+.act-drop-item.danger:hover { background: #fff5f5; color: #dc2626; }
+.act-drop-item.success-item:hover { background: #f0fdf4; color: #166534; }
+.act-drop-divider { height: 1px; background: #edf1f7; margin: 3px 0; }
+
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 2000;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: #fff; border-radius: 20px; padding: 34px;
+  max-width: 540px; width: 100%; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+.modal-box h3 { font-size: 19px; color: #1d3e73; margin-bottom: 12px; font-weight: 700; }
+.modal-box p  { font-size: 13.5px; color: #4a5568; line-height: 1.6; margin-bottom: 8px; }
+.modal-footer { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: flex-end; }
+.modal-btn { padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: .15s; }
+.modal-btn-danger  { background: #dc2626; color: #fff; }
+.modal-btn-danger:hover { background: #b91c1c; }
+.modal-btn-warn    { background: #d97706; color: #fff; }
+.modal-btn-warn:hover { background: #b45309; }
+.modal-btn-link    { background: #1d3e73; color: #fff; }
+.modal-btn-link:hover { background: #14305a; }
+.modal-btn-outline { background: #fff; color: #374151; border: 1.5px solid #d1d5db; }
+.modal-btn-outline:hover { background: #f3f4f6; }
+.warning-box {
+  background: #fef3c7; border-left: 4px solid #d97706;
+  padding: 12px 16px; border-radius: 0 8px 8px 0;
+  color: #92400e; font-size: 12.5px; margin: 10px 0; line-height: 1.55;
+}
+.modal-data-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.modal-data-table th { background: #1d3e73; color: #fff; padding: 9px 14px; text-align: left; font-weight: 600; }
+.modal-data-table td { padding: 9px 14px; border-bottom: 1px solid #edf1f7; color: #2d3748; }
+.modal-data-table tbody tr:hover { background: #f5f8ff; }
+.modal-empty { text-align: center; padding: 30px; color: #94a3b8; font-style: italic; }
+.empty-state-cell { text-align: center; padding: 40px; color: #94a3b8; font-style: italic; }
+</style>
+
+
+<div class="dm-page">
+
+<!-- ── Page Header ── -->
+<div class="dm-header">
+  <div class="dm-header-left">
+    <div class="dm-header-icon"><i class="fas fa-city"></i></div>
+    <div>
+      <h1 class="dm-header-title">District Management</h1>
+      <p class="dm-header-sub">Add and manage districts within states</p>
+    </div>
+  </div>
+  <div class="dm-header-actions">
+    <button class="dm-btn dm-btn-primary" data-section="add" onclick="showSection('add')">
+      <i class="fas fa-plus"></i> Add District
+    </button>
+    <button class="dm-btn dm-btn-secondary" data-section="list" onclick="showSection('list')">
+      <i class="fas fa-list"></i> District List
+      <span style="background:#2a5298;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:2px;">
+        {{ districtdata|length }}
+      </span>
+    </button>
+    <a class="dm-btn dm-btn-outline" href="/master_data">
+      <i class="fas fa-sitemap"></i> Master Data
+    </a>
+    <div class="dm-nav-links">
+      <a href="/add_state"   class="dm-nav-link"><i class="fas fa-map"></i> State</a>
+      <a href="/add_block"   class="dm-nav-link"><i class="fas fa-layer-group"></i> Block</a>
+      <a href="/add_village" class="dm-nav-link"><i class="fas fa-home"></i> Village</a>
+    </div>
+  </div>
 </div>
 
-<div id="addForm" style="display: none;">
-    <h2>Add District</h2>
-    <form id="districtForm" method="POST">
-        <label for="state_Id">State :</label>
-        <select name="state_Id" id="state_Id" required>
-            <option value="" disabled selected>Select State</option>
-            {% for state in states %}
-            <option value="{{ state[0] }}">{{ state[1] }}</option>
-            {% endfor %}
+
+<!-- ════════════════════════════════════════
+     SECTION: ADD
+════════════════════════════════════════ -->
+<div id="section-add" class="dm-section">
+<div class="dm-card">
+  <div class="dm-card-head">
+    <i class="fas fa-plus-circle dm-card-head-icon"></i>
+    <span class="dm-card-head-title">Add New District</span>
+    <span class="dm-card-head-sub">Select a state and enter the district name</span>
+  </div>
+
+  <form id="districtForm" method="POST" autocomplete="off">
+
+    <div class="dm-form-row">
+      <div class="dm-form-group">
+        <label class="dm-label">State <span class="dm-req">*</span></label>
+        <select class="dm-select" name="state_Id" id="state_Id" required>
+          <option value="" disabled selected>Select State</option>
+          {% for state in states %}
+          <option value="{{ state[0] }}">{{ state[1] }}</option>
+          {% endfor %}
         </select>
+        <p class="dm-helper">Only active states are shown.</p>
+      </div>
 
-        <label>Enter District :</label>
-        <input type="text" id="district_Name" name="district_Name" placeholder="District Name" required>
-        <span id="districtMessage"></span>
-
-        <button type="submit" id="submitButton" disabled>Add District</button>
-    </form>
-</div>
-
-<div id="addTable" style="display: none;">
-    <div class="search-container">
-        <h2>Display Districts</h2>
-        <input type="text" id="searchBar" placeholder="Searching..." onkeyup="searchTable()">
+      <div class="dm-form-group">
+        <label class="dm-label">District Name <span class="dm-req">*</span></label>
+        <input class="dm-input" type="text" id="district_Name" name="district_Name"
+          placeholder="Enter District Name" required>
+        <p class="dm-helper">Letters only. Will be checked for duplicates within the selected state.</p>
+      </div>
     </div>
 
-   <table id="sortableTable" border="1">
-        <tr>
-            <th>District ID</th>
-            <th class="sortable-header">
-                District Name
-                <span class="sort-buttons">
-                        <span class="sort-asc">⬆️</span>
-                        <span class="sort-desc">⬇️</span>
-                    </span></th>
-            <th class="sortable-header">
-                State Name
-                <span class="sort-buttons">
-                        <span class="sort-asc">⬆️</span>
-                        <span class="sort-desc">⬇️</span>
-                    </span></th>
+    <div class="dm-form-group" style="max-width:260px;">
+      <label class="dm-label">Status</label>
+      <select class="dm-select" name="district_Status" id="district_Status">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+      <p class="dm-helper">Active districts appear in block dropdowns.</p>
+    </div>
 
-            <th>Edit District</th>
-            <th>Delete District</th>
-        </tr>
-        {% for district in districtdata %}
-        <tr>
-            <td>{{ district[0] }}</td>
-            <td>{{ district[1] }}</td>
-            <td>{{ district[2] }}</td>
-            <td>
-                <a href="{{ url_for('district.edit_district', district_id=district[0]) }}">
-                    <img src="{{ url_for('static', filename='images/icons/pen_blue_icon.png') }}" alt="Edit"
-                         class="icon">
-                </a>
-            </td>
-            <td>
-                <a href="{{ url_for('district.delete_district', district_id=district[0]) }}"
-                   onclick="return confirm('Are you sure you want to delete this district?')">
-                    <img src="{{ url_for('static', filename='images/icons/bin_red_icon.png') }}" alt="Delete"
-                         class="icon">
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div id="checkBar" class="check-bar"></div>
+
+    <button type="submit" id="submitButton" class="dm-save-btn" disabled>
+      <i class="fas fa-save"></i> Save District
+    </button>
+
+  </form>
+</div>
 </div>
 
-</body>
+
+<!-- ════════════════════════════════════════
+     SECTION: LIST
+════════════════════════════════════════ -->
+<div id="section-list" class="dm-section">
+<div class="dm-card">
+  <div class="dm-card-head">
+    <i class="fas fa-table dm-card-head-icon"></i>
+    <span class="dm-card-head-title">All Districts</span>
+    <span class="dm-card-head-sub">Click column headers to sort</span>
+  </div>
+
+  <div class="dm-controls">
+    <div class="dm-ctrl-group dm-search-wrap">
+      <i class="fas fa-search"></i>
+      <input class="dm-search-input" id="searchBar" placeholder="Search district name…"
+        oninput="applyFilters()">
+    </div>
+    <div class="dm-ctrl-group">
+      <span class="dm-ctrl-label">Status</span>
+      <select class="dm-filter-select" id="statusFilter" onchange="applyFilters()">
+        <option value="">All Status</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+    </div>
+    <div class="dm-result-pill" id="resultCount">{{ districtdata|length }} districts</div>
+  </div>
+
+  <div class="dm-table-wrap">
+    <table id="sortableTable">
+      <thead>
+        <tr>
+          <th style="width:70px;">ID</th>
+          <th class="sortable-header">District Name <span style="font-size:10px;opacity:.7;">↕</span></th>
+          <th class="sortable-header">State <span style="font-size:10px;opacity:.7;">↕</span></th>
+          <th style="width:110px;">Status</th>
+          <th style="width:130px;">Created</th>
+          <th style="width:110px;text-align:center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="districtTableBody">
+        {% for d in districtdata %}
+        <tr data-status="{{ d[3] }}">
+          <td style="color:#94a3b8;font-size:12px;font-weight:600;">{{ d[0] }}</td>
+          <td style="font-weight:600;">{{ d[1] }}</td>
+          <td style="color:#6b7fa3;">{{ d[2] }}</td>
+          <td>
+            <span class="badge {{ 'badge-active' if d[3] == 'Active' else 'badge-inactive' }}">
+              {{ d[3] }}
+            </span>
+          </td>
+          <td style="color:#6b7fa3;font-size:13px;">
+            {{ d[4].strftime('%d %b %Y') if d[4] else '—' }}
+          </td>
+          <td style="text-align:center;">
+            <div class="act-drop">
+              <button class="act-drop-btn" onclick="toggleDrop(this)">Actions ▾</button>
+              <div class="act-drop-menu">
+                <a class="act-drop-item"
+                   href="{{ url_for('district.edit_district', district_id=d[0]) }}">
+                  <i class="fas fa-pen" style="width:16px;margin-right:6px;color:#2a5298;"></i>Edit District
+                </a>
+                {% if d[3] == 'Active' %}
+                <button class="act-drop-item"
+                  onclick="handleStatusChange({{ d[0] }}, 'deactivate', '{{ d[1]|replace("'","\\'") }}')">
+                  <i class="fas fa-pause" style="width:16px;margin-right:6px;color:#d97706;"></i>Deactivate
+                </button>
+                {% else %}
+                <button class="act-drop-item success-item"
+                  onclick="handleStatusChange({{ d[0] }}, 'activate', '{{ d[1]|replace("'","\\'") }}')">
+                  <i class="fas fa-play" style="width:16px;margin-right:6px;color:#166534;"></i>Activate
+                </button>
+                {% endif %}
+                <div class="act-drop-divider"></div>
+                <button class="act-drop-item"
+                  onclick="openViewBlocks({{ d[0] }}, '{{ d[1]|replace("'","\\'") }}')">
+                  <i class="fas fa-th-large" style="width:16px;margin-right:6px;color:#4a6fa5;"></i>View Blocks
+                </button>
+                <a class="act-drop-item" href="/master_data">
+                  <i class="fas fa-sitemap" style="width:16px;margin-right:6px;color:#6b7fa3;"></i>Open in Master Data
+                </a>
+                <div class="act-drop-divider"></div>
+                <button class="act-drop-item danger"
+                  onclick="handleDelete({{ d[0] }}, '{{ d[1]|replace("'","\\'") }}')">
+                  <i class="fas fa-trash" style="width:16px;margin-right:6px;"></i>Delete
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="empty-state-cell">No districts added yet. Click "Add District" to get started.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</div><!-- /section-list -->
+
+</div><!-- /dm-page -->
+
+
+<!-- ════════════ VIEW BLOCKS MODAL ════════════ -->
+<div id="blocksModal" class="modal-overlay">
+<div class="modal-box">
+  <h3 id="blocksModalTitle"><i class="fas fa-th-large" style="color:#2a5298;margin-right:8px;"></i>Blocks</h3>
+  <div id="blocksModalBody"><p>Loading…</p></div>
+  <div class="modal-footer">
+    <a href="/add_block" class="modal-btn modal-btn-link">Add Block</a>
+    <button class="modal-btn modal-btn-outline" onclick="closeModal('blocksModal')">Close</button>
+  </div>
+</div>
+</div>
+
+<!-- ════════════ CANNOT DELETE MODAL ════════════ -->
+<div id="cannotDeleteModal" class="modal-overlay">
+<div class="modal-box">
+  <h3><i class="fas fa-exclamation-triangle" style="color:#d97706;margin-right:8px;"></i>Cannot Delete District</h3>
+  <p id="cannotDeleteMsg"></p>
+  <div class="warning-box">
+    This district has linked blocks. Delete all linked blocks first, or deactivate this district to hide it from dropdowns while preserving historical data.
+  </div>
+  <div class="modal-footer">
+    <button class="modal-btn modal-btn-link" id="viewLinkedBtn">View Blocks</button>
+    <button class="modal-btn modal-btn-warn" id="deactivateFromDeleteBtn">Deactivate Instead</button>
+    <button class="modal-btn modal-btn-outline" onclick="closeModal('cannotDeleteModal')">Cancel</button>
+  </div>
+</div>
+</div>
+
+<!-- ════════════ CONFIRM DELETE MODAL ════════════ -->
+<div id="confirmDeleteModal" class="modal-overlay">
+<div class="modal-box">
+  <h3><i class="fas fa-trash" style="color:#dc2626;margin-right:8px;"></i>Delete District</h3>
+  <p id="confirmDeleteMsg"></p>
+  <div class="warning-box">This action is permanent and cannot be undone.</div>
+  <div class="modal-footer">
+    <button class="modal-btn modal-btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
+    <button class="modal-btn modal-btn-outline" onclick="closeModal('confirmDeleteModal')">Cancel</button>
+  </div>
+</div>
+</div>
+
+
+<script>
+let pendingDeleteId = null, pendingDeleteName = null;
+
+/* ─────────────────────────────────
+   SECTION TOGGLE
+───────────────────────────────── */
+function showSection(name) {
+  document.querySelectorAll('.dm-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelectorAll('.dm-header-actions .dm-btn[data-section]').forEach(b => {
+    b.style.boxShadow = b.getAttribute('data-section') === name
+      ? 'inset 0 0 0 2px rgba(255,255,255,.5)' : '';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const hasData = document.querySelector('#districtTableBody tr[data-status]');
+  showSection(hasData ? 'list' : 'add');
+});
+
+/* ─────────────────────────────────
+   DUPLICATE CHECK
+───────────────────────────────── */
+const nameInput = document.getElementById('district_Name');
+const stateSelect = document.getElementById('state_Id');
+
+function runCheck() {
+  const name    = nameInput.value.trim();
+  const stateId = stateSelect.value;
+  if (!name || !stateId) {
+    hideCheckBar();
+    document.getElementById('submitButton').disabled = true;
+    return;
+  }
+  fetch('/check_district', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ district_Name: name, state_Id: stateId })
+  })
+  .then(r => r.json())
+  .then(data => {
+    const avail = data.status === 'available';
+    showCheckBar(avail ? 'available' : 'error-bar',
+      (avail ? '✓ ' : '✗ ') + (data.message || ''));
+    document.getElementById('submitButton').disabled = !avail;
+  })
+  .catch(() => {
+    showCheckBar('error-bar', '⚠ Connection error.');
+    document.getElementById('submitButton').disabled = true;
+  });
+}
+
+nameInput.addEventListener('input', function () {
+  this.value = this.value.replace(/[^A-Za-z ]/g, '');
+  runCheck();
+});
+stateSelect.addEventListener('change', runCheck);
+
+function showCheckBar(cls, msg) {
+  const bar = document.getElementById('checkBar');
+  bar.className = 'check-bar ' + cls;
+  bar.textContent = msg;
+  bar.style.display = 'block';
+}
+function hideCheckBar() {
+  document.getElementById('checkBar').style.display = 'none';
+}
+
+/* ─────────────────────────────────
+   FORM SUBMIT
+───────────────────────────────── */
+document.getElementById('districtForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitButton');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  fetch('/add_district', { method: 'POST', body: new FormData(this) })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === 'success') {
+      showCheckBar('available', '✓ ' + data.message);
+      setTimeout(() => location.reload(), 900);
+    } else {
+      showCheckBar('error-bar', '⚠ ' + (data.message || 'Failed.'));
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Save District';
+    }
+  })
+  .catch(() => {
+    showCheckBar('error-bar', '⚠ Connection error.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save District';
+  });
+});
+
+/* ─────────────────────────────────
+   ACTIVATE / DEACTIVATE
+───────────────────────────────── */
+function handleStatusChange(id, action, name) {
+  if (!confirm((action === 'activate' ? 'Activate' : 'Deactivate') + ' "' + name + '"?')) return;
+  const url = action === 'activate'
+    ? '/activate_district/' + id
+    : '/deactivate_district/' + id;
+  fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  .then(r => r.json())
+  .then(d => {
+    if (d.status === 'success') location.reload();
+    else alert(d.message || 'Failed.');
+  })
+  .catch(() => alert('Request failed.'));
+}
+
+/* ─────────────────────────────────
+   DELETE (two-step)
+───────────────────────────────── */
+function handleDelete(id, name) {
+  document.querySelectorAll('.act-drop-menu.open').forEach(m => m.classList.remove('open'));
+  fetch('/can_delete_district/' + id, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.can_delete) {
+      document.getElementById('cannotDeleteMsg').textContent = data.message;
+      document.getElementById('viewLinkedBtn').onclick = () => {
+        closeModal('cannotDeleteModal'); openViewBlocks(id, name);
+      };
+      document.getElementById('deactivateFromDeleteBtn').onclick = () => {
+        closeModal('cannotDeleteModal'); handleStatusChange(id, 'deactivate', name);
+      };
+      openModal('cannotDeleteModal');
+    } else {
+      pendingDeleteId = id; pendingDeleteName = name;
+      document.getElementById('confirmDeleteMsg').textContent =
+        'Delete district "' + name + '"? This cannot be undone.';
+      document.getElementById('confirmDeleteBtn').onclick = confirmDelete;
+      openModal('confirmDeleteModal');
+    }
+  })
+  .catch(() => alert('Request failed.'));
+}
+
+function confirmDelete() {
+  if (!pendingDeleteId) return;
+  fetch('/delete_district/' + pendingDeleteId, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  .then(r => r.json())
+  .then(d => {
+    closeModal('confirmDeleteModal');
+    if (d.status === 'success') location.reload();
+    else alert(d.message || 'Failed.');
+  })
+  .catch(() => alert('Delete failed.'));
+}
+
+/* ─────────────────────────────────
+   VIEW BLOCKS MODAL
+───────────────────────────────── */
+function openViewBlocks(id, name) {
+  document.querySelectorAll('.act-drop-menu.open').forEach(m => m.classList.remove('open'));
+  document.getElementById('blocksModalTitle').innerHTML =
+    '<i class="fas fa-th-large" style="color:#2a5298;margin-right:8px;"></i>Blocks under "' + name + '"';
+  const body = document.getElementById('blocksModalBody');
+  body.innerHTML = '<p style="color:#94a3b8;padding:16px 0;">Loading…</p>';
+  openModal('blocksModal');
+  fetch('/district_blocks/' + id)
+  .then(r => r.json())
+  .then(data => {
+    if (!data.blocks || !data.blocks.length) {
+      body.innerHTML = '<p class="modal-empty">No blocks found under this district.</p>'; return;
+    }
+    body.innerHTML = `<p style="font-size:13px;color:#6b7fa3;margin-bottom:8px;">${data.count} block(s) found</p>
+      <table class="modal-data-table">
+        <thead><tr><th>ID</th><th>Block Name</th><th>Status</th></tr></thead>
+        <tbody>${data.blocks.map(b =>
+          `<tr><td style="color:#94a3b8;font-size:12px;">${b.id}</td><td>${b.name}</td>
+           <td><span class="badge ${b.status === 'Active' ? 'badge-active' : 'badge-inactive'}">${b.status}</span></td></tr>`
+        ).join('')}</tbody>
+      </table>`;
+  })
+  .catch(() => { body.innerHTML = '<p style="color:#dc2626;">Failed to load blocks.</p>'; });
+}
+
+/* ─────────────────────────────────
+   TABLE FILTER + SORT
+───────────────────────────────── */
+function applyFilters() {
+  const q     = (document.getElementById('searchBar').value || '').trim().toLowerCase();
+  const st    = document.getElementById('statusFilter').value;
+  const tbody = document.getElementById('districtTableBody');
+  let vis     = 0;
+
+  document.querySelectorAll('#districtTableBody tr[data-status]').forEach(row => {
+    /* cells[1] = District Name only — do not match State/Status/ID/Date */
+    const districtName = (row.cells[1] ? row.cells[1].textContent.trim().toLowerCase() : '');
+    const rowSt        = row.getAttribute('data-status');
+    const show         = (!q || districtName.includes(q)) && (!st || rowSt === st);
+    row.style.display  = show ? '' : 'none';
+    if (show) vis++;
+  });
+
+  document.getElementById('resultCount').textContent = vis + ' district' + (vis !== 1 ? 's' : '');
+
+  /* no-results placeholder */
+  let noRow = document.getElementById('dmNoResults');
+  if (vis === 0 && q) {
+    if (!noRow) {
+      noRow = document.createElement('tr');
+      noRow.id = 'dmNoResults';
+      noRow.innerHTML = '<td colspan="6" class="empty-state-cell">No matching districts found.</td>';
+      tbody.appendChild(noRow);
+    }
+    noRow.style.display = '';
+  } else if (noRow) {
+    noRow.style.display = 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.sortable-header').forEach(th => {
+    let asc = true;
+    th.addEventListener('click', function () {
+      const idx = Array.from(this.parentNode.children).indexOf(this);
+      const tbody = document.getElementById('districtTableBody');
+      const rows  = Array.from(tbody.querySelectorAll('tr[data-status]'));
+      rows.sort((a, b) => {
+        const x = a.cells[idx]?.textContent.trim().toLowerCase() || '';
+        const y = b.cells[idx]?.textContent.trim().toLowerCase() || '';
+        return asc ? x.localeCompare(y) : y.localeCompare(x);
+      });
+      asc = !asc;
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+});
+
+/* ─────────────────────────────────
+   ACTION DROPDOWN
+───────────────────────────────── */
+function _closeAllDrops() {
+  document.querySelectorAll('.act-drop-menu.open').forEach(function(m) {
+    m.classList.remove('open');
+    m.style.cssText = '';
+  });
+}
+function toggleDrop(btn) {
+  const menu    = btn.nextElementSibling;
+  const wasOpen = menu.classList.contains('open');
+  _closeAllDrops();
+  if (!wasOpen) {
+    const r = btn.getBoundingClientRect();
+    menu.style.cssText = 'position:fixed;visibility:hidden;display:block;top:-9999px;left:-9999px;';
+    const mH = menu.offsetHeight;
+    const openUp   = (window.innerHeight - r.bottom - 8) < mH;
+    const rightOff = window.innerWidth - r.right;
+    if (openUp) {
+      menu.style.cssText = 'position:fixed;z-index:9999;right:' + rightOff + 'px;left:auto;top:auto;bottom:' + (window.innerHeight - r.top + 4) + 'px;';
+    } else {
+      menu.style.cssText = 'position:fixed;z-index:9999;right:' + rightOff + 'px;left:auto;top:' + (r.bottom + 4) + 'px;bottom:auto;';
+    }
+    menu.classList.add('open');
+  }
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.act-drop')) _closeAllDrops();
+});
+document.addEventListener('scroll', function() { _closeAllDrops(); }, true);
+
+/* ─────────────────────────────────
+   MODAL HELPERS
+───────────────────────────────── */
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); });
+});
+</script>
 {% endblock %}

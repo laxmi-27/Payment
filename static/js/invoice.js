@@ -173,8 +173,27 @@ $(document).ready(function () {
 
     $(document).on("click", "li", function () {
         $("#subcontractor").val($(this).text());
-        $("#subcontractor_id").val($(this).attr("data-id"));
+        const contractorId = $(this).attr("data-id");
+        $("#subcontractor_id").val(contractorId);
         $("#subcontractor_list").fadeOut();
+
+        const pmcSel = document.getElementById('pmc_no');
+        if (pmcSel && contractorId) {
+            pmcSel.innerHTML = '<option value="">Loading…</option>';
+            fetch('/get_pmc_nos_by_subcontractor/' + contractorId)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.pmc_nos && data.pmc_nos.length) {
+                        pmcSel.innerHTML = '<option value="">— Select PMC No —</option>'
+                            + data.pmc_nos.map(p => `<option value="${p}">${p}</option>`).join('');
+                    } else {
+                        pmcSel.innerHTML = '<option value="">No PMC numbers found</option>';
+                    }
+                })
+                .catch(() => {
+                    pmcSel.innerHTML = '<option value="">Error loading PMC numbers</option>';
+                });
+        }
     });
 
     // Focus

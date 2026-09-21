@@ -1,26 +1,198 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <title>Edit District</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+
+<style>
+
+.edit-wrapper{
+max-width:700px;
+margin:70px auto;
+}
+
+.edit-card{
+background:#fff;
+padding:45px;
+border-radius:24px;
+box-shadow:0 10px 35px rgba(0,0,0,.06);
+}
+
+.edit-header{
+text-align:center;
+margin-bottom:35px;
+}
+
+.edit-header h2{
+font-size:32px;
+color:#1d3e73;
+margin-bottom:10px;
+}
+
+.edit-header p{
+color:#667085;
+}
+
+/* Form */
+
+.form-group{
+margin-bottom:24px;
+}
+
+label{
+display:block;
+font-weight:600;
+margin-bottom:10px;
+color:#344054;
+}
+
+select,
+input{
+width:100%;
+padding:15px 16px;
+border:1px solid #d8dfeb;
+border-radius:12px;
+background:#fafcff;
+outline:none;
+font-size:15px;
+transition:.3s;
+}
+
+select:focus,
+input:focus{
+border-color:#2d73d5;
+background:#fff;
+box-shadow:0 0 0 4px rgba(45,115,213,.08);
+}
+
+/* Buttons */
+
+.button-group{
+display:flex;
+gap:15px;
+margin-top:25px;
+flex-wrap:wrap;
+}
+
+.update-btn{
+background:#1d3e73;
+color:#fff;
+border:none;
+padding:14px 30px;
+border-radius:12px;
+font-weight:600;
+cursor:pointer;
+transition:.3s;
+}
+
+.update-btn:hover{
+background:#14305a;
+}
+
+.cancel-btn{
+background:#6c757d;
+color:#fff;
+text-decoration:none;
+padding:14px 30px;
+border-radius:12px;
+font-weight:600;
+display:inline-block;
+}
+
+.cancel-btn:hover{
+background:#56616b;
+}
+
+@media(max-width:768px){
+
+.edit-card{
+padding:28px 22px;
+}
+
+.edit-header h2{
+font-size:26px;
+}
+
+}
+
+</style>
+
+
+
+<div class="edit-wrapper">
+
+<div class="edit-card">
+
+<div class="edit-header">
 <h2>Edit District</h2>
+<p>Update district information below</p>
+</div>
+
 
 <form method="POST">
-    <label for="state_Id">State :</label>
-    <select name="state_Id" required>
-        <option value="" disabled>Select State</option>
-        {% for state in states %}
-        <option value="{{ state[0] }}" {% if state[0] == districtdata[1] %}selected{% endif %}>{{ state[1] }}</option>
-        {% endfor %}
-    </select>
-    <label>Enter District :</label>
-    <input type="text" name="district_Name" placeholder="District Name" value="{{ districtdata[0] }}" required>
-    <button type="submit">Update District</button>
+
+<div class="form-group">
+<label for="state_Id">
+Select State
+</label>
+
+<select name="state_Id" required>
+
+<option value="" disabled>
+Select State
+</option>
+
+{% for state in states %}
+<option
+value="{{ state[0] }}"
+{% if state[0] == districtdata[1] %}
+selected
+{% endif %}>
+
+{{ state[1] }}
+
+</option>
+{% endfor %}
+
+</select>
+</div>
+
+
+
+<div class="form-group">
+
+<label>
+District Name
+</label>
+
+<input
+type="text"
+name="district_Name"
+placeholder="District Name"
+value="{{ districtdata[0] }}"
+required>
+
+</div>
+
+
+
+<div class="button-group">
+
+<button
+type="submit"
+class="update-btn">
+Update District
+</button>
+
+<a href="/add_district"
+class="cancel-btn">
+Cancel
+</a>
+
+</div>
+
+
 </form>
 
+</div>
 
-</body>
+</div>
 
 {% endblock %}

@@ -1,226 +1,395 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Edit Invoice</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/invoice.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style1.css') }}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
+<style>
+/* ── Edit Invoice ────────────────────────────────────────────────── */
+.eiv-page { max-width: 960px; margin: 0 auto; }
 
-<body>
+/* Header */
+.eiv-header {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px; padding: 22px 28px; margin-bottom: 22px; color: #fff;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.eiv-header-left h1 { font-size: 21px; font-weight: 700; margin: 0 0 3px; }
+.eiv-header-left p  { margin: 0; font-size: 13px; opacity: .82; }
+.eiv-back {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 18px;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+  border-radius: 9px; color: #fff; font-size: 13px; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+}
+.eiv-back:hover { background: rgba(255,255,255,.25); color: #fff; }
 
-    <div id="editForm">
-        <h2>Edit Invoice</h2>
+/* Toast */
+.eiv-toast {
+  position: fixed; top: 22px; right: 22px; z-index: 99999;
+  padding: 12px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+  min-width: 220px; box-shadow: 0 6px 22px rgba(0,0,0,.15); display: none;
+}
+.eiv-toast.ok  { background: #f0fff5; border: 1.5px solid #a3e6bc; color: #1a7a3f; }
+.eiv-toast.err { background: #fff0f0; border: 1.5px solid #ffc0c0; color: #c62828; }
 
-        <!-- Success Alert Box -->
-        <div id="invoiceSuccessAlert" class="success-alert" style="display:none;">
-            Invoice successfully updated!
+/* Form card */
+.eiv-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 30px 34px;
+}
+
+/* Sections */
+.eiv-section { margin-bottom: 26px; }
+.eiv-sec-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 5px 12px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: inline-block;
+}
+.eiv-g2   { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+.eiv-g3   { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.eiv-full { grid-column: 1 / -1; }
+
+.eiv-field { display: flex; flex-direction: column; }
+.eiv-field label { font-size: 13px; font-weight: 600; color: #344054; margin-bottom: 6px; }
+.eiv-req { color: #d32f2f; margin-left: 2px; }
+
+.eiv-field input,
+.eiv-field textarea {
+  padding: 11px 14px; border: 1.5px solid #d8dfeb; border-radius: 10px;
+  background: #fafcff; font-size: 13.5px; outline: none; box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s; width: 100%; margin: 0;
+}
+.eiv-field textarea { min-height: 84px; resize: vertical; }
+.eiv-field input:focus,
+.eiv-field textarea:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+}
+/* Soft/derived fields — editable but visually de-emphasised */
+.eiv-field input.eiv-soft {
+  background: #f5f8fe; color: #5a7aa3; border-style: dashed; border-color: #c5d9f0;
+}
+.eiv-field input.eiv-soft:focus {
+  border-style: solid; border-color: #2d73d5; box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+  background: #fff; color: #344054;
+}
+
+/* Hold-amount rows */
+.eiv-hold-row {
+  display: grid; grid-template-columns: 1fr 1fr auto;
+  gap: 10px; margin-bottom: 10px; align-items: center;
+}
+.eiv-hold-row input {
+  padding: 10px 12px; border: 1.5px solid #d8dfeb; border-radius: 9px;
+  background: #fafcff; font-size: 13px; outline: none; width: 100%; box-sizing: border-box;
+}
+.eiv-hold-row input:focus {
+  border-color: #2d73d5; box-shadow: 0 0 0 3px rgba(45,115,213,.08);
+}
+.eiv-rm-hold {
+  padding: 9px 13px; background: #fff0f0; border: 1.5px solid #ffb0b0;
+  border-radius: 9px; color: #c62828; cursor: pointer; font-size: 12px; font-weight: 700;
+  white-space: nowrap;
+}
+.eiv-rm-hold:hover { background: #fde8e8; }
+.eiv-add-hold {
+  background: none; border: 1.5px solid #2a5298; color: #2a5298;
+  padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;
+}
+.eiv-add-hold:hover { background: #f0f7ff; }
+
+/* Footer */
+.eiv-footer {
+  display: flex; gap: 12px; padding-top: 18px;
+  border-top: 1px solid #edf1f7; margin-top: 6px; flex-wrap: wrap; align-items: center;
+}
+.eiv-submit {
+  padding: 12px 34px; background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff; border: none; border-radius: 10px; font-size: 14.5px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s;
+}
+.eiv-submit:hover { opacity: .9; }
+.eiv-submit:disabled { opacity: .55; cursor: not-allowed; }
+.eiv-cancel {
+  padding: 12px 22px; background: #f0f4fa; color: #1d3e73;
+  border: 1.5px solid #d0dff5; border-radius: 10px; font-size: 14px; font-weight: 600;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+}
+.eiv-cancel:hover { background: #e4edf8; color: #1d3e73; }
+
+@media (max-width: 768px) {
+  .eiv-card { padding: 20px 16px; }
+  .eiv-g2, .eiv-g3 { grid-template-columns: 1fr; }
+  .eiv-hold-row { grid-template-columns: 1fr 1fr; }
+  .eiv-hold-row .eiv-rm-hold { grid-column: 1 / -1; }
+}
+</style>
+
+
+<div class="eiv-page">
+
+  <!-- Header -->
+  <div class="eiv-header">
+    <div class="eiv-header-left">
+      <h1><i class="fas fa-file-invoice" style="margin-right:9px;opacity:.9;"></i>Edit Invoice</h1>
+      <p>Invoice #{{ invoice.invoice_no }} &mdash; {{ invoice.Contractor_Name }}</p>
+    </div>
+    <a href="{{ url_for('invoice.add_invoice') }}" class="eiv-back">
+      <i class="fas fa-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="eiv-toast" id="eivToast"></div>
+
+  <!-- Form card -->
+  <div class="eiv-card">
+
+    <form id="invoiceForm"
+          action="{{ url_for('invoice.edit_invoice', invoice_id=invoice.Invoice_Id) }}"
+          method="POST">
+
+      <!-- ── Contractor & Location ──────────────────────────────── -->
+      <div class="eiv-section">
+        <div class="eiv-sec-title">
+          <i class="fas fa-hard-hat" style="margin-right:6px;"></i>Contractor &amp; Location
+        </div>
+        <div class="eiv-g2">
+
+          <div class="eiv-field eiv-full">
+            <label>Subcontractor Name <span class="eiv-req">*</span></label>
+            <input list="subcontractor_list" id="subcontractor" name="subcontractor"
+              value="{{ invoice.Contractor_Name }}" autocomplete="off" required>
+            <input type="hidden" id="subcontractor_id" name="subcontractor_id"
+              value="{{ invoice.Subcontractor_Id }}">
+            <datalist id="subcontractor_list"></datalist>
+          </div>
+
+          <div class="eiv-field">
+            <label>Village Name <span class="eiv-req">*</span></label>
+            <input type="text" id="village" name="village"
+              value="{{ invoice.Village_Name }}" required>
+          </div>
+
+          <div class="eiv-field">
+            <label>PMC No <span class="eiv-req">*</span></label>
+            <input type="text" id="pmc_no" name="pmc_no"
+              value="{{ invoice.PMC_No }}" required>
+          </div>
+
+          <div class="eiv-field">
+            <label>Work Type <span class="eiv-req">*</span></label>
+            <input type="text" id="work_type" name="work_type"
+              value="{{ invoice.Work_Type }}" required>
+          </div>
+
+          <div class="eiv-field eiv-full">
+            <label>Invoice Details <span class="eiv-req">*</span></label>
+            <textarea id="invoice_details" name="invoice_details" required>{{ invoice.Invoice_Details }}</textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Invoice Details ───────────────────────────────────── -->
+      <div class="eiv-section">
+        <div class="eiv-sec-title">
+          <i class="fas fa-file-alt" style="margin-right:6px;"></i>Invoice Details
+        </div>
+        <div class="eiv-g2">
+
+          <div class="eiv-field">
+            <label>Invoice No <span class="eiv-req">*</span></label>
+            <input type="text" id="invoice_no" name="invoice_no"
+              value="{{ invoice.invoice_no }}" required>
+          </div>
+
+          <div class="eiv-field">
+            <label>Invoice Date <span class="eiv-req">*</span></label>
+            <input type="date" id="invoice_date" name="invoice_date"
+              value="{{ invoice.Invoice_Date }}" required>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Amount Details ────────────────────────────────────── -->
+      <div class="eiv-section">
+        <div class="eiv-sec-title">
+          <i class="fas fa-rupee-sign" style="margin-right:6px;"></i>Amount Details
+        </div>
+        <div class="eiv-g3">
+
+          <div class="eiv-field">
+            <label>Basic Amount <span class="eiv-req">*</span></label>
+            <input type="number" step="0.01" name="basic_amount"
+              value="{{ invoice.Basic_Amount }}" required>
+          </div>
+
+          <div class="eiv-field">
+            <label>Debit Amount <span class="eiv-req">*</span></label>
+            <input type="number" step="0.01" name="debit_amount"
+              value="{{ invoice.Debit_Amount }}" required>
+          </div>
+
+          <div class="eiv-field">
+            <label>After Debit Amount</label>
+            <input type="number" step="0.01" name="after_debit_amount"
+              value="{{ invoice.After_Debit_Amount }}" class="eiv-soft">
+          </div>
+
+          <div class="eiv-field">
+            <label>Amount</label>
+            <input type="number" step="0.01" name="amount"
+              value="{{ invoice.Amount }}" class="eiv-soft">
+          </div>
+
+          <div class="eiv-field">
+            <label>GST Amount</label>
+            <input type="number" step="0.01" name="gst_amount"
+              value="{{ invoice.GST_Amount }}" class="eiv-soft">
+          </div>
+
+          <div class="eiv-field">
+            <label>TDS Amount</label>
+            <input type="number" step="0.01" name="tds_amount"
+              value="{{ invoice.TDS_Amount }}" class="eiv-soft">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Deductions & Holds ─────────────────────────────────── -->
+      <div class="eiv-section">
+        <div class="eiv-sec-title">
+          <i class="fas fa-minus-circle" style="margin-right:6px;"></i>Deductions &amp; Holds
+        </div>
+        <div class="eiv-g3">
+
+          <div class="eiv-field">
+            <label>SD Amount</label>
+            <input type="number" step="0.01" name="sd_amount"
+              value="{{ invoice.SD_Amount }}" class="eiv-soft">
+          </div>
+
+          <div class="eiv-field">
+            <label>On Commission</label>
+            <input type="number" step="0.01" name="on_commission"
+              value="{{ invoice.On_Commission }}" class="eiv-soft">
+          </div>
+
+          <div class="eiv-field">
+            <label>Hydro Testing</label>
+            <input type="number" step="0.01" name="hydro_testing"
+              value="{{ invoice.Hydro_Testing }}" class="eiv-soft">
+          </div>
+
         </div>
 
-        <form id="invoiceForm" action="{{ url_for('invoice.edit_invoice', invoice_id=invoice.Invoice_Id) }}"
-            method="POST">
+        <!-- Hold amount rows -->
+        <div id="hold_amount_container" style="margin-top:14px;">
+          {% for hold in invoice.hold_amounts %}
+          <div class="eiv-hold-row">
+            <input type="text"   name="hold_type[]"   value="{{ hold.hold_type }}"   placeholder="Hold Type"   required>
+            <input type="number" name="hold_amount[]"  value="{{ hold.hold_amount }}"  step="0.01" placeholder="Hold Amount" required>
+            <button type="button" class="eiv-rm-hold"><i class="fas fa-times"></i> Remove</button>
+          </div>
+          {% endfor %}
+        </div>
 
-            <!-- Subcontractor Field -->
-            <div class="row1">
-                <div>
-                    <label for="subcontractor">Subcontractor Name:</label>
-                    <input class="form-control" list="subcontractor_list" id="subcontractor" name="subcontractor"
-                        value="{{ invoice.Contractor_Name }}" placeholder="Type to search..." required>
-                    <input type="hidden" id="subcontractor_id" name="subcontractor_id"
-                        value="{{ invoice.Subcontractor_Id }}">
-                    <datalist id="subcontractor_list"></datalist>
-                </div>
-            </div>
+        <button type="button" id="add_hold_amount" class="eiv-add-hold">
+          <i class="fas fa-plus"></i> Add Hold Amount
+        </button>
 
-            <!-- Village and PMC No Fields -->
-            <div class="row2">
-                <div>
-                    <label for="village">Village Name:</label>
-                    <input type="text" id="village" name="village" value="{{ invoice.Village_Name }}" required />
-                    <datalist id="village_list"></datalist>
-                </div>
-                <div>
-                    <label for="pmc_no">PMC No:</label>
-                    <input type="text" id="pmc_no" name="pmc_no" value="{{ invoice.PMC_No }}" required />
-                </div>
-            </div>
+        <!-- GST SD + Final Amount -->
+        <div class="eiv-g2" style="margin-top:18px;">
+          <div class="eiv-field">
+            <label>GST SD Amount</label>
+            <input type="number" step="0.01" name="gst_sd_amount"
+              value="{{ invoice.GST_SD_Amount }}" class="eiv-soft">
+          </div>
+          <div class="eiv-field">
+            <label>Final Amount</label>
+            <input type="number" step="0.01" name="final_amount"
+              value="{{ invoice.Final_Amount }}" class="eiv-soft">
+          </div>
+        </div>
 
-            <!-- Work Type and Invoice Details -->
-            <div class="row2">
-                <div>
-                    <label for="work_type">Work Type:</label>
-                    <input type="text" id="work_type" name="work_type" value="{{ invoice.Work_Type }}" required />
-                </div>
-                <div>
-                    <label for="invoice_details">Invoice Details:</label>
-                    <textarea id="invoice_details" name="invoice_details"
-                        required>{{ invoice.Invoice_Details }}</textarea>
-                </div>
-            </div>
+      </div>
 
-            <!-- Invoice No and Invoice Date -->
-            <div class="row2">
-                <div>
-                    <label for="invoice_no">Invoice No:</label>
-                    <input type="text" id="invoice_no" name="invoice_no" value="{{ invoice.invoice_no }}" required />
-                </div>
-                <div>
-                    <label for="invoice_date">Invoice Date:</label>
-                    <input type="date" id="invoice_date" name="invoice_date" value="{{ invoice.Invoice_Date }}"
-                        required />
-                </div>
-            </div>
+      <!-- Footer -->
+      <div class="eiv-footer">
+        <button type="submit" class="eiv-submit" id="eivSubmitBtn">Update Invoice</button>
+        <a href="{{ url_for('invoice.add_invoice') }}" class="eiv-cancel">Cancel</a>
+      </div>
 
-            <!-- Amount Fields -->
-            <div class="row3">
-                <div>
-                    <label for="basic_amount">Basic Amount:</label>
-                    <input type="number" step="0.01" id="basic_amount" name="basic_amount"
-                        value="{{ invoice.Basic_Amount }}" required />
-                </div>
-                <div>
-                    <label for="debit_amount">Debit Amount:</label>
-                    <input type="number" step="0.01" id="debit_amount" name="debit_amount"
-                        value="{{ invoice.Debit_Amount }}" required />
-                </div>
-                <div>
-                    <label for="after_debit_amount">After Debit Amount:</label>
-                    <input type="number" step="0.01" id="after_debit_amount" name="after_debit_amount"
-                        value="{{ invoice.After_Debit_Amount }}" required />
-                </div>
-            </div>
-
-            <!-- GST, TDS, and Other Amounts -->
-            <div class="row3">
-                <div>
-                    <label for="amount">Amount:</label>
-                    <input type="number" step="0.01" id="amount" name="amount" value="{{ invoice.Amount }}" required />
-                </div>
-                <div>
-                    <label for="gst_amount">GST Amount:</label>
-                    <input type="number" step="0.01" id="gst_amount" name="gst_amount" value="{{ invoice.GST_Amount }}"
-                        required />
-                </div>
-                <div>
-                    <label for="tds_amount">TDS Amount:</label>
-                    <input type="number" step="0.01" id="tds_amount" name="tds_amount" value="{{ invoice.TDS_Amount }}"
-                        required />
-                </div>
-            </div>
-
-            <!-- SD, On Commission, Hydro Testing -->
-            <div class="row3">
-                <div>
-                    <label for="sd_amount">SD Amount:</label>
-                    <input type="number" step="0.01" id="sd_amount" name="sd_amount" value="{{ invoice.SD_Amount }}"
-                        required />
-                </div>
-                <div>
-                    <label for="on_commission">On Commission:</label>
-                    <input type="number" step="0.01" id="on_commission" name="on_commission"
-                        value="{{ invoice.On_Commission }}" required />
-                </div>
-                <div>
-                    <label for="hydro_testing">Hydro Testing:</label>
-                    <input type="number" step="0.01" id="hydro_testing" name="hydro_testing"
-                        value="{{ invoice.Hydro_Testing }}" required />
-                </div>
-            </div>
-
-            <!-- Hold Amount Section -->
-            <div id="hold_amount_container">
-                {% set seen_types = [] %}
-                {% for hold in invoice.hold_amounts %}
-                {% if hold.hold_type not in seen_types %}
-                {% set _ = seen_types.append(hold.hold_type) %}
-                <div class="hold-amount-row">
-                    <label for="hold_type_{{ loop.index }}">Hold Type:</label>
-                    <input type="text" id="hold_type_{{ loop.index }}" name="hold_type[]" value="{{ hold.hold_type }}"
-                        required />
-                    <label for="hold_amount_{{ loop.index }}">Hold Amount:</label>
-                    <input type="number" step="0.01" id="hold_amount_{{ loop.index }}" name="hold_amount[]"
-                        value="{{ hold.hold_amount }}" required />
-                    <button type="button" class="remove-hold-amount">Remove</button>
-                </div>
-                {% endif %}
-                {% endfor %}
-            </div>
+    </form>
+  </div>
+</div>
 
 
-            <div class="hold-row">
-                <button type="button" id="add_hold_amount" class="button">+ Add Hold Amount</button>
-            </div>
+<script>
+function eivToast(msg, type) {
+  const t = document.getElementById('eivToast');
+  t.textContent = msg;
+  t.className = 'eiv-toast ' + (type || 'ok');
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, 3800);
+}
 
-            <!-- Final Amounts -->
-            <div class="row2">
-                <div>
-                    <label for="gst_sd_amount">GST SD Amount:</label>
-                    <input type="number" step="0.01" id="gst_sd_amount" name="gst_sd_amount"
-                        value="{{ invoice.GST_SD_Amount }}" required />
-                </div>
-                <div>
-                    <label for="final_amount">Final Amount:</label>
-                    <input type="number" step="0.01" id="final_amount" name="final_amount"
-                        value="{{ invoice.Final_Amount }}" required />
-                </div>
-            </div>
+window.alert = function (msg) {
+  eivToast(msg, msg.toLowerCase().includes('error') ? 'err' : 'ok');
+};
 
-            <!-- Submit Button -->
-            <button type="submit" class="button">Update</button>
-        </form>
-    </div>
+$(document).ready(function () {
 
-    <!-- JS for dynamic hold amount rows -->
-    <script>
-        $(document).ready(function () {
-            // Add new hold amount row
-            $("#add_hold_amount").click(function () {
-                const index = $("#hold_amount_container .hold-amount-row").length;
-                const newRow = `
-            <div class="hold-amount-row">
-                <label for="hold_type_${index}">Hold Type:</label>
-                <input type="text" id="hold_type_${index}" name="hold_type[]" required/>
-                <label for="hold_amount_${index}">Hold Amount:</label>
-                <input type="number" step="0.01" id="hold_amount_${index}" name="hold_amount[]" required/>
-                <button type="button" class="remove-hold-amount">Remove</button>
-            </div>
-        `;
-                $("#hold_amount_container").append(newRow);
-            });
+  /* Add hold-amount row */
+  $('#add_hold_amount').click(function () {
+    const row = `<div class="eiv-hold-row">
+      <input type="text"   name="hold_type[]"  placeholder="Hold Type"   required>
+      <input type="number" name="hold_amount[]" placeholder="Hold Amount" step="0.01" required>
+      <button type="button" class="eiv-rm-hold"><i class="fas fa-times"></i> Remove</button>
+    </div>`;
+    $('#hold_amount_container').append(row);
+  });
 
-            // Remove hold amount row
-            $(document).on("click", ".remove-hold-amount", function () {
-                $(this).closest(".hold-amount-row").remove();
-            });
+  /* Remove hold-amount row */
+  $(document).on('click', '.eiv-rm-hold', function () {
+    $(this).closest('.eiv-hold-row').remove();
+  });
 
-            // Submit form via AJAX
-            $("#invoiceForm").submit(function (e) {
-                e.preventDefault();
+  /* Submit */
+  $('#invoiceForm').submit(function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('eivSubmitBtn');
+    btn.disabled    = true;
+    btn.textContent = 'Saving…';
 
-                $.ajax({
-                    type: "POST",
-                    url: $(this).attr("action"),
-                    data: $(this).serialize(),
-                    dataType: 'json',  // ensure JSON is returned
-                    success: function (response) {
-                        if (response.status === "success") {
-                            alert("Invoice updated successfully!");  // <-- Popup alert
+    $.ajax({
+      type: 'POST',
+      url:  $(this).attr('action'),
+      data: $(this).serialize(),
+      dataType: 'json',
+      success: function (response) {
+        if (response.status === 'success') {
+          eivToast('Invoice updated successfully!', 'ok');
+          setTimeout(() => { window.location.href = "{{ url_for('invoice.add_invoice') }}"; }, 1200);
+        } else {
+          eivToast(response.message || 'Failed to update invoice.', 'err');
+          btn.disabled    = false;
+          btn.textContent = 'Update Invoice';
+        }
+      },
+      error: function (xhr) {
+        eivToast('Error: ' + (xhr.responseJSON?.message || 'Something went wrong!'), 'err');
+        btn.disabled    = false;
+        btn.textContent = 'Update Invoice';
+      }
+    });
+  });
 
-                            // ✅ Redirect to Add Invoice page (table part visible)
-                            window.location.href = "{{ url_for('invoice.add_invoice') }}#addTable";
-                        }
-                    },
-                    error: function (xhr) {
-                        alert("Error: " + xhr.responseJSON?.message || "Something went wrong!");
-                    }
-                });
-            });
-        });
-    </script>
+});
+</script>
 
-</body>
 {% endblock %}

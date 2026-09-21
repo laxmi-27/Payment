@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<script src="{{ url_for('static', filename='js/search_on_table.js') }}"></script>
+
+<style>
+.master-page { max-width: 1150px; margin: auto; }
+
+/* Buttons */
+.button-container {
+  display: flex; justify-content: center; gap: 20px; margin-bottom: 35px; flex-wrap: wrap;
+}
+.action-button {
+  background: linear-gradient(90deg,#183b70,#2f68bb); color: #fff; border: none;
+  padding: 14px 34px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: .3s;
+}
+.action-button:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,.12); }
+
+/* Form */
+#addForm {
+  display: none; max-width: 700px; margin: auto; background: #fff;
+  padding: 42px; border-radius: 24px; box-shadow: 0 8px 30px rgba(0,0,0,.06);
+}
+#addForm h2 { font-size: 30px; color: #1d3e73; margin-bottom: 28px; }
+
+label { display: block; font-weight: 600; margin-bottom: 10px; color: #344054; }
+
+input, select {
+  width: 100%; padding: 14px 16px; border: 1px solid #d8dfeb; border-radius: 12px;
+  background: #fafcff; outline: none; margin-bottom: 18px; box-sizing: border-box;
+}
+input:focus, select:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 4px rgba(45,115,213,.08);
+}
+input[readonly] { background: #eef2f8; cursor: not-allowed; }
+
+button[type="submit"] {
+  background: #1d3e73; color: white; border: none; padding: 14px 28px;
+  border-radius: 12px; font-weight: 600; cursor: pointer;
+}
+
+/* Autocomplete */
+.cn-ac-wrap { position: relative; margin-bottom: 18px; }
+.cn-ac-wrap > input { margin-bottom: 0; }
+.cn-ac-list {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 500;
+  background: #fff; border: 1.5px solid #c9d9f5; border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.14); max-height: 210px; overflow-y: auto; margin-top: 4px;
+}
+.cn-ac-item {
+  padding: 11px 16px; font-size: 13.5px; color: #2d3748; cursor: pointer;
+  border-bottom: 1px solid #f0f4ff; transition: .12s;
+}
+.cn-ac-item:last-child { border-bottom: none; }
+.cn-ac-item:hover { background: #eef4ff; color: #183b70; }
+.cn-ac-empty { padding: 11px 16px; font-size: 13px; color: #9aadcc; font-style: italic; }
+
+/* Table */
+#addTable {
+  display: none; background: #fff; padding: 30px;
+  border-radius: 24px; box-shadow: 0 8px 30px rgba(0,0,0,.06);
+}
+.search-container {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 20px; margin-bottom: 25px;
+}
+.search-container h2 { font-size: 30px; color: #1d3e73; }
+#searchBar { max-width: 320px; }
+
+/* Cards */
+#cnCards { display: flex; flex-direction: column; gap: 16px; }
+
+.cn-card {
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.07); overflow: hidden;
+  border-left: 5px solid #2f68bb;
+}
+
+.cn-card-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px; background: #f7faff;
+  border-bottom: 1px solid #e8f0fa; flex-wrap: wrap; gap: 10px;
+}
+.cn-card-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cn-card-id   { font-size: 11px; color: #9aadcc; font-weight: 700; }
+.cn-card-name { font-size: 14px; font-weight: 700; color: #1d3e73; }
+.cn-pmc-badge {
+  background: #eef4ff; color: #1d3e73; border-radius: 20px;
+  padding: 3px 12px; font-size: 12px; font-weight: 700;
+}
+.type-credit { background: #d1fae5; color: #065f46; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 700; }
+.type-debit  { background: #fee2e2; color: #991b1b; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 700; }
+.cn-card-actions { display: flex; gap: 8px; }
+.cn-act-btn {
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.cn-act-edit   { background: #eef4ff; color: #1d3e73; border: 1px solid #c9d9f5; }
+.cn-act-edit:hover   { background: #dbeafe; }
+.cn-act-delete { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.cn-act-delete:hover { background: #fecaca; }
+
+.cn-info-row {
+  display: flex; gap: 30px; padding: 10px 20px;
+  border-bottom: 1px solid #f0f4ff; flex-wrap: wrap;
+}
+.cn-info-item { display: flex; gap: 8px; align-items: baseline; }
+.cn-info-label { font-size: 11px; font-weight: 700; color: #9aadcc; text-transform: uppercase; letter-spacing: .05em; }
+.cn-info-val   { font-size: 13px; font-weight: 600; color: #374151; }
+.cn-utr-val    { max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: bottom; color: #6b7a99; font-size: 12px; }
+
+/* Amount grid */
+.cn-amt-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+@media (max-width: 900px) { .cn-amt-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 560px) { .cn-amt-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.cn-amt-box {
+  padding: 12px 16px; text-align: center;
+  border-right: 1px solid #f0f4ff;
+}
+.cn-amt-box:last-child { border-right: none; }
+.cn-amt-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; margin-bottom: 5px;
+}
+.cn-amt-val { font-size: 14px; font-weight: 700; font-family: monospace; }
+
+.box-basic   { background: #f0f7ff; }
+.box-basic   .cn-amt-label { color: #3b82f6; }
+.box-basic   .cn-amt-val   { color: #1d4ed8; }
+
+.box-debit   { background: #fff5f5; }
+.box-debit   .cn-amt-label { color: #ef4444; }
+.box-debit   .cn-amt-val   { color: #dc2626; }
+
+.box-after   { background: #f0fdf4; }
+.box-after   .cn-amt-label { color: #22c55e; }
+.box-after   .cn-amt-val   { color: #16a34a; }
+
+.box-gst     { background: #fffbeb; }
+.box-gst     .cn-amt-label { color: #f59e0b; }
+.box-gst     .cn-amt-val   { color: #d97706; }
+
+.box-final   { background: #ecfdf5; }
+.box-final   .cn-amt-label { color: #10b981; }
+.box-final   .cn-amt-val   { color: #059669; font-size: 15px; }
+
+.box-payment { background: #faf5ff; }
+.box-payment .cn-amt-label { color: #a855f7; }
+.box-payment .cn-amt-val   { color: #7c3aed; }
+
+.box-total   { background: #f0f9ff; }
+.box-total   .cn-amt-label { color: #0ea5e9; }
+.box-total   .cn-amt-val   { color: #0284c7; }
+
+.icon { width: 24px; transition: .3s; }
+.icon:hover { transform: scale(1.12); }
+</style>
+
+
+<div class="master-page">
+
+<!-- Buttons -->
+<div class="button-container">
+  <button id="addButton" class="action-button">Add</button>
+  <button id="displayButton" class="action-button">Display</button>
+</div>
+
+<!-- FORM -->
+<div id="addForm">
+  <h2>Credit / Debit Note</h2>
+
+  <form action="{{ url_for('credit_bp.add_credit_note') }}" method="POST">
+
+    <label>Note Type</label>
+    <select id="note_type" name="note_type" required>
+      <option value="">Select Type</option>
+      <option value="credit Note">Credit Note</option>
+      <option value="debit Note">Debit Note</option>
+    </select>
+
+    <label>Subcontractor Name</label>
+    <div class="cn-ac-wrap">
+      <input type="text" id="subcontractor" name="subcontractor" required
+             autocomplete="off" placeholder="Type to search contractor…">
+      <input type="hidden" id="subcontractor_id" name="subcontractor_id">
+      <div class="cn-ac-list" id="cnAcList"></div>
+    </div>
+
+    <label>PMC No</label>
+    <select id="PMC_No" name="PMC_No" required>
+      <option value="">-- Select PMC No --</option>
+    </select>
+
+    <label>Invoice No</label>
+    <input type="text" name="invoice_No">
+
+    <label>Basic Amount</label>
+    <input type="number" step="0.01" id="basic_amount" name="basic_amount" oninput="calcAmounts()">
+
+    <label>Debit Amount</label>
+    <input type="number" step="0.01" id="debit_amount" name="debit_amount" oninput="calcAmounts()">
+
+    <label>After Debit Amount</label>
+    <input type="number" step="0.01" id="after_debit_amount" name="after_debit_amount" readonly>
+
+    <label>GST Amount</label>
+    <input type="number" step="0.01" id="gst_amount" name="gst_amount" oninput="calcAmounts()">
+
+    <label>Final Amount</label>
+    <input type="number" step="0.01" id="final_amount" name="final_amount" readonly>
+
+    <label>Payment Amount</label>
+    <input type="number" step="0.01" name="Payment_Amount">
+
+    <label>Total Amount</label>
+    <input type="number" step="0.01" name="Total_Amount">
+
+    <label>UTR</label>
+    <input type="text" name="UTR">
+
+    <button type="submit">Submit</button>
+  </form>
+</div>
+
+<!-- DISPLAY -->
+<div id="addTable">
+
+  <div class="search-container">
+    <h2>Credit / Debit History</h2>
+    <input type="text" id="searchBar" placeholder="Search by name, PMC, invoice…" oninput="cnFilterCards(this.value)">
+  </div>
+
+  <div id="cnCards">
+  {% for row in notes %}
+  <div class="cn-card" data-search="{{ (row[1]|lower) }} {{ row[2] }} {{ (row[3]|lower) }} {{ (row[4]|lower) }}">
+
+    <!-- Card header -->
+    <div class="cn-card-head">
+      <div class="cn-card-left">
+        <span class="cn-card-id">#{{ row[0] }}</span>
+        <span class="cn-card-name">{{ row[1] }}</span>
+        <span class="cn-pmc-badge">PMC {{ row[2] or '—' }}</span>
+        {% if row[4] %}
+          <span class="cn-type-badge {% if 'credit' in (row[4]|lower) %}type-credit{% else %}type-debit{% endif %}">
+            {{ row[4] }}
+          </span>
+        {% endif %}
+      </div>
+      <div class="cn-card-actions">
+        <a href="/edit_credit/{{ row[0] }}" class="cn-act-btn cn-act-edit">
+          <i class="fas fa-pen"></i> Edit
+        </a>
+        <a href="/delete_credit/{{ row[0] }}" class="cn-act-btn cn-act-delete"
+           onclick="return confirm('Delete this record?')">
+          <i class="fas fa-trash"></i> Delete
+        </a>
+      </div>
+    </div>
+
+    <!-- Invoice info row -->
+    <div class="cn-info-row">
+      <div class="cn-info-item">
+        <span class="cn-info-label">Invoice No</span>
+        <span class="cn-info-val">{{ row[3] or '—' }}</span>
+      </div>
+      {% if row[12] %}
+      <div class="cn-info-item cn-utr">
+        <span class="cn-info-label">UTR</span>
+        <span class="cn-info-val cn-utr-val" title="{{ row[12] }}">{{ row[12] }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Amount grid -->
+    <div class="cn-amt-grid">
+      <div class="cn-amt-box box-basic">
+        <div class="cn-amt-label">Basic Amount</div>
+        <div class="cn-amt-val">₹ {{ '%.2f'|format(row[5]|float) }}</div>
+      </div>
+      <div class="cn-amt-box box-debit">
+        <div class="cn-amt-label">Debit Amount</div>
+        <div class="cn-amt-val">₹ {{ '%.2f'|format(row[6]|float) }}</div>
+      </div>
+      <div class="cn-amt-box box-after">
+        <div class="cn-amt-label">After Debit</div>
+        <div class="cn-amt-val">₹ {{ '%.2f'|format(row[7]|float) }}</div>
+      </div>
+      <div class="cn-amt-box box-gst">
+        <div class="cn-amt-label">GST Amount</div>
+        <div class="cn-amt-val">₹ {{ '%.2f'|format(row[8]|float) }}</div>
+      </div>
+      <div class="cn-amt-box box-final">
+        <div class="cn-amt-label">Final Amount</div>
+        <div class="cn-amt-val">₹ {{ '%.2f'|format(row[9]|float) }}</div>
+      </div>
+      <div class="cn-amt-box box-payment">
+        <div class="cn-amt-label">Payment Amount</div>
+        <div class="cn-amt-val">₹ {{ '%.2f'|format(row[10]|float) }}</div>
+      </div>
+      <div class="cn-amt-box box-total">
+        <div class="cn-amt-label">Total Amount</div>
+        <div class="cn-amt-val">₹ {{ '%.2f'|format(row[11]|float) }}</div>
+      </div>
+    </div>
+
+  </div>
+  {% else %}
+  <div style="text-align:center;color:#aab;padding:50px;font-size:15px;font-style:italic;">No records found.</div>
+  {% endfor %}
+  </div>
+
+</div>
+
+</div>
+
+<script>
+// ── Form / Table toggle ──────────────────────────────────────
+document.getElementById("addButton").addEventListener("click", function () {
+  document.getElementById("addForm").style.display = "block";
+  document.getElementById("addTable").style.display = "none";
+});
+document.getElementById("displayButton").addEventListener("click", function () {
+  document.getElementById("addForm").style.display = "none";
+  document.getElementById("addTable").style.display = "block";
+});
+document.getElementById("addForm").style.display = "block";
+
+function cnFilterCards(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll(".cn-card").forEach(function(card) {
+    card.style.display = card.dataset.search.includes(q) ? "" : "none";
+  });
+}
+
+// ── Amount calculations ──────────────────────────────────────
+function calcAmounts() {
+  const basic      = parseFloat(document.getElementById("basic_amount").value) || 0;
+  const debit      = parseFloat(document.getElementById("debit_amount").value) || 0;
+  const gst        = parseFloat(document.getElementById("gst_amount").value)   || 0;
+  const afterDebit = basic - debit;
+  document.getElementById("after_debit_amount").value = afterDebit.toFixed(2);
+  document.getElementById("final_amount").value       = (afterDebit + gst).toFixed(2);
+}
+
+// ── Subcontractor Autocomplete ───────────────────────────────
+var cnAcTimer;
+
+function cnHideAc() {
+  document.getElementById("cnAcList").style.display = "none";
+}
+
+function cnSelectContractor(id, name) {
+  document.getElementById("subcontractor").value    = name;
+  document.getElementById("subcontractor_id").value = id;
+  cnHideAc();
+  cnLoadPMC(id);
+}
+
+document.getElementById("subcontractor").addEventListener("input", function () {
+  clearTimeout(cnAcTimer);
+  var q = this.value.trim();
+  if (!q) { cnHideAc(); return; }
+  cnAcTimer = setTimeout(function () { cnSearchContractors(q); }, 280);
+});
+
+document.getElementById("subcontractor").addEventListener("blur", function () {
+  setTimeout(cnHideAc, 200);
+});
+
+async function cnSearchContractors(q) {
+  try {
+    var res  = await fetch("/api/payment/search_contractors?q=" + encodeURIComponent(q));
+    var data = await res.json();
+    var acList = document.getElementById("cnAcList");
+    acList.innerHTML = "";
+    if (!data.results || !data.results.length) { acList.style.display = "none"; return; }
+    data.results.forEach(function (r) {
+      var d = document.createElement("div");
+      d.className   = "cn-ac-item";
+      d.textContent = r.name;
+      d.addEventListener("mousedown", function () { cnSelectContractor(r.id, r.name); });
+      acList.appendChild(d);
+    });
+    acList.style.display = "block";
+  } catch(e) { cnHideAc(); }
+}
+
+// ── Load PMC Nos ─────────────────────────────────────────────
+async function cnLoadPMC(contractorId) {
+  var sel = document.getElementById("PMC_No");
+  sel.innerHTML = "<option value=''>Loading…</option>";
+  try {
+    var res  = await fetch("/get_pmc_nos_by_subcontractor/" + contractorId);
+    var data = await res.json();
+    sel.innerHTML = "<option value=''>-- Select PMC No --</option>";
+    (data.pmc_nos || []).forEach(function (pmc) {
+      var opt = document.createElement("option");
+      opt.value = pmc; opt.textContent = pmc;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    sel.innerHTML = "<option value=''>-- Select PMC No --</option>";
+  }
+}
+</script>
+
+{% endblock %}

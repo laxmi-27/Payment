@@ -1,0 +1,858 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+/* ── Layout ─────────────────────────────────────────────────────── */
+.dp-wrap { max-width: 880px; margin: 40px auto; padding: 0 18px 60px; }
+
+/* ── Page header card ─────────────────────────────────────────── */
+.dp-hero {
+  background: linear-gradient(135deg, #183b70 0%, #2f68bb 100%);
+  border-radius: 20px; padding: 30px 36px; margin-bottom: 28px;
+  display: flex; align-items: center; gap: 20px;
+}
+.dp-hero-icon {
+  width: 54px; height: 54px; border-radius: 14px;
+  background: rgba(255,255,255,.15); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 22px; color: #fff; flex-shrink: 0;
+}
+.dp-hero h1 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 4px; }
+.dp-hero p  { font-size: 13px; color: rgba(255,255,255,.72); margin: 0; }
+
+/* ── Steps container ──────────────────────────────────────────── */
+.dp-steps { display: flex; flex-direction: column; gap: 0; }
+
+/* ── Single step card ─────────────────────────────────────────── */
+.dp-step-card {
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  border: 1.5px solid #edf1f7;
+  margin-bottom: 16px; overflow: hidden;
+  transition: box-shadow .2s;
+}
+.dp-step-card.active { border-color: #c2d8f5; box-shadow: 0 4px 20px rgba(42,82,152,.1); }
+.dp-step-card.done   { border-color: #a3e6bc; }
+
+.dp-step-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 24px; border-bottom: 1px solid #edf1f7;
+}
+.dp-step-card:not(.active):not(.done) .dp-step-head { border-bottom: none; }
+
+.dp-step-num {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  background: #eef2f9; color: #94a3b8;
+}
+.dp-step-card.active .dp-step-num { background: linear-gradient(135deg,#183b70,#2f68bb); color: #fff; }
+.dp-step-card.done   .dp-step-num { background: #d1fae5; color: #059669; }
+
+.dp-step-title  { font-size: 14.5px; font-weight: 700; color: #1d3e73; }
+.dp-step-sub    { font-size: 12px; color: #94a3b8; margin-top: 1px; }
+.dp-step-badge  {
+  margin-left: auto; background: #eef3fc; color: #2a5298;
+  font-size: 11.5px; font-weight: 700; padding: 4px 12px;
+  border-radius: 20px; white-space: nowrap; display: none;
+}
+.dp-step-card.active .dp-step-badge,
+.dp-step-card.done   .dp-step-badge { display: inline-block; }
+
+.dp-step-body { padding: 22px 24px; }
+
+/* ── Autocomplete input ───────────────────────────────────────── */
+.dp-ac-wrap { position: relative; }
+.dp-ac-wrap input {
+  width: 100%; padding: 12px 16px 12px 42px;
+  border: 1.5px solid #d8dfeb; border-radius: 12px;
+  font-size: 14px; color: #2d3748; background: #fafcff;
+  outline: none; transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+.dp-ac-wrap input:focus {
+  border-color: #2d73d5; background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.08);
+}
+.dp-ac-icon {
+  position: absolute; left: 14px; top: 50%;
+  transform: translateY(-50%); color: #94a3b8; font-size: 14px; pointer-events: none;
+}
+.dp-ac-drop {
+  position: fixed;
+  background: #fff; border: 1.5px solid #d8dfeb; border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.15); z-index: 9999;
+  max-height: 240px; overflow-y: auto; display: none;
+}
+.dp-ac-drop.open { display: block; }
+.dp-ac-item {
+  padding: 11px 16px; font-size: 13.5px; color: #2d3748; cursor: pointer;
+  border-bottom: 1px solid #f1f5fb; display: flex; align-items: center; gap: 10px;
+}
+.dp-ac-item:last-child { border-bottom: none; }
+.dp-ac-item:hover { background: #f0f7ff; color: #1d3e73; }
+.dp-ac-item i { color: #94a3b8; font-size: 13px; }
+.dp-ac-hint {
+  padding: 14px 16px; font-size: 13px; color: #94a3b8;
+  text-align: center; font-style: italic;
+}
+
+/* ── Selected contractor pill ─────────────────────────────────── */
+.dp-sel-contractor {
+  display: none; align-items: center; gap: 12px;
+  margin-top: 14px; padding: 12px 16px;
+  background: #f0f7ff; border: 1.5px solid #bdd5f5;
+  border-radius: 12px;
+}
+.dp-sel-contractor.show { display: flex; }
+.dp-sel-avatar {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg,#183b70,#2f68bb);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.dp-sel-name  { font-weight: 700; font-size: 14px; color: #1d3e73; flex: 1; }
+.dp-sel-id    { font-size: 11.5px; color: #7a8fa8; }
+.dp-sel-clear {
+  background: none; border: none; color: #94a3b8; cursor: pointer;
+  font-size: 15px; padding: 4px 8px; border-radius: 7px; line-height: 1;
+  transition: color .15s, background .15s;
+}
+.dp-sel-clear:hover { color: #dc2626; background: #fff0f0; }
+
+/* ── PMC section ──────────────────────────────────────────────── */
+.dp-pmc-empty {
+  text-align: center; padding: 36px 20px;
+  border: 1.5px dashed #d8dfeb; border-radius: 12px;
+  color: #94a3b8;
+}
+.dp-pmc-empty i    { font-size: 30px; margin-bottom: 10px; display: block; opacity: .5; }
+.dp-pmc-empty p    { margin: 4px 0 0; font-size: 13.5px; }
+.dp-pmc-empty span { font-size: 12px; color: #b0bac8; }
+
+.dp-pmc-toolbar {
+  display: none; align-items: center; gap: 10px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.dp-pmc-toolbar.show { display: flex; }
+.dp-tb-btn {
+  padding: 6px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  border-radius: 8px; border: 1.5px solid #d8dfeb;
+  background: #fff; color: #2a5298; transition: .15s;
+}
+.dp-tb-btn:hover { background: #f0f7ff; border-color: #2a5298; }
+.dp-pmc-count-badge {
+  margin-left: auto; font-size: 12.5px; color: #6b7fa3;
+  background: #f4f7fc; padding: 5px 13px; border-radius: 20px;
+  font-weight: 600;
+}
+
+.dp-pmc-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.dp-pmc-tile {
+  border: 1.5px solid #d8dfeb; border-radius: 11px;
+  padding: 12px 14px 10px; cursor: pointer; transition: .15s;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; background: #fafcff; user-select: none;
+}
+.dp-pmc-tile:hover { border-color: #5b9bd5; background: #f0f7ff; }
+.dp-pmc-tile.sel   { border-color: #2a5298; background: #e8f1fd; box-shadow: 0 0 0 3px rgba(42,82,152,.1); }
+
+.dp-pmc-tile-top {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+}
+.dp-pmc-chk {
+  width: 17px; height: 17px; accent-color: #2a5298; cursor: pointer; flex-shrink: 0;
+}
+.dp-pmc-num {
+  font-size: 16px; font-weight: 700; color: #1d3e73; letter-spacing: .02em;
+}
+.dp-pmc-lbl { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
+.dp-pmc-tile.sel .dp-pmc-num { color: #183b70; }
+.dp-pmc-tile.sel .dp-pmc-lbl { color: #2a5298; }
+
+.dp-pmc-loading { display: none; text-align: center; padding: 32px; color: #94a3b8; }
+.dp-pmc-loading i { font-size: 22px; animation: dp-spin .8s linear infinite; display: block; margin-bottom: 10px; }
+@keyframes dp-spin { to { transform: rotate(360deg); } }
+
+/* ── Step 3 delete panel ──────────────────────────────────────── */
+.dp-delete-panel {
+  background: #fff8f8; border: 1.5px solid #fcd5d5; border-radius: 12px;
+  padding: 18px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.dp-sel-summary { flex: 1; min-width: 200px; }
+.dp-sel-summary strong { font-size: 14px; color: #1d3e73; display: block; margin-bottom: 2px; }
+.dp-sel-summary span   { font-size: 12.5px; color: #7a8fa8; }
+
+.dp-delete-btn {
+  padding: 13px 28px; border-radius: 11px; border: none;
+  background: linear-gradient(90deg, #b91c1c, #dc2626);
+  color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 9px; transition: .2s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.dp-delete-btn:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(185,28,28,.3); }
+.dp-delete-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.dp-back-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 18px; color: #2a5298; font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.dp-back-link:hover { text-decoration: underline; }
+
+/* ── Confirmation Modal ───────────────────────────────────────── */
+.dp-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,23,42,.55); z-index: 1000;
+  align-items: center; justify-content: center; padding: 16px;
+}
+.dp-overlay.open { display: flex; }
+
+.dp-modal {
+  background: #fff; border-radius: 20px; width: 100%; max-width: 500px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.25); overflow: hidden;
+}
+.dp-modal-top {
+  background: linear-gradient(135deg, #7f1d1d, #dc2626);
+  padding: 28px 28px 22px; text-align: center; color: #fff;
+}
+.dp-modal-top i  { font-size: 28px; opacity: .9; display: block; margin-bottom: 10px; }
+.dp-modal-top h3 { font-size: 18px; font-weight: 700; margin: 0 0 4px; }
+.dp-modal-top p  { font-size: 13px; opacity: .8; margin: 0; }
+
+.dp-modal-body { padding: 24px 28px; }
+
+.dp-mi-label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: #6b7fa3; margin-bottom: 8px;
+}
+.dp-mi-contractor {
+  display: flex; align-items: center; gap: 10px;
+  background: #f7f9fc; border-radius: 10px; padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.dp-mi-avatar {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg,#183b70,#2f68bb);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.dp-mi-cname { font-weight: 700; font-size: 13.5px; color: #1d3e73; }
+.dp-mi-cid   { font-size: 11px; color: #94a3b8; }
+
+.dp-mi-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.dp-mi-tag  {
+  background: #eef3fc; color: #2a5298; font-size: 12px;
+  font-weight: 700; padding: 4px 11px; border-radius: 20px;
+}
+
+.dp-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.dp-count-row {
+  background: #f7f9fc; border-radius: 9px; padding: 10px 13px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dp-count-lbl { font-size: 12px; color: #4a5568; font-weight: 600; }
+.dp-count-n   { font-size: 14px; font-weight: 700; color: #1d3e73; }
+.dp-count-n.warn { color: #dc2626; }
+
+.dp-warn-box {
+  background: #fffbea; border: 1.5px solid #fde68a; border-radius: 10px;
+  padding: 11px 14px; font-size: 12.5px; color: #92400e;
+  display: flex; align-items: flex-start; gap: 9px; margin-bottom: 20px;
+}
+.dp-warn-box i { flex-shrink: 0; margin-top: 1px; }
+
+.dp-modal-btns { display: flex; gap: 10px; }
+.dp-btn-cancel {
+  flex: 1; padding: 13px; border-radius: 11px;
+  background: #f1f5fb; color: #1d3e73; font-weight: 700;
+  font-size: 14px; border: none; cursor: pointer; transition: .15s;
+}
+.dp-btn-cancel:hover { background: #e2eaf6; }
+.dp-btn-confirm {
+  flex: 1.4; padding: 13px; border-radius: 11px;
+  background: linear-gradient(90deg, #b91c1c, #dc2626);
+  color: #fff; font-weight: 700; font-size: 14px;
+  border: none; cursor: pointer; transition: .15s;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.dp-btn-confirm:hover:not(:disabled) { opacity: .88; }
+.dp-btn-confirm:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Toast ───────────────────────────────────────────────────── */
+.dp-toast {
+  position: fixed; bottom: 28px; right: 28px; z-index: 3000;
+  padding: 13px 20px; border-radius: 12px; font-size: 13.5px; font-weight: 600;
+  box-shadow: 0 8px 26px rgba(0,0,0,.18); color: #fff; max-width: 320px;
+  opacity: 0; transform: translateY(14px); transition: .3s; pointer-events: none;
+}
+.dp-toast.show { opacity: 1; transform: none; }
+.dp-toast.ok  { background: #1a7a3f; }
+.dp-toast.err { background: #b91c1c; }
+</style>
+
+
+<!-- Toast -->
+<div class="dp-toast" id="dpToast"></div>
+
+<!-- Confirmation Modal -->
+<div class="dp-overlay" id="dpOverlay">
+  <div class="dp-modal">
+    <div class="dp-modal-top">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Confirm Permanent Deletion</h3>
+      <p>This action cannot be undone. Review carefully before proceeding.</p>
+    </div>
+    <div class="dp-modal-body">
+
+      <div class="dp-mi-label">Subcontractor</div>
+      <div class="dp-mi-contractor">
+        <div class="dp-mi-avatar" id="mAvatar">—</div>
+        <div>
+          <div class="dp-mi-cname" id="mCname">—</div>
+          <div class="dp-mi-cid"   id="mCid">—</div>
+        </div>
+      </div>
+
+      <div class="dp-mi-label">PMC Numbers Selected</div>
+      <div class="dp-mi-tags" id="mTags"></div>
+
+      <div class="dp-mi-label">Records that will be deleted</div>
+      <div class="dp-counts">
+        <div class="dp-count-row">
+          <span class="dp-count-lbl"><i class="fas fa-money-check-dollar" style="color:#2a5298;margin-right:5px;"></i>Payments</span>
+          <span class="dp-count-n" id="mCntPay">—</span>
+        </div>
+        <div class="dp-count-row">
+          <span class="dp-count-lbl"><i class="fas fa-file-invoice" style="color:#2a5298;margin-right:5px;"></i>Invoices</span>
+          <span class="dp-count-n" id="mCntInv">—</span>
+        </div>
+        <div class="dp-count-row">
+          <span class="dp-count-lbl"><i class="fas fa-percent" style="color:#2a5298;margin-right:5px;"></i>GST Release</span>
+          <span class="dp-count-n" id="mCntGst">—</span>
+        </div>
+        <div class="dp-count-row">
+          <span class="dp-count-lbl"><i class="fas fa-file-contract" style="color:#2a5298;margin-right:5px;"></i>Credit/Debit</span>
+          <span class="dp-count-n" id="mCntCdn">—</span>
+        </div>
+        <div class="dp-count-row" style="grid-column:1/-1;">
+          <span class="dp-count-lbl"><i class="fas fa-lock-open" style="color:#2a5298;margin-right:5px;"></i>Hold Release</span>
+          <span class="dp-count-n" id="mCntHr">—</span>
+        </div>
+      </div>
+
+      <div class="dp-warn-box">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>All records for the selected PMC numbers will be <strong>permanently deleted</strong> from the database. This cannot be reversed.</span>
+      </div>
+
+      <div class="dp-modal-btns">
+        <button class="dp-btn-cancel" id="mCancel">Cancel</button>
+        <button class="dp-btn-confirm" id="mConfirm" disabled>
+          <i class="fas fa-trash-alt"></i> Delete Permanently
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Page ── -->
+<div class="dp-wrap">
+
+  <!-- Hero -->
+  <div class="dp-hero">
+    <div class="dp-hero-icon"><i class="fas fa-trash-alt"></i></div>
+    <div>
+      <h1>Delete PMC Records</h1>
+      <p>Select a subcontractor, choose PMC numbers, and permanently remove all associated records.</p>
+    </div>
+  </div>
+
+  <div class="dp-steps">
+
+    <!-- ── Step 1 ── -->
+    <div class="dp-step-card active" id="step1Card">
+      <div class="dp-step-head">
+        <div class="dp-step-num" id="s1Num">1</div>
+        <div>
+          <div class="dp-step-title">Select Subcontractor</div>
+          <div class="dp-step-sub">Search and pick the subcontractor whose records you want to delete</div>
+        </div>
+        <span class="dp-step-badge" id="s1Badge"></span>
+      </div>
+      <div class="dp-step-body" id="step1Body">
+
+        <div class="dp-ac-wrap">
+          <i class="fas fa-search dp-ac-icon"></i>
+          <input type="text" id="dpInput" placeholder="Type subcontractor name to search…" autocomplete="off">
+          <div class="dp-ac-drop" id="dpDrop"></div>
+        </div>
+
+        <div class="dp-sel-contractor" id="dpSelPill">
+          <div class="dp-sel-avatar" id="dpSelAvatar">—</div>
+          <div style="flex:1;">
+            <div class="dp-sel-name" id="dpSelName">—</div>
+            <div class="dp-sel-id"   id="dpSelId"></div>
+          </div>
+          <button class="dp-sel-clear" id="dpClearBtn" title="Change subcontractor">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Step 2 ── -->
+    <div class="dp-step-card" id="step2Card">
+      <div class="dp-step-head">
+        <div class="dp-step-num" id="s2Num">2</div>
+        <div>
+          <div class="dp-step-title">Select PMC Numbers</div>
+          <div class="dp-step-sub">Choose one or more PMC numbers to delete</div>
+        </div>
+        <span class="dp-step-badge" id="s2Badge"></span>
+      </div>
+      <div class="dp-step-body" id="step2Body">
+
+        <!-- Loading -->
+        <div class="dp-pmc-loading" id="pmcLoading">
+          <i class="fas fa-circle-notch"></i>
+          Loading PMC numbers…
+        </div>
+
+        <!-- Placeholder before subcontractor selected -->
+        <div class="dp-pmc-empty" id="pmcPlaceholder">
+          <i class="fas fa-list-ol"></i>
+          <p>Select a subcontractor in Step 1</p>
+          <span>PMC numbers will appear here</span>
+        </div>
+
+        <!-- No PMC found -->
+        <div class="dp-pmc-empty" id="pmcNone" style="display:none;">
+          <i class="fas fa-inbox"></i>
+          <p>No PMC numbers found</p>
+          <span>This subcontractor has no PMC records in the system</span>
+        </div>
+
+        <!-- Toolbar + Grid (shown when PMC loaded) -->
+        <div class="dp-pmc-toolbar" id="pmcToolbar">
+          <button class="dp-tb-btn" onclick="dpSelAll()"><i class="fas fa-check-double" style="margin-right:5px;"></i>Select All</button>
+          <button class="dp-tb-btn" onclick="dpDeselAll()"><i class="fas fa-square" style="margin-right:5px;"></i>Deselect All</button>
+          <span class="dp-pmc-count-badge" id="pmcSelBadge">0 of 0 selected</span>
+        </div>
+        <div class="dp-pmc-grid" id="pmcGrid"></div>
+
+      </div>
+    </div>
+
+    <!-- ── Step 3 ── -->
+    <div class="dp-step-card" id="step3Card">
+      <div class="dp-step-head">
+        <div class="dp-step-num">3</div>
+        <div>
+          <div class="dp-step-title">Preview &amp; Delete</div>
+          <div class="dp-step-sub">Review what will be deleted, then confirm</div>
+        </div>
+      </div>
+      <div class="dp-step-body">
+
+        <div class="dp-delete-panel">
+          <div class="dp-sel-summary">
+            <strong id="delSummaryTitle">No PMC numbers selected</strong>
+            <span  id="delSummaryDetail">Select PMC numbers in Step 2 to continue</span>
+          </div>
+          <button class="dp-delete-btn" id="dpDeleteBtn" disabled onclick="dpShowModal()">
+            <i class="fas fa-trash-alt"></i> Preview &amp; Delete
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <a href="/" class="dp-back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+
+</div>
+
+
+<script>
+var dpContractorId  = null;
+var dpContractorName = '';
+var dpPmcNos        = [];
+var dpAcTimer       = null;
+
+var dpInput   = document.getElementById('dpInput');
+var dpDrop    = document.getElementById('dpDrop');
+
+// ── Autocomplete ───────────────────────────────────────────────────────────
+dpInput.addEventListener('input', function() {
+  clearTimeout(dpAcTimer);
+  var q = this.value.trim();
+  if (q.length < 1) { dpCloseDrop(); return; }
+  dpAcTimer = setTimeout(function() { dpSearch(q); }, 250);
+});
+
+dpInput.addEventListener('focus', function() {
+  var q = this.value.trim();
+  if (q.length >= 1) dpSearch(q);
+});
+
+function dpPositionDrop() {
+  var r = dpInput.getBoundingClientRect();
+  dpDrop.style.top   = (r.bottom + 5) + 'px';
+  dpDrop.style.left  = r.left + 'px';
+  dpDrop.style.width = r.width + 'px';
+}
+
+function dpSearch(q) {
+  dpPositionDrop();
+  dpDrop.innerHTML = '<div class="dp-ac-hint"><i class="fas fa-circle-notch fa-spin"></i> Searching…</div>';
+  dpDrop.classList.add('open');
+
+  fetch('/api/payment/search_contractors?q=' + encodeURIComponent(q))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var results = data.results || [];
+      dpDrop.innerHTML = '';
+      if (results.length === 0) {
+        dpDrop.innerHTML = '<div class="dp-ac-hint">No subcontractors match "' + q + '"</div>';
+        return;
+      }
+      results.forEach(function(c) {
+        var el = document.createElement('div');
+        el.className = 'dp-ac-item';
+        el.innerHTML =
+          '<i class="fas fa-user-tie"></i>' +
+          '<span>' + c.name + '</span>' +
+          '<span style="margin-left:auto;font-size:11.5px;color:#94a3b8;">#' + c.id + '</span>';
+        el.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          dpChoose(c.id, c.name);
+        });
+        dpDrop.appendChild(el);
+      });
+    })
+    .catch(function() {
+      dpDrop.innerHTML = '<div class="dp-ac-hint">Search failed. Please try again.</div>';
+    });
+}
+
+function dpCloseDrop() {
+  dpDrop.classList.remove('open');
+  dpDrop.innerHTML = '';
+}
+
+document.addEventListener('click', function(e) {
+  if (!dpInput.contains(e.target) && !dpDrop.contains(e.target)) dpCloseDrop();
+});
+document.addEventListener('scroll', function() { dpCloseDrop(); }, true);
+window.addEventListener('resize',   function() { dpCloseDrop(); });
+
+// ── Choose contractor ──────────────────────────────────────────────────────
+function dpChoose(id, name) {
+  dpContractorId   = id;
+  dpContractorName = name;
+  dpInput.value    = name;
+  dpCloseDrop();
+
+  // Show pill
+  var initials = name.trim().split(/\s+/).map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
+  document.getElementById('dpSelAvatar').textContent = initials || '?';
+  document.getElementById('dpSelName').textContent   = name;
+  document.getElementById('dpSelId').textContent     = 'Subcontractor ID: #' + id;
+  document.getElementById('dpSelPill').classList.add('show');
+
+  // Mark step 1 done
+  var c1 = document.getElementById('step1Card');
+  c1.classList.remove('active'); c1.classList.add('done');
+  document.getElementById('s1Num').innerHTML = '<i class="fas fa-check" style="font-size:11px;"></i>';
+  document.getElementById('s1Badge').textContent = name;
+
+  // Activate step 2
+  document.getElementById('step2Card').classList.add('active');
+
+  dpLoadPmc(id);
+}
+
+document.getElementById('dpClearBtn').addEventListener('click', function() {
+  dpReset();
+});
+
+function dpReset() {
+  dpContractorId   = null;
+  dpContractorName = '';
+  dpPmcNos         = [];
+  dpInput.value    = '';
+
+  document.getElementById('dpSelPill').classList.remove('show');
+
+  // Reset step 1
+  var c1 = document.getElementById('step1Card');
+  c1.classList.add('active'); c1.classList.remove('done');
+  document.getElementById('s1Num').textContent  = '1';
+  document.getElementById('s1Badge').textContent = '';
+
+  // Reset step 2
+  var c2 = document.getElementById('step2Card');
+  c2.classList.remove('active', 'done');
+  document.getElementById('s2Num').textContent  = '2';
+  document.getElementById('s2Badge').textContent = '';
+  document.getElementById('pmcPlaceholder').style.display = '';
+  document.getElementById('pmcNone').style.display        = 'none';
+  document.getElementById('pmcLoading').style.display     = 'none';
+  document.getElementById('pmcToolbar').classList.remove('show');
+  document.getElementById('pmcGrid').innerHTML = '';
+
+  dpUpdateDelete();
+}
+
+// ── Load PMC numbers ───────────────────────────────────────────────────────
+function dpLoadPmc(contractorId) {
+  document.getElementById('pmcPlaceholder').style.display = 'none';
+  document.getElementById('pmcNone').style.display        = 'none';
+  document.getElementById('pmcLoading').style.display     = 'block';
+  document.getElementById('pmcToolbar').classList.remove('show');
+  document.getElementById('pmcGrid').innerHTML = '';
+  dpUpdateDelete();
+
+  fetch('/get_pmc_nos_by_subcontractor/' + contractorId)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      document.getElementById('pmcLoading').style.display = 'none';
+      var raw  = data.pmc_nos || data || [];
+      dpPmcNos = raw.map(function(p) { return parseInt(p, 10); }).filter(function(n) { return !isNaN(n); });
+
+      if (dpPmcNos.length === 0) {
+        document.getElementById('pmcNone').style.display = '';
+        document.getElementById('s2Badge').textContent = 'No PMC numbers';
+        return;
+      }
+
+      document.getElementById('s2Badge').textContent = dpPmcNos.length + ' PMC' + (dpPmcNos.length !== 1 ? 's' : '') + ' available';
+      document.getElementById('pmcToolbar').classList.add('show');
+      dpBuildGrid();
+      dpUpdateCount();
+    })
+    .catch(function() {
+      document.getElementById('pmcLoading').style.display = 'none';
+      document.getElementById('pmcNone').style.display = '';
+    });
+}
+
+function dpBuildGrid() {
+  var grid = document.getElementById('pmcGrid');
+  grid.innerHTML = '';
+  dpPmcNos.forEach(function(pmc) {
+    var tile = document.createElement('div');
+    tile.className    = 'dp-pmc-tile';
+    tile.dataset.pmc  = pmc;
+    tile.innerHTML =
+      '<div class="dp-pmc-tile-top">' +
+        '<input type="checkbox" class="dp-pmc-chk" value="' + pmc + '">' +
+      '</div>' +
+      '<div class="dp-pmc-num">' + pmc + '</div>' +
+      '<div class="dp-pmc-lbl">PMC No</div>';
+
+    var cb = tile.querySelector('input');
+    tile.addEventListener('click', function(e) {
+      if (e.target !== cb) cb.checked = !cb.checked;
+      tile.classList.toggle('sel', cb.checked);
+      dpUpdateCount();
+    });
+    cb.addEventListener('change', function() {
+      tile.classList.toggle('sel', cb.checked);
+      dpUpdateCount();
+    });
+    grid.appendChild(tile);
+  });
+}
+
+function dpUpdateCount() {
+  var total   = dpPmcNos.length;
+  var checked = document.querySelectorAll('#pmcGrid .dp-pmc-chk:checked').length;
+  document.getElementById('pmcSelBadge').textContent = checked + ' of ' + total + ' selected';
+
+  // Mark step 2 done if any selected
+  var c2 = document.getElementById('step2Card');
+  if (checked > 0) {
+    c2.classList.add('done');
+    document.getElementById('s2Num').innerHTML = '<i class="fas fa-check" style="font-size:11px;"></i>';
+  } else {
+    c2.classList.remove('done');
+    document.getElementById('s2Num').textContent = '2';
+  }
+
+  dpUpdateDelete();
+}
+
+function dpSelAll() {
+  document.querySelectorAll('#pmcGrid .dp-pmc-tile').forEach(function(t) {
+    t.querySelector('input').checked = true;
+    t.classList.add('sel');
+  });
+  dpUpdateCount();
+}
+
+function dpDeselAll() {
+  document.querySelectorAll('#pmcGrid .dp-pmc-tile').forEach(function(t) {
+    t.querySelector('input').checked = false;
+    t.classList.remove('sel');
+  });
+  dpUpdateCount();
+}
+
+function dpUpdateDelete() {
+  var checked = document.querySelectorAll('#pmcGrid .dp-pmc-chk:checked').length;
+  var btn     = document.getElementById('dpDeleteBtn');
+
+  if (!dpContractorId || checked === 0) {
+    btn.disabled = true;
+    document.getElementById('delSummaryTitle').textContent  = 'No PMC numbers selected';
+    document.getElementById('delSummaryDetail').textContent = 'Select PMC numbers in Step 2 to continue';
+  } else {
+    btn.disabled = false;
+    document.getElementById('delSummaryTitle').textContent  =
+      checked + ' PMC number' + (checked !== 1 ? 's' : '') + ' ready to delete';
+    document.getElementById('delSummaryDetail').textContent =
+      'Subcontractor: ' + dpContractorName;
+  }
+
+  // Activate step 3 styling
+  var c3 = document.getElementById('step3Card');
+  c3.classList.toggle('active', !btn.disabled);
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function dpShowModal() {
+  var selected = dpGetSelected();
+  if (selected.length === 0 || !dpContractorId) return;
+
+  var initials = dpContractorName.trim().split(/\s+/).map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
+  document.getElementById('mAvatar').textContent = initials || '?';
+  document.getElementById('mCname').textContent  = dpContractorName;
+  document.getElementById('mCid').textContent    = 'ID: #' + dpContractorId;
+
+  var tags = document.getElementById('mTags');
+  tags.innerHTML = '';
+  selected.forEach(function(p) {
+    var s = document.createElement('span');
+    s.className   = 'dp-mi-tag';
+    s.textContent = 'PMC ' + p;
+    tags.appendChild(s);
+  });
+
+  // Reset counts
+  ['mCntPay','mCntInv','mCntGst','mCntCdn','mCntHr'].forEach(function(id) {
+    var el = document.getElementById(id);
+    el.textContent = '…';
+    el.className   = 'dp-count-n';
+  });
+
+  var confirmBtn = document.getElementById('mConfirm');
+  confirmBtn.disabled = true;
+  confirmBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Loading…';
+
+  document.getElementById('dpOverlay').classList.add('open');
+
+  fetch('/api/delete_pmc/preview', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ contractor_id: dpContractorId, pmc_nos: selected })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (!res.success) {
+      dpCloseModal();
+      dpToast(res.message || 'Preview failed.', 'err');
+      return;
+    }
+    var c = res.counts;
+    function setN(id, val) {
+      var el = document.getElementById(id);
+      el.textContent = val;
+      if (val > 0) el.classList.add('warn');
+    }
+    setN('mCntPay', c.payments);
+    setN('mCntInv', c.invoices);
+    setN('mCntGst', c.gst_release);
+    setN('mCntCdn', c.credit_notes);
+    setN('mCntHr',  c.hold_release);
+
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+  })
+  .catch(function() {
+    dpCloseModal();
+    dpToast('Could not load preview. Please try again.', 'err');
+  });
+}
+
+document.getElementById('mCancel').addEventListener('click', dpCloseModal);
+document.getElementById('dpOverlay').addEventListener('click', function(e) {
+  if (e.target === this) dpCloseModal();
+});
+
+function dpCloseModal() {
+  document.getElementById('dpOverlay').classList.remove('open');
+  var confirmBtn = document.getElementById('mConfirm');
+  confirmBtn.disabled = false;
+  confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+}
+
+document.getElementById('mConfirm').addEventListener('click', function() {
+  var selected = dpGetSelected();
+  if (selected.length === 0 || !dpContractorId) return;
+
+  var btn = this;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Deleting…';
+
+  fetch('/api/delete_pmc/execute', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ contractor_id: dpContractorId, pmc_nos: selected })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    dpCloseModal();
+    if (res.success) {
+      dpToast(res.message || 'Records deleted successfully.', 'ok');
+      dpReset();
+    } else {
+      dpToast(res.message || 'Delete failed.', 'err');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+    }
+  })
+  .catch(function() {
+    dpCloseModal();
+    dpToast('A network error occurred. Please try again.', 'err');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+  });
+});
+
+function dpGetSelected() {
+  return Array.from(document.querySelectorAll('#pmcGrid .dp-pmc-chk:checked'))
+              .map(function(cb) { return parseInt(cb.value, 10); });
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function dpToast(msg, type) {
+  var t = document.getElementById('dpToast');
+  t.textContent = msg;
+  t.className   = 'dp-toast ' + (type || 'ok');
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(function() { t.classList.remove('show'); }, 4500);
+}
+</script>
+
+{% endblock %}

@@ -1,7 +1,9 @@
-venv/
-*.pyc
+.env
 __pycache__/
-
-static/downloads/
-static/uploads/
-
+*.pyc
+*.log
+venv/
+.venv/
+node_modules/
+payment_db_v4/
+*.xlsx

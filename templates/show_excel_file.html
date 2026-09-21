@@ -1,86 +1,474 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Excel Data</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/show_excel.css') }}">
-<!--    <script src="{{ url_for('static', filename='js/save_excel_file.js') }}"></script>-->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{{ url_for('static', filename='js/save_data_success.js') }}"></script>
+{% extends 'base.html' %}
+{% block content %}
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-</head>
-<body>
-<h1>Excel Data</h1>
+<style>
+/* ── Show Excel File ─────────────────────────────────────────────── */
+.se-page { max-width: 1400px; margin: 0 auto; }
 
-<h2>File Information:</h2>
-<ul>
-    <li>Subcontractor: {{ file_info['Subcontractor'] }}</li>
-    <li>State: {{ file_info['State'] }}</li>
-    <li>District: {{ file_info['District'] }}</li>
-    <li>Block: {{ file_info['Block'] }}</li>
-</ul>
+/* Header */
+.se-header {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px; padding: 26px 32px; margin-bottom: 22px; color: #fff;
+}
+.se-header h1 { font-size: 22px; font-weight: 700; margin: 0 0 14px; }
+.se-info-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.se-chip {
+  background: rgba(255,255,255,.12); border-radius: 10px; padding: 9px 14px;
+}
+.se-chip .se-chip-label { font-size: 11px; opacity: .78; text-transform: uppercase; letter-spacing: .06em; }
+.se-chip .se-chip-val   { font-size: 14px; font-weight: 600; margin-top: 3px; }
 
-{% if errors %}
-<div class="errors">
-    <h2>Validation Errors:</h2>
-    <ul>
-        {% for error in errors %}
-        <li class="error">{{ error }}</li>
-        {% endfor %}
+/* Card */
+.se-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 24px 28px; margin-bottom: 22px;
+}
+.se-card-title {
+  font-size: 14px; font-weight: 700; color: #1d3e73; margin: 0 0 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* Errors */
+.se-err-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.se-err-item {
+  background: #fff5f5; border: 1.5px solid #ffc5c5; border-radius: 10px;
+  padding: 10px 14px; font-size: 13.5px; color: #c62828;
+  display: flex; align-items: flex-start; gap: 9px;
+}
+.se-err-item i { margin-top: 1px; flex-shrink: 0; }
+
+/* Table */
+.se-table-outer {
+  overflow-x: auto; border-radius: 12px; border: 1px solid #e8eef7;
+  max-height: 520px; overflow-y: auto;
+}
+.se-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.se-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: #f5f8ff; color: #344054; font-size: 11.5px; font-weight: 700;
+  padding: 10px 12px; text-align: left; border-bottom: 1.5px solid #dce7f7;
+  white-space: nowrap; text-transform: uppercase; letter-spacing: .04em;
+}
+.se-table thead th:first-child { left: 0; z-index: 3; }
+.se-table tbody tr { transition: background .1s; }
+.se-table tbody tr:hover { background: #f8fbff; }
+.se-table tbody td {
+  padding: 9px 12px; font-size: 13px; color: #374151;
+  border-bottom: 1px solid #eef2f8; white-space: nowrap; vertical-align: middle;
+}
+.se-table tbody tr:last-child td { border-bottom: none; }
+.se-table tbody td:first-child { font-weight: 600; color: #9aadcc; text-align: center; }
+
+/* Total row */
+.se-table tfoot td {
+  position: sticky; bottom: 0; z-index: 2;
+  background: #eef4ff; border-top: 2.5px solid #2f68bb;
+  font-weight: 700; font-size: 13px; color: #183b70;
+  padding: 10px 12px; white-space: nowrap;
+}
+.se-table tfoot td:first-child {
+  text-align: center; font-size: 10.5px; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase; color: #2f68bb;
+}
+
+/* Footer */
+.se-footer { display: flex; align-items: center; gap: 14px; margin-top: 20px; flex-wrap: wrap; }
+.se-save-btn {
+  padding: 13px 40px;
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff; border: none; border-radius: 10px;
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .2s;
+}
+.se-save-btn:hover { opacity: .9; }
+.se-save-btn:disabled { opacity: .5; cursor: not-allowed; }
+.se-back-link {
+  padding: 13px 24px; background: #f5f5f5; color: #555;
+  border: 1.5px solid #e0e0e0; border-radius: 10px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 7px; transition: .15s;
+}
+.se-back-link:hover { background: #eaeaea; }
+.se-row-count { font-size: 13px; color: #9aadcc; }
+
+/* ── File Selector ───────────────────────────────────────────────── */
+.ef-selector-card { padding: 14px 22px; }
+.ef-selector-row  { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ef-selector-label {
+  font-size: 14px; font-weight: 700; color: #1d3e73;
+  white-space: nowrap; display: flex; align-items: center; gap: 7px;
+}
+.ef-search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 520px; }
+.ef-search-input {
+  width: 100%; padding: 9px 36px 9px 13px; border: 1.5px solid #dce7f7; border-radius: 9px;
+  font-size: 13.5px; color: #374151; background: #f8fbff; outline: none;
+  box-sizing: border-box; transition: border-color .15s; cursor: pointer;
+}
+.ef-search-input:focus { border-color: #2f68bb; background: #fff; }
+.ef-caret {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  color: #9aadcc; font-size: 11px; pointer-events: none; transition: transform .18s;
+}
+.ef-caret.open { transform: translateY(-50%) rotate(180deg); }
+.ef-dropdown {
+  display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0;
+  background: #fff; border: 1.5px solid #dce7f7; border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.11); z-index: 200;
+  max-height: 280px; overflow-y: auto; list-style: none; margin: 0; padding: 5px 0;
+}
+.ef-dropdown.open { display: block; }
+.ef-no-results { padding: 12px 16px; font-size: 13px; color: #9aadcc; }
+.ef-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px; cursor: pointer; font-size: 13px; color: #374151;
+  transition: background .1s;
+}
+.ef-option:hover { background: #f0f6ff; }
+.ef-option.ef-active { background: #eef4ff; color: #183b70; font-weight: 600; }
+.ef-option.ef-hidden { display: none; }
+.ef-opt-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ef-opt-date { font-size: 11px; color: #9aadcc; white-space: nowrap; flex-shrink: 0; }
+.ef-hist-link {
+  padding: 9px 18px; background: #f5f8ff; color: #1d3e73;
+  border: 1.5px solid #dce7f7; border-radius: 9px; font-size: 13px; font-weight: 600;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+  white-space: nowrap; transition: background .15s;
+}
+.ef-hist-link:hover { background: #e8f0ff; }
+
+@media(max-width:900px) {
+  .se-info-grid { grid-template-columns: repeat(2,1fr); }
+  .se-card { padding: 18px 16px; }
+  .ef-search-wrap { max-width: 100%; }
+}
+</style>
+
+<div class="se-page">
+
+  <!-- File Selector -->
+  <div class="se-card ef-selector-card">
+    <div class="ef-selector-row">
+      <span class="ef-selector-label">
+        <i class="fa fa-folder-open" style="color:#2f68bb;"></i> Select Excel File
+      </span>
+      <div class="ef-search-wrap" id="efWrap">
+        <input type="text" id="efSearch" class="ef-search-input" autocomplete="off"
+               placeholder="Search uploaded files…" value="{{ current_filename }}">
+        <i class="fa fa-chevron-down ef-caret" id="efCaret"></i>
+        <ul class="ef-dropdown" id="efDropdown">
+          {% for f in all_uploads %}
+          <li class="ef-option {% if f['file_id'] == file_id %}ef-active{% endif %}"
+              data-name="{{ f['stored_name'] }}"
+              data-url="{{ url_for('excel.show_table', filename=f['stored_name'], file_id=f['file_id']) }}">
+            <i class="fa fa-file-excel-o" style="color:#1a7f4b;font-size:13px;flex-shrink:0;"></i>
+            <span class="ef-opt-name">{{ f['stored_name'] }}</span>
+            <span class="ef-opt-date">
+              {{ f['uploaded_date'].strftime('%d %b %Y') if f['uploaded_date'] else '' }}
+            </span>
+          </li>
+          {% endfor %}
+          <li class="ef-no-results" id="efNoResults" style="display:none;">No files match</li>
+        </ul>
+      </div>
+      <a href="{{ url_for('excel.excel_history') }}" class="ef-hist-link">
+        <i class="fa fa-history"></i> Excel History
+      </a>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="se-header">
+    <h1><i class="fa fa-table"></i> Excel Data Preview</h1>
+    <div class="se-info-grid">
+      <div class="se-chip">
+        <div class="se-chip-label">Subcontractor</div>
+        <div class="se-chip-val">{{ file_info['Subcontractor'] or '—' }}</div>
+      </div>
+      <div class="se-chip">
+        <div class="se-chip-label">State</div>
+        <div class="se-chip-val">{{ file_info['State'] or '—' }}</div>
+      </div>
+      <div class="se-chip">
+        <div class="se-chip-label">District</div>
+        <div class="se-chip-val">{{ file_info['District'] or '—' }}</div>
+      </div>
+      <div class="se-chip">
+        <div class="se-chip-label">Block</div>
+        <div class="se-chip-val">{{ file_info['Block'] or '—' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auto-created items warnings -->
+  {% if warnings %}
+  <div class="se-card" style="border-left:4px solid #f59e0b;">
+    <div class="se-card-title" style="color:#b45309;">
+      <i class="fa fa-info-circle" style="color:#f59e0b;"></i> Items Added Automatically
+    </div>
+    <ul class="se-err-list">
+      {% for w in warnings %}
+      <li class="se-err-item" style="color:#92400e;">
+        <i class="fa fa-plus-circle" style="color:#f59e0b;"></i> {{ w }}
+      </li>
+      {% endfor %}
     </ul>
-</div>
-{% endif %}
+  </div>
+  {% endif %}
 
-<h2>Data Table:</h2>
-<form id="saveForm">
-    <div class="table-container">
-        <table>
-            <thead>
+  <!-- Validation Errors -->
+  {% if errors %}
+  <div class="se-card">
+    <div class="se-card-title" style="color:#c62828;">
+      <i class="fa fa-exclamation-circle" style="color:#e53935;"></i> Validation Errors
+    </div>
+    <ul class="se-err-list">
+      {% for error in errors %}
+      <li class="se-err-item"><i class="fa fa-times-circle"></i>{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Data Table -->
+  <div class="se-card">
+    <div class="se-card-title"><i class="fa fa-table"></i> Data Rows</div>
+
+    <form id="seForm">
+      <!-- Required hidden fields for save_data -->
+      <input type="hidden" name="subcontractor_data"
+        value="{{ subcontractor_data['Contractor_Id'] if subcontractor_data else '' }}">
+      <input type="hidden" name="state_data"
+        value="{{ state_data['State_Id'] if state_data else '' }}">
+      <input type="hidden" name="district_data"
+        value="{{ district_data['District_id'] if district_data else '' }}">
+      <input type="hidden" name="block_data"
+        value="{{ block_data['Block_Id'] if block_data else '' }}">
+      <input type="hidden" name="hold_columns"
+        value="{{ hold_columns | tojson | forceescape }}">
+      <input type="hidden" name="file_id"
+        value="{{ file_id or '' }}">
+
+      <div class="se-table-outer">
+        <table class="se-table">
+          <thead>
             <tr>
-                <th>Row No</th>
-                {% for var in variables %}
-                <th>{{ var }}</th>
-                {% endfor %}
+              <th>Row</th>
+              {% for var in variables %}
+              <th data-col="{{ var }}">{{ var }}</th>
+              {% endfor %}
             </tr>
-            </thead>
-            <tbody>
+          </thead>
+          <tbody>
             {% for row in data %}
             <tr>
-                <td>{{ row['Row Number'] }}</td>
-                {% for var in variables %}
-                <td><input type="text" value="{{ row[var] }}"/></td>
-                {% endfor %}
+              <td>{{ row['Row Number'] }}</td>
+              {% for var in variables %}
+              <td>{{ row[var] if row[var] is not none else '—' }}</td>
+              {% endfor %}
             </tr>
             {% endfor %}
-            </tbody>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>TOTAL</td>
+              {% for var in variables %}
+              <td data-col="{{ var }}"></td>
+              {% endfor %}
+            </tr>
+          </tfoot>
         </table>
-    </div>
+      </div>
 
-    <!-- Hidden fields for other necessary information -->
-    <input type="text" name="subcontractor_data" value="{{ subcontractor_data['Contractor_Id'] }}">
-    <input type="text" name="state_data" value="{{ state_data['State_Id'] }}">
-    <!-- <input type="text" name="district_data" value="{{ district_data['District_ID'] }}">      -->
-    <input type="text" name="district_data" value="{{ district_data['District_id'] }}">     
-    <input type="text" name="block_data" value="{{ block_data['Block_Id'] }}">
+      <div class="se-footer">
+        <button type="submit" class="se-save-btn" id="seSaveBtn"
+          {% if not has_contractor %}disabled title="Contractor not identified — fix errors above before saving"{% endif %}>
+          <i class="fa fa-save"></i>&nbsp; Save Data
+        </button>
+        {% if not has_contractor %}
+        <span style="font-size:13px;color:#c62828;font-weight:600;">
+          <i class="fa fa-exclamation-triangle"></i> Contractor not identified — cannot save.
+        </span>
+        {% endif %}
+        <a href="{{ url_for('excel.upload') }}" class="se-back-link">
+          <i class="fa fa-arrow-left"></i> Back
+        </a>
+        <span class="se-row-count">{{ data | length }} row{{ 's' if data | length != 1 else '' }}</span>
+      </div>
+    </form>
+  </div>
 
-    <input type="text" name="file_info" value="{{ file_info }}">
+</div>
 
-    <input type="text" name="hold_columns" value="{{ hold_columns }}">
-    <input type="text" name="hold_counter" value="{{ hold_counter }}">
+<script>
+/* ── File selector dropdown ──────────────────────────────────────── */
+(function () {
+  var wrap   = document.getElementById('efWrap');
+  var input  = document.getElementById('efSearch');
+  var list   = document.getElementById('efDropdown');
+  var caret  = document.getElementById('efCaret');
+  var noRes  = document.getElementById('efNoResults');
+  var opts   = Array.from(list.querySelectorAll('.ef-option'));
+  var activeName = '{{ current_filename }}';
 
-    <input type="text" name="variables[]" value="{{ variables }}">
-    <input type="text" name="data[]" value="{{ data }}">
+  function openDrop() {
+    list.classList.add('open');
+    caret.classList.add('open');
+    filterOpts('');
+    input.select();
+  }
+  function closeDrop() {
+    list.classList.remove('open');
+    caret.classList.remove('open');
+    input.value = activeName;
+  }
+  function filterOpts(q) {
+    var lq = q.toLowerCase();
+    var visible = 0;
+    opts.forEach(function (o) {
+      var match = o.dataset.name.toLowerCase().indexOf(lq) !== -1;
+      o.classList.toggle('ef-hidden', !match);
+      if (match) visible++;
+    });
+    noRes.style.display = visible === 0 ? 'block' : 'none';
+  }
 
-    <!--    {% for row in data %}-->
-    <!--        <input type="text" name="data[]" value="{{ row | join(',') }}">-->
-    <!--    {% endfor %}-->
+  input.addEventListener('click', openDrop);
+  input.addEventListener('focus', openDrop);
+  input.addEventListener('input', function () {
+    list.classList.add('open');
+    caret.classList.add('open');
+    filterOpts(this.value);
+  });
 
-    <button type="submit" class="save-button">Save Data</button>
-</form>
+  opts.forEach(function (o) {
+    o.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      window.location.href = this.dataset.url;
+    });
+  });
 
-<a href="/" class="back-button">Back to Dashboard</a>
+  document.addEventListener('click', function (e) {
+    if (!wrap.contains(e.target)) closeDrop();
+  });
+})();
 
+/* ── Column totals ───────────────────────────────────────────────── */
+(function () {
+  var TOTAL_COLS = new Set([
+    'Basic_Amount','Debit_Amount','After_Debit_Amount','GST_Amount','Amount',
+    'TDS_Amount','SD_Amount','On_Commission','Hydro_Testing','GST_SD_Amount',
+    'Final_Amount','Total_Amount','Payment_Amount','TDS_Payment_Amount','Hold_Amount',
+    {% for hc in hold_columns %}'{{ hc.column_name | e }}',{% endfor %}
+  ]);
 
-</body>
+  function computeTotals() {
+    var table    = document.querySelector('.se-table');
+    if (!table) return;
+    var headers  = Array.from(table.querySelectorAll('thead th'));
+    var colNames = headers.map(function (th) { return th.dataset.col || ''; });
+    var footCells= Array.from(table.querySelectorAll('tfoot td'));
 
-</html>
+    /* accumulate sums using integer cents to avoid float drift */
+    var cents = {};
+    Array.from(table.querySelectorAll('tbody tr')).forEach(function (tr) {
+      if (tr.style.display === 'none') return;
+      Array.from(tr.querySelectorAll('td')).forEach(function (td, i) {
+        var col = colNames[i];
+        if (!TOTAL_COLS.has(col)) return;
+        var raw = td.textContent.trim().replace(/,/g, '');
+        if (raw === '' || raw === '—' || raw === '-') return;
+        var v = parseFloat(raw);
+        if (isNaN(v)) return;
+        cents[col] = (cents[col] || 0) + Math.round(v * 100);
+      });
+    });
+
+    /* write totals — only fill cells whose column is in TOTAL_COLS */
+    footCells.forEach(function (td, i) {
+      var col = colNames[i];
+      if (i === 0 || !TOTAL_COLS.has(col)) { return; }
+      if (cents[col] !== undefined) {
+        td.textContent = (cents[col] / 100).toFixed(2);
+      }
+    });
+  }
+
+  computeTotals();
+
+  /* re-compute whenever tbody rows are toggled (future filter support) */
+  var tbody = document.querySelector('.se-table tbody');
+  if (tbody && window.MutationObserver) {
+    new MutationObserver(computeTotals).observe(tbody, { subtree: true, attributes: true, attributeFilter: ['style'] });
+  }
+})();
+
+/* ── Save form ───────────────────────────────────────────────────── */
+document.getElementById('seForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('seSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>&nbsp; Saving...';
+
+  const formData = new FormData(this);
+
+  fetch('/save_data', { method: 'POST', body: formData })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      const s = d.summary || {};
+      let html = '<p style="margin:0 0 10px;">' + (typeof d.success === 'string' ? d.success : 'Data saved successfully.') + '</p>';
+      if (s.total_rows !== undefined) {
+        html += '<table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:10px;">';
+        html += '<tr><td style="padding:3px 8px;color:#555;">Total Rows</td><td style="padding:3px 8px;font-weight:600;">' + s.total_rows + '</td></tr>';
+        html += '<tr><td style="padding:3px 8px;color:#555;">Saved (Invoices)</td><td style="padding:3px 8px;font-weight:600;color:#065f46;">' + (s.saved_invoices || 0) + '</td></tr>';
+        html += '<tr><td style="padding:3px 8px;color:#555;">Saved (Payments)</td><td style="padding:3px 8px;font-weight:600;color:#065f46;">' + (s.saved_payments || 0) + '</td></tr>';
+        if (s.duplicates_skipped) html += '<tr><td style="padding:3px 8px;color:#555;">Duplicates Skipped</td><td style="padding:3px 8px;font-weight:600;color:#92400e;">' + s.duplicates_skipped + '</td></tr>';
+        if (s.blank_rows_skipped) html += '<tr><td style="padding:3px 8px;color:#555;">Blank/Total Rows Skipped</td><td style="padding:3px 8px;font-weight:600;color:#92400e;">' + s.blank_rows_skipped + '</td></tr>';
+        if (s.failed_rows) html += '<tr><td style="padding:3px 8px;color:#555;">Failed Rows</td><td style="padding:3px 8px;font-weight:600;color:#991b1b;">' + s.failed_rows + '</td></tr>';
+        html += '</table>';
+      }
+      if (s.failed_details && s.failed_details.length > 0) {
+        html += '<div style="background:#fee2e2;border-radius:6px;padding:8px 12px;text-align:left;max-height:120px;overflow-y:auto;">';
+        html += '<div style="font-size:11px;font-weight:700;color:#991b1b;margin-bottom:4px;">Validation Failures:</div>';
+        s.failed_details.forEach(function(msg) {
+          html += '<div style="font-size:12px;color:#7f1d1d;padding:2px 0;">' + msg + '</div>';
+        });
+        html += '</div>';
+      }
+      Swal.fire({
+        icon: s.failed_rows ? 'warning' : 'success',
+        title: 'Saved!',
+        html: html,
+        confirmButtonColor: '#183b70',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        window.location.href = '{{ url_for("excel.upload") }}';
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: d.error || 'An error occurred while saving.',
+        confirmButtonColor: '#183b70'
+      });
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa fa-save"></i>&nbsp; Save Data';
+    }
+  })
+  .catch(() => {
+    Swal.fire({
+      icon: 'error',
+      title: 'Network Error',
+      text: 'Could not reach the server. Please try again.',
+      confirmButtonColor: '#183b70'
+    });
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa fa-save"></i>&nbsp; Save Data';
+  });
+});
+</script>
+
+{% endblock %}

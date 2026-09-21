@@ -144,8 +144,7 @@ select {
 }
 
 .invoice-table th {
-    background-color: #007bff;
-    color: #fff;
+    color: #310a80;
 }
 
 .invoice-table tr:nth-child(even) {

@@ -1,207 +1,920 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Payment</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/search_on_table.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/invoice.js') }}"></script>
-</head>
+<style>
+/* ── Payment Management ─────────────────────────────────────────── */
+.pm-page { max-width: 1240px; margin: 0 auto; }
 
-<body>
+/* Header */
+.pm-header {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px; padding: 26px 32px; margin-bottom: 22px; color: #fff;
+}
+.pm-header h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; }
+.pm-header p  { margin: 0; font-size: 13.5px; opacity: .82; }
 
-    <div class="button-container">
-        <button id="addButton" class="action-button">Add</button>
-        <button id="displayButton" class="action-button">Display</button>
-    </div>
+/* Tabs */
+.pm-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.pm-tab-btn {
+  padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 2px solid #d0dff5; background: #fff; color: #1d3e73;
+  transition: .2s; display: inline-flex; align-items: center; gap: 7px;
+}
+.pm-tab-btn.active {
+  background: linear-gradient(90deg, #183b70, #2f68bb); color: #fff;
+  border-color: transparent; box-shadow: 0 4px 12px rgba(24,59,112,.18);
+}
+.pm-tab-btn:hover:not(.active) { background: #f0f7ff; border-color: #b3cff0; }
 
-    <div id="addForm" style="display: none;">
-        <h2>Add Payment</h2>
+/* Toast */
+.pm-toast {
+  position: fixed; top: 22px; right: 22px; z-index: 99999;
+  padding: 12px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+  min-width: 230px; box-shadow: 0 6px 22px rgba(0,0,0,.15); display: none;
+}
+.pm-toast.ok  { background: #f0fff5; border: 1.5px solid #a3e6bc; color: #1a7a3f; }
+.pm-toast.err { background: #fff0f0; border: 1.5px solid #ffc0c0; color: #c62828; }
 
-        <form action="/add_payment" method="POST" onsubmit="showSuccessAlert(event)">
-            <div class="row1">
-                <div>
-                    <label for="subcontractor">Subcontractor Name:</label>
-                    <input type="text" id="subcontractor" name="subcontractor" required autocomplete="off" />
-                    <input type="hidden" id="subcontractor_id" name="subcontractor_id" />
-                    <div id="subcontractor_list" class="autocomplete-items"></div>
-                </div>
-            </div>
+/* ── Add Payment Form ─────────────────────────────────────────── */
+.pm-form-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 30px 34px;
+}
+.pm-section { margin-bottom: 26px; }
+.pm-sec-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 5px 12px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: inline-block;
+}
+.pm-g2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+.pm-g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.pm-g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.pm-full { grid-column: 1 / -1; }
 
-            <label for="PMC_No">PMC No:</label><br>
-            <select id="PMC_No" name="PMC_No" required>
-                <option value="">Select PMC No</option>
-            </select><br><br>
+.pm-field { display: flex; flex-direction: column; position: relative; }
+.pm-field label { font-size: 13px; font-weight: 600; color: #344054; margin-bottom: 6px; }
+.pm-req { color: #d32f2f; margin-left: 2px; }
+.pm-field input,
+.pm-field select {
+  padding: 11px 14px; border: 1.5px solid #d8dfeb; border-radius: 10px;
+  background: #fafcff; font-size: 13.5px; outline: none; box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s; width: 100%; margin: 0;
+}
+.pm-field input:focus, .pm-field select:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+}
+.pm-field input[readonly] {
+  background: #f0f4fa; color: #6b7a99; cursor: not-allowed; border-style: dashed; border-color: #c5d9f0;
+}
 
-            <label for="invoice_No">Invoice No:</label><br>
-            <input type="number" step="0.01" id="invoice_No" name="invoice_No"><br><br>
+/* Subcontractor autocomplete */
+.pm-ac-wrap { position: relative; }
+.pm-ac-list {
+  display: none; position: absolute; z-index: 300; background: #fff;
+  border: 1.5px solid #d0dff5; border-top: none; border-radius: 0 0 10px 10px;
+  max-height: 180px; overflow-y: auto; width: 100%;
+  box-shadow: 0 6px 18px rgba(0,0,0,.1);
+}
+.pm-ac-item {
+  padding: 10px 14px; cursor: pointer; font-size: 13.5px; color: #344054;
+}
+.pm-ac-item:hover { background: #f0f7ff; color: #1d3e73; }
 
-            <label for="Payment_Amount">Amount:</label><br>
-            <input type="number" step="0.01" id="Payment_Amount" name="Payment_Amount" required
-                oninput="calculateTDSAndTotal()"><br><br>
+/* Form footer */
+.pm-form-footer {
+  display: flex; gap: 12px; padding-top: 16px;
+  border-top: 1px solid #edf1f7; margin-top: 4px; flex-wrap: wrap;
+}
+.pm-submit-btn {
+  padding: 12px 34px; background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff; border: none; border-radius: 10px; font-size: 14.5px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s;
+}
+.pm-submit-btn:hover { opacity: .9; }
+.pm-submit-btn:disabled { opacity: .55; cursor: not-allowed; }
+.pm-clear-btn {
+  padding: 12px 22px; background: #f0f4fa; color: #1d3e73;
+  border: 1.5px solid #d0dff5; border-radius: 10px; font-size: 14px;
+  font-weight: 600; cursor: pointer;
+}
+.pm-clear-btn:hover { background: #e4edf8; }
 
-            <label for="TDS_Percentage">TDS Percentage (%):</label><br>
-            <input type="number" step="0.01" id="TDS_Percentage" name="TDS_Percentage"
-                oninput="calculateTDSAndTotal()"><br><br>
+/* ── Payment History ──────────────────────────────────────────── */
+.pm-list-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); overflow: hidden;
+}
+.pm-list-hd {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 24px 14px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #edf1f7;
+}
+.pm-list-hd h2 { font-size: 16px; font-weight: 700; color: #1d3e73; margin: 0; }
+.pm-list-count  { font-size: 12px; color: #8fa3c4; }
 
-            <label for="TDS_Payment_Amount">TDS Amount:</label><br>
-            <input type="number" step="0.01" id="TDS_Payment_Amount" name="TDS_Payment_Amount" required
-                readonly><br><br>
+/* Filters */
+.pm-filters {
+  padding: 14px 24px; background: #f8fbff; border-bottom: 1px solid #edf1f7;
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+}
+.pm-fgroup { display: flex; flex-direction: column; gap: 4px; }
+.pm-fgroup label { font-size: 11px; font-weight: 600; color: #8fa3c4; text-transform: uppercase; }
+.pm-fgroup input,
+.pm-fgroup select {
+  padding: 7px 11px; border: 1.5px solid #d8dfeb; border-radius: 8px;
+  background: #fff; font-size: 12.5px; color: #344054; outline: none; min-width: 120px;
+}
+.pm-fgroup input:focus, .pm-fgroup select:focus {
+  border-color: #2d73d5; box-shadow: 0 0 0 3px rgba(45,115,213,.08);
+}
+.pm-fclear {
+  padding: 7px 14px; background: #f0f4fa; border: 1.5px solid #d0dff5;
+  border-radius: 8px; color: #1d3e73; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; align-self: flex-end;
+}
+.pm-fclear:hover { background: #e4edf8; }
 
-            <label for="total_amount">Total Amount:</label><br>
-            <input type="number" step="0.01" id="total_amount" name="total_amount" required readonly><br><br>
+/* Table */
+.pm-table-wrap { overflow-x: auto; }
+.pm-table { width: 100%; border-collapse: collapse; min-width: 1060px; }
+.pm-table thead tr { background: linear-gradient(90deg, #183b70, #2f68bb); }
+.pm-table th {
+  padding: 11px 13px; font-size: 12px; font-weight: 600; color: #fff;
+  text-align: left; white-space: nowrap; position: sticky; top: 0; z-index: 2;
+}
+.pm-table td {
+  padding: 11px 13px; font-size: 13px; color: #344054;
+  border-bottom: 1px solid #edf1f7; vertical-align: middle;
+}
+.pm-table tbody tr:hover { background: #f8fbff; }
+.pm-name-cell { font-weight: 600; color: #1d3e73; max-width: 160px; }
+.pm-mono  { font-family: monospace; font-size: 12.5px; }
+.pm-total { font-weight: 700; color: #1a7a3f; font-family: monospace; }
+.pm-utr-cell { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-family: monospace; color: #5a7aa3; }
+.pm-empty { text-align: center; padding: 52px 24px; color: #8fa3c4; }
+.pm-empty i { font-size: 36px; margin-bottom: 10px; display: block; }
+
+/* Status badges */
+.pm-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 700; border: 1px solid; white-space: nowrap;
+}
+.pm-badge.paid          { background: #f0fff5; color: #1a7a3f; border-color: #a3e6bc; }
+.pm-badge.partial       { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+.pm-badge.pending       { background: #f0f7ff; color: #1d3e73; border-color: #b3cff0; }
+.pm-badge.overpaid      { background: #fff0f0; color: #c62828; border-color: #ffc0c0; }
+.pm-badge.duplicate-utr { background: #fdf4ff; color: #6b21a8; border-color: #d8b4fe; }
+
+/* Actions dropdown */
+.pm-act-btn {
+  padding: 5px 11px; background: #f0f4fa; border: 1.5px solid #d0dff5;
+  border-radius: 7px; font-size: 12px; font-weight: 600; color: #1d3e73;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.pm-act-btn:hover { background: #e4edf8; }
+.pm-act-menu {
+  display: none; position: fixed; background: #fff; border: 1px solid #dce8f8;
+  border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.13);
+  min-width: 162px; z-index: 9999; overflow: hidden;
+}
+.pm-act-menu.open { display: block; }
+.pm-act-item {
+  display: flex; align-items: center; gap: 9px; padding: 10px 16px;
+  font-size: 13px; color: #344054; cursor: pointer; background: none;
+  border: none; width: 100%; text-align: left; transition: background .12s;
+}
+.pm-act-item:hover     { background: #f0f7ff; color: #1d3e73; }
+.pm-act-item.pm-dng    { color: #c62828; }
+.pm-act-item.pm-dng:hover { background: #fff0f0; }
+.pm-act-div { height: 1px; background: #edf1f7; margin: 3px 0; }
+
+/* Modal */
+.pm-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(20,35,70,.45); z-index: 10000; align-items: center; justify-content: center;
+}
+.pm-overlay.open { display: flex; }
+.pm-modal {
+  background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  width: 680px; max-width: calc(100vw - 32px); max-height: 92vh; overflow-y: auto;
+}
+.pm-modal-head {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  padding: 20px 26px; border-radius: 20px 20px 0 0; color: #fff;
+}
+.pm-modal-head h3 { margin: 0 0 3px; font-size: 17px; }
+.pm-modal-head p  { margin: 0; font-size: 12.5px; opacity: .8; }
+.pm-modal-close {
+  float: right; background: rgba(255,255,255,.18); border: none;
+  color: #fff; width: 28px; height: 28px; border-radius: 50%;
+  cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+}
+.pm-modal-body { padding: 22px 26px; }
+.pm-ms {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 4px 11px; border-radius: 0 7px 7px 0; display: inline-block; margin-bottom: 12px;
+}
+.pm-dg  { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
+.pm-dg2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 16px; }
+.pm-di label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: #8fa3c4; display: block; margin-bottom: 3px;
+}
+.pm-di span { font-size: 13.5px; color: #1d3e73; font-weight: 600; word-break: break-all; }
+.pm-di span.muted { color: #8fa3c4; font-weight: 400; }
+.pm-di span.total { color: #1a7a3f; font-weight: 700; font-size: 15px; }
+
+@media (max-width: 768px) {
+  .pm-form-card { padding: 20px 16px; }
+  .pm-g2, .pm-g3, .pm-g4 { grid-template-columns: 1fr; }
+  .pm-dg, .pm-dg2 { grid-template-columns: 1fr 1fr; }
+}
+</style>
 
 
-            <label for="utr">UTR:</label><br>
-            <input type="text" id="utr" name="utr"><br><br>
+<div class="pm-page">
 
-            <button type="submit">Submit Payment</button>
-        </form>
-    </div>
+  <!-- Header -->
+  <div class="pm-header">
+    <h1><i class="fas fa-money-check-alt" style="margin-right:10px;opacity:.9;"></i>Payment Management</h1>
+    <p>Record, track, and reconcile invoice payments.</p>
+  </div>
 
-    <div id="successPopup" class="success-popup">
-        <i>&#10004;</i> Payment added successfully!
-    </div>
+  <!-- Tabs (IDs preserved for any existing JS hooks) -->
+  <div class="pm-tabs">
+    <button id="addButton" class="pm-tab-btn" onclick="pmTab('form')">
+      <i class="fas fa-plus-circle"></i> Add Payment
+    </button>
+    <button id="displayButton" class="pm-tab-btn active" onclick="pmTab('list')">
+      <i class="fas fa-list"></i> Payment History
+    </button>
+  </div>
 
-    <div id="addTable" style="display: none;">
-        <div class="search-container">
-            <h2>Payment History</h2>
-            <input type="text" id="searchBar" placeholder="Searching..." onkeyup="searchTable()">
+  <!-- Toast -->
+  <div class="pm-toast" id="pmToast"></div>
+
+  <!-- ── Add Payment Form ─────────────────────────────────────── -->
+  <div id="addForm" class="pm-form-card" style="display:none;">
+    <form id="pmAddForm" onsubmit="pmSubmitAdd(event)">
+
+      <!-- Section 1: Contractor & Invoice -->
+      <div class="pm-section">
+        <div class="pm-sec-title"><i class="fas fa-hard-hat" style="margin-right:6px;"></i>Contractor &amp; Invoice</div>
+        <div class="pm-g3">
+
+          <div class="pm-field pm-full pm-ac-wrap">
+            <label>Subcontractor Name <span class="pm-req">*</span></label>
+            <input type="text" id="subcontractor" name="subcontractor"
+              placeholder="Type to search contractor…" autocomplete="off" required>
+            <input type="hidden" id="subcontractor_id" name="subcontractor_id">
+            <div id="subcontractor_list" class="pm-ac-list"></div>
+          </div>
+
+          <div class="pm-field">
+            <label>PMC No <span class="pm-req">*</span></label>
+            <select id="PMC_No" name="PMC_No" required onchange="pmPMCChanged()">
+              <option value="">Select PMC No</option>
+            </select>
+          </div>
+
+          <div class="pm-field">
+            <label>Invoice No</label>
+            <input type="text" id="invoice_No_select" name="invoice_No"
+              list="invoice_datalist" placeholder="Select or type invoice no"
+              oninput="pmInvoiceChanged()" autocomplete="off">
+            <datalist id="invoice_datalist"></datalist>
+          </div>
+
         </div>
-        <table id="sortableTable" border="1">
-            <thead>
-                <tr>
-                    <th class="sortable-header">Payment ID</th>
-                    <th class="sortable-header">PMC No</th>
-                    <th>Invoice No</th>
-                    <th>Payment Amount</th>
-                    <th>TDS Amount</th>
-                    <th>Total Amount</th>
-                    <th>UTR</th>
-                    <th>Update</th>
-                    <th>Delete</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for payment in payments %}
-                <tr>
-                    <td>{{ payment[0] }}</td>
-                    <td>{{ payment[1] }}</td>
-                    <td>{{ payment[2] }}</td>
-                    <td>{{ payment[3] }}</td>
-                    <td>{{ payment[4] }}</td>
-                    <td>{{ payment[5] }}</td>
-                    <td>{{ payment[6] }}</td>
-                    <td><a href="/edit_payment/{{ payment[0] }}"><img
-                                src="{{ url_for('static', filename='images/icons/pen_blue_icon.png') }}" alt="Edit"
-                                class="icon"></a></td>
+      </div>
 
-                    <td>
-                        <a href="{{ url_for('payment_bp.delete_payment', payment_id=payment[0]) }}"
-                            onclick="return confirm('Are you sure you want to delete this Payment?')">
-                            <img src="{{ url_for('static', filename='images/icons/bin_red_icon.png') }}" alt="Delete"
-                                class="icon">
-                        </a>
-                    </td>
-                </tr>
-                <!-- <tr>
-            <td>{{ payment['Payment_Id'] }}</td>
-            <td>{{ payment['PMC_No'] }}</td>
-            <td>{{ payment['invoice_no'] }}</td>
-            <td>{{ payment['Payment_Amount'] }}</td>
-            <td>{{ payment['TDS_Payment_Amount'] }}</td>
-            <td>{{ payment['Total_Amount'] }}</td>
-            <td>{{ payment['UTR'] }}</td>
-            <td><a href="/edit_payment/{{ payment['Payment_Id'] }}"><img src="{{ url_for('static', filename='images/icons/pen_blue_icon.png') }}" alt="Edit" class="icon"></a></td>
-            <td><a href="/delete_payment/{{ payment['Payment_Id'] }}" onclick="return confirm('Are you sure you want to delete this payment?')"><img src="{{ url_for('static', filename='images/icons/bin_red_icon.png') }}" alt="Delete" class="icon"></a></td>
-        </tr> -->
-                {% endfor %}
-            </tbody>
-        </table>
+      <!-- Section 2: Payment Calculation -->
+      <div class="pm-section">
+        <div class="pm-sec-title"><i class="fas fa-calculator" style="margin-right:6px;"></i>Payment Calculation</div>
+        <div class="pm-g4">
+
+          <div class="pm-field">
+            <label>Amount with TDS (&#8377;) <span class="pm-req">*</span></label>
+            <input type="number" step="0.01" id="Amount_with_TDS" name="Amount_with_TDS"
+              placeholder="0.00" required oninput="pmCalc()">
+          </div>
+
+          <div class="pm-field">
+            <label>TDS Amount (&#8377;)</label>
+            <input type="number" step="0.01" id="TDS_Payment_Amount" name="TDS_Payment_Amount"
+              placeholder="0.00" oninput="pmCalc()">
+          </div>
+
+          <div class="pm-field">
+            <label>Amount after TDS Deduction (&#8377;)</label>
+            <input type="number" step="0.01" id="total_amount" name="total_amount"
+              placeholder="0.00" readonly>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 3: Transaction Details -->
+      <div class="pm-section">
+        <div class="pm-sec-title"><i class="fas fa-receipt" style="margin-right:6px;"></i>Transaction Details</div>
+        <div class="pm-g3">
+
+          <div class="pm-field pm-full">
+            <label>UTR <span class="pm-req">*</span></label>
+            <input type="text" id="utr" name="utr"
+              placeholder="Bank transaction reference / UTR number" required>
+          </div>
+
+          <div class="pm-field">
+            <label>Payment Date <span class="pm-req">*</span></label>
+            <input type="date" id="payment_date" name="payment_date" required>
+          </div>
+
+          <div class="pm-field">
+            <label>Payment Status</label>
+            <select id="payment_status" name="payment_status">
+              <option value="Paid">Paid</option>
+              <option value="Partial">Partial</option>
+              <option value="Pending">Pending</option>
+              <option value="Overpaid">Overpaid</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="pm-form-footer">
+        <button type="submit" class="pm-submit-btn" id="pmAddBtn">Submit Payment</button>
+        <button type="button" class="pm-clear-btn" onclick="pmClearForm()">Clear</button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ── Payment History ─────────────────────────────────────── -->
+  <div id="addTable" class="pm-list-card">
+
+    <div class="pm-list-hd">
+      <div>
+        <h2>Payment History</h2>
+        <span class="pm-list-count" id="pmCount">{{ payments|length }} record{{ 's' if payments|length != 1 else '' }}</span>
+      </div>
     </div>
 
-    <script>
-        document.getElementById("subcontractor").addEventListener("input", function () {
-            const query = this.value;
-            const list = document.getElementById("subcontractor_list");
+    <!-- Filters -->
+    <div class="pm-filters">
+      <div class="pm-fgroup">
+        <label>Contractor</label>
+        <select id="pmFContractor" onchange="pmFilter()">
+          <option value="">All Contractors</option>
+        </select>
+      </div>
+      <div class="pm-fgroup">
+        <label>PMC No</label>
+        <input type="text" id="pmFPMC" placeholder="Any PMC" oninput="pmFilter()">
+      </div>
+      <div class="pm-fgroup">
+        <label>Invoice No</label>
+        <input type="text" id="pmFInv" placeholder="Any Invoice" oninput="pmFilter()">
+      </div>
+      <div class="pm-fgroup">
+        <label>Status</label>
+        <select id="pmFStatus" onchange="pmFilter()">
+          <option value="">All Statuses</option>
+          <option value="Paid">Paid</option>
+          <option value="Partial">Partial</option>
+          <option value="Pending">Pending</option>
+          <option value="Overpaid">Overpaid</option>
+          <option value="Duplicate UTR">Duplicate UTR</option>
+        </select>
+      </div>
+      <div class="pm-fgroup">
+        <label>Date From</label>
+        <input type="date" id="pmFFrom" onchange="pmFilter()">
+      </div>
+      <div class="pm-fgroup">
+        <label>Date To</label>
+        <input type="date" id="pmFTo" onchange="pmFilter()">
+      </div>
+      <div class="pm-fgroup">
+        <label>Search UTR</label>
+        <input type="text" id="pmFUTR" placeholder="UTR keyword…" oninput="pmFilter()">
+      </div>
+      <button class="pm-fclear" onclick="pmClearFilter()">Clear Filters</button>
+    </div>
 
-            if (query.length < 2) {
-                list.innerHTML = '';
-                return;
-            }
+    <!-- Table -->
+    <div class="pm-table-wrap">
+      <table class="pm-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Contractor</th>
+            <th>PMC No</th>
+            <th>Invoice No</th>
+            <th>Amount with TDS (&#8377;)</th>
+            <th>Amount after TDS Deduction (&#8377;)</th>
+            <th>UTR</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="pmTableBody">
+          {% if payments %}
+            {% for p in payments %}
+              {% set st = (p.Payment_Status or 'Paid') %}
+              {% set d = {
+                'id':         p.Payment_Id,
+                'contractor': (p.Contractor_Name or ''),
+                'pmc':        (p.PMC_No or '')|string,
+                'invoice':    (p.Invoice_No or ''),
+                'amount':     (p.Amount_with_TDS or 0)|string,
+                'tds_pct':    (p.TDS_Percentage or 0)|string,
+                'tds_amt':    (p.TDS_Payment_Amount or 0)|string,
+                'total':      (p.Amount_after_TDS_Deduction or 0)|string,
+                'utr':        (p.UTR or ''),
+                'date':       p.Payment_Date|string if p.Payment_Date else '',
+                'status':     st,
+              } %}
+              <tr data-id="{{ p.Payment_Id }}"
+                  data-info='{{ d | tojson }}'
+                  data-contractor="{{ (p.Contractor_Name or '')|lower }}"
+                  data-pmc="{{ p.PMC_No or '' }}"
+                  data-invoice="{{ p.Invoice_No or '' }}"
+                  data-status="{{ st }}"
+                  data-date="{{ p.Payment_Date|string if p.Payment_Date else '' }}"
+                  data-utr="{{ (p.UTR or '')|lower }}">
+                <td class="pm-mono">{{ p.Payment_Id }}</td>
+                <td class="pm-name-cell" title="{{ p.Contractor_Name or '' }}">{{ p.Contractor_Name or '—' }}</td>
+                <td class="pm-mono">{{ p.PMC_No or '—' }}</td>
+                <td>{{ p.Invoice_No or '—' }}</td>
+                <td class="pm-mono">{{ p.Amount_with_TDS or '0.00' }}</td>
+                <td class="pm-total">{{ p.Amount_after_TDS_Deduction or '0.00' }}</td>
+                <td class="pm-utr-cell" title="{{ p.UTR or '' }}">
+                  {{ (p.UTR or '')[:40] }}{% if p.UTR and p.UTR|length > 40 %}…{% endif %}
+                </td>
+                <td>{{ p.Payment_Date|string if p.Payment_Date else '—' }}</td>
+                <td>
+                  <span class="pm-badge {{ st|lower|replace(' ', '-') }}">{{ st }}</span>
+                </td>
+                <td>
+                  <button class="pm-act-btn" onclick="pmOpenMenu(this, {{ p.Payment_Id }})">
+                    Actions <i class="fas fa-chevron-down" style="font-size:10px;"></i>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="12" class="pm-empty">
+                <i class="fas fa-money-check-alt"></i>
+                <p style="font-weight:600;">No payments recorded yet</p>
+                <p>Click <b>Add Payment</b> to record the first payment.</p>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
 
-            fetch(`/search_subcontractor?query=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    list.innerHTML = '';
-                    data.results.forEach(item => {
-                        const div = document.createElement("div");
-                        div.setAttribute("data-id", item.id);
-                        div.textContent = item.name;
-                        list.appendChild(div);
-                    });
-                });
-        });
+  </div><!-- /addTable -->
 
-        document.getElementById("subcontractor_list").addEventListener("click", function (e) {
-            const selectedId = e.target.getAttribute("data-id");
-            const selectedName = e.target.textContent;
-
-            if (selectedId) {
-                document.getElementById("subcontractor_id").value = selectedId;
-                document.getElementById("subcontractor").value = selectedName;
-                document.getElementById("subcontractor_list").innerHTML = ""; // hide the list
-
-                console.log("Contractor id is", selectedId);
-
-                // Fetch PMC numbers
-                fetch(`/get_pmc_nos_by_subcontractor/${encodeURIComponent(selectedId)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Fetched PMC Nos:", data.pmc_nos);
-                        const pmcDropdown = document.getElementById("PMC_No");
-                        pmcDropdown.innerHTML = "";
-
-                        const defaultOption = document.createElement("option");
-                        defaultOption.value = "";
-                        defaultOption.textContent = "Select PMC No";
-                        pmcDropdown.appendChild(defaultOption);
-
-                        data.pmc_nos.forEach(pmc => {
-                            const option = document.createElement("option");
-                            option.value = pmc;
-                            option.textContent = pmc;
-                            pmcDropdown.appendChild(option);
-                        });
-
-                        if (data.pmc_nos.length === 0) {
-                            alert("No PMC Nos found for this subcontractor.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error fetching PMC Nos:", error);
-                        alert("Failed to fetch PMC numbers.");
-                    });
-            }
-        });
-    </script>
-
-    <script>
-        function calculateTDSAndTotal() {
-            const amount = parseFloat(document.getElementById("Payment_Amount").value) || 0;
-            const tdsPercent = parseFloat(document.getElementById("TDS_Percentage").value) || 0;
-
-            const tdsAmount = (amount * tdsPercent / 100).toFixed(2);
-            const totalAmount = (amount - tdsAmount).toFixed(2);
-
-            document.getElementById("TDS_Payment_Amount").value = tdsAmount;
-            document.getElementById("total_amount").value = totalAmount;
-        }
-    </script>
+</div><!-- /pm-page -->
 
 
-    <script src="{{ url_for('static', filename='js/showSuccessAlert.js') }}"></script>
-</body>
+<!-- Actions Dropdown (fixed position) -->
+<div class="pm-act-menu" id="pmMenu">
+  <button class="pm-act-item" onclick="pmDoView()">
+    <i class="fas fa-eye" style="width:14px;"></i> View Details
+  </button>
+  <button class="pm-act-item" onclick="pmDoEdit()">
+    <i class="fas fa-pen" style="width:14px;"></i> Edit Payment
+  </button>
+  <div class="pm-act-div"></div>
+  <button class="pm-act-item pm-dng" onclick="pmDoDelete()">
+    <i class="fas fa-trash" style="width:14px;"></i> Delete
+  </button>
+</div>
+
+
+<!-- View Details Modal -->
+<div class="pm-overlay" id="pmOverlay" onclick="pmCloseModal(event)">
+  <div class="pm-modal" onclick="event.stopPropagation()">
+    <div class="pm-modal-head">
+      <button class="pm-modal-close" onclick="pmCloseModal()">&times;</button>
+      <h3><i class="fas fa-money-check-alt" style="margin-right:8px;"></i>Payment Details</h3>
+      <p id="pmDSub" style="opacity:.85;"></p>
+    </div>
+    <div class="pm-modal-body">
+
+      <div class="pm-ms"><i class="fas fa-hard-hat" style="margin-right:5px;"></i>Contractor &amp; Invoice</div>
+      <div class="pm-dg">
+        <div class="pm-di"><label>Payment ID</label><span id="pmDId">—</span></div>
+        <div class="pm-di"><label>PMC No</label><span id="pmDPmc">—</span></div>
+        <div class="pm-di"><label>Invoice No</label><span id="pmDInv">—</span></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div class="pm-di"><label>Subcontractor Name</label><span id="pmDContractor" style="font-size:14px;font-weight:600;color:#1d3e73;">—</span></div>
+      </div>
+
+      <div class="pm-ms"><i class="fas fa-calculator" style="margin-right:5px;"></i>Payment Calculation</div>
+      <div class="pm-dg2">
+        <div class="pm-di"><label>Amount with TDS</label><span id="pmDAmount">—</span></div>
+        <div class="pm-di"><label>TDS Amount</label><span id="pmDTdsAmt">—</span></div>
+        <div class="pm-di"><label>Amount after TDS Deduction</label><span id="pmDTotal" class="total">—</span></div>
+      </div>
+
+      <div class="pm-ms"><i class="fas fa-receipt" style="margin-right:5px;"></i>Transaction Details</div>
+      <div class="pm-dg2">
+        <div class="pm-di"><label>Payment Date</label><span id="pmDDate">—</span></div>
+        <div class="pm-di"><label>Payment Status</label><span id="pmDStatus">—</span></div>
+      </div>
+      <div class="pm-di" style="margin-bottom:8px;">
+        <label>UTR</label>
+        <span id="pmDUtr" style="word-break:break-all;font-family:monospace;font-size:13px;color:#344054;">—</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ── Tab switching ─────────────────────────────────────────────── */
+function pmTab(tab) {
+  const addForm   = document.getElementById('addForm');
+  const addTable  = document.getElementById('addTable');
+  const addBtn    = document.getElementById('addButton');
+  const dispBtn   = document.getElementById('displayButton');
+  if (tab === 'form') {
+    addForm.style.display  = 'block';
+    addTable.style.display = 'none';
+    addBtn.classList.add('active');
+    dispBtn.classList.remove('active');
+  } else {
+    addForm.style.display  = 'none';
+    addTable.style.display = 'block';
+    addBtn.classList.remove('active');
+    dispBtn.classList.add('active');
+  }
+}
+
+/* ── Toast ──────────────────────────────────────────────────────── */
+function pmToast(msg, type) {
+  const t = document.getElementById('pmToast');
+  t.textContent = msg;
+  t.className = 'pm-toast ' + (type || 'ok');
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+window.alert = function(msg) {
+  pmToast(msg, (msg.toLowerCase().includes('error') || msg.toLowerCase().includes('fail')) ? 'err' : 'ok');
+};
+
+/* ── Subcontractor autocomplete ────────────────────────────────── */
+let pmAcTimer;
+document.getElementById('subcontractor').addEventListener('input', function () {
+  clearTimeout(pmAcTimer);
+  const q = this.value.trim();
+  if (q.length < 1) { pmHideAc(); return; }
+  pmAcTimer = setTimeout(() => pmSearchContractors(q), 280);
+});
+document.getElementById('subcontractor').addEventListener('blur', function() {
+  setTimeout(pmHideAc, 200);
+});
+
+async function pmSearchContractors(q) {
+  try {
+    const res  = await fetch(`/api/payment/search_contractors?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const list = document.getElementById('subcontractor_list');
+    list.innerHTML = '';
+    if (!data.results || !data.results.length) { list.style.display = 'none'; return; }
+    data.results.forEach(r => {
+      const d = document.createElement('div');
+      d.className = 'pm-ac-item';
+      d.textContent = r.name;
+      d.addEventListener('mousedown', () => pmSelectContractor(r.id, r.name));
+      list.appendChild(d);
+    });
+    list.style.display = 'block';
+  } catch(e) { pmHideAc(); }
+}
+
+function pmSelectContractor(id, name) {
+  document.getElementById('subcontractor').value    = name;
+  document.getElementById('subcontractor_id').value = id;
+  pmHideAc();
+  pmLoadPMC(id);
+}
+
+function pmHideAc() {
+  document.getElementById('subcontractor_list').style.display = 'none';
+}
+
+/* ── Load PMC Nos ──────────────────────────────────────────────── */
+async function pmLoadPMC(contractorId) {
+  const sel = document.getElementById('PMC_No');
+  sel.innerHTML = '<option value="">Loading…</option>';
+  const invSel = document.getElementById('invoice_No_select');
+  if (invSel) { invSel.value = ''; document.getElementById('invoice_datalist').innerHTML = ''; }
+  try {
+    const res  = await fetch(`/get_pmc_nos_by_subcontractor/${contractorId}`);
+    const data = await res.json();
+    sel.innerHTML = '<option value="">Select PMC No</option>';
+    (data.pmc_nos || []).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p; opt.textContent = p;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    sel.innerHTML = '<option value="">Error loading PMC</option>';
+  }
+}
+
+function pmPMCChanged() {
+  const cid   = document.getElementById('subcontractor_id').value;
+  const pmcNo = document.getElementById('PMC_No').value;
+  const inv   = document.getElementById('invoice_No_select');
+  inv.value   = '';
+  document.getElementById('invoice_datalist').innerHTML = '';
+  document.getElementById('Amount_with_TDS').value = '';
+  pmCalc();
+  if (!cid || !pmcNo) return;
+  pmLoadInvoices(cid, pmcNo);
+}
+
+/* ── Load Invoices into datalist ───────────────────────────────── */
+let _pmInvoiceAmounts = {};
+async function pmLoadInvoices(contractorId, pmcNo) {
+  _pmInvoiceAmounts = {};
+  const dl = document.getElementById('invoice_datalist');
+  dl.innerHTML = '';
+  try {
+    const res  = await fetch(`/api/payment/invoices/${contractorId}/${pmcNo}`);
+    const data = await res.json();
+    (data.invoices || []).forEach(inv => {
+      if (!inv.invoice_no) return;
+      const opt = document.createElement('option');
+      opt.value = inv.invoice_no;
+      opt.label = `${inv.invoice_no}  (Amt: ₹${inv.basic_amount})`;
+      dl.appendChild(opt);
+      _pmInvoiceAmounts[inv.invoice_no] = inv.basic_amount;
+    });
+  } catch(e) { /* allow manual entry on error */ }
+}
+
+function pmInvoiceChanged() {
+  const val = document.getElementById('invoice_No_select').value.trim();
+  if (val && _pmInvoiceAmounts[val]) {
+    document.getElementById('Amount_with_TDS').value = parseFloat(_pmInvoiceAmounts[val]).toFixed(2);
+    pmCalc();
+  }
+}
+
+/* ── TDS Calculation ───────────────────────────────────────────── */
+function pmCalc() {
+  const amount  = parseFloat(document.getElementById('Amount_with_TDS').value)      || 0;
+  const tdsAmt  = parseFloat(document.getElementById('TDS_Payment_Amount').value)  || 0;
+  const total   = amount - tdsAmt;
+  document.getElementById('total_amount').value = total.toFixed(2);
+}
+
+/* ── Form Submit ───────────────────────────────────────────────── */
+async function pmSubmitAdd(e) {
+  e.preventDefault();
+  const utr = document.getElementById('utr').value.trim();
+  if (!utr) { pmToast('UTR is required.', 'err'); return; }
+
+  const btn = document.getElementById('pmAddBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const res  = await fetch('/add_payment', {
+      method: 'POST',
+      body: new FormData(document.getElementById('pmAddForm'))
+    });
+    const data = await res.json();
+    if (data.success) {
+      pmToast('Payment added successfully!', 'ok');
+      setTimeout(() => window.location.reload(), 1100);
+    } else {
+      pmToast(data.message || 'Failed to add payment.', 'err');
+      btn.disabled    = false;
+      btn.textContent = 'Submit Payment';
+    }
+  } catch(err) {
+    pmToast('Network error. Please try again.', 'err');
+    btn.disabled    = false;
+    btn.textContent = 'Submit Payment';
+  }
+}
+
+function pmClearForm() {
+  document.getElementById('pmAddForm').reset();
+  document.getElementById('TDS_Payment_Amount').value = '';
+  document.getElementById('total_amount').value        = '';
+  document.getElementById('PMC_No').innerHTML          = '<option value="">Select PMC No</option>';
+  document.getElementById('invoice_No_select').value = '';
+  document.getElementById('invoice_datalist').innerHTML = '';
+}
+
+/* ── Client-side Filters ───────────────────────────────────────── */
+function pmFilter() {
+  const fCon    = document.getElementById('pmFContractor').value.toLowerCase();
+  const fPMC    = document.getElementById('pmFPMC').value.toLowerCase();
+  const fInv    = document.getElementById('pmFInv').value.toLowerCase();
+  const fStatus = document.getElementById('pmFStatus').value;
+  const fFrom   = document.getElementById('pmFFrom').value;
+  const fTo     = document.getElementById('pmFTo').value;
+  const fUTR    = document.getElementById('pmFUTR').value.toLowerCase();
+
+  let count = 0;
+  document.querySelectorAll('#pmTableBody tr[data-id]').forEach(tr => {
+    let show = true;
+    const con    = tr.dataset.contractor || '';
+    const pmc    = String(tr.dataset.pmc || '').toLowerCase();
+    const inv    = String(tr.dataset.invoice || '').toLowerCase();
+    const status = tr.dataset.status || '';
+    const date   = tr.dataset.date   || '';
+    const utr    = tr.dataset.utr    || '';
+
+    if (fCon    && !con.includes(fCon))       show = false;
+    if (fPMC    && !pmc.includes(fPMC))       show = false;
+    if (fInv    && !inv.includes(fInv))       show = false;
+    if (fStatus && status !== fStatus)         show = false;
+    if (fFrom   && date && date < fFrom)       show = false;
+    if (fTo     && date && date > fTo)         show = false;
+    if (fUTR    && !utr.includes(fUTR))        show = false;
+
+    tr.style.display = show ? '' : 'none';
+    if (show) count++;
+  });
+  document.getElementById('pmCount').textContent =
+    count + ' record' + (count !== 1 ? 's' : '');
+}
+
+function pmClearFilter() {
+  ['pmFContractor','pmFPMC','pmFInv','pmFStatus','pmFFrom','pmFTo','pmFUTR']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el.tagName === 'SELECT') el.value = '';
+      else el.value = '';
+    });
+  pmFilter();
+}
+
+/* ── Build contractor filter dropdown from table data ─────────── */
+(function buildContractorFilter() {
+  const seen = new Set();
+  document.querySelectorAll('#pmTableBody tr[data-id]').forEach(tr => {
+    const name = tr.dataset.contractor;
+    if (name) seen.add(name);
+  });
+  const sel = document.getElementById('pmFContractor');
+  [...seen].sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name.toLowerCase();
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+})();
+
+/* ── Actions Dropdown ──────────────────────────────────────────── */
+let _pmMenuId = null;
+
+function pmOpenMenu(btn, paymentId) {
+  const menu = document.getElementById('pmMenu');
+  if (_pmMenuId === paymentId && menu.classList.contains('open')) {
+    menu.classList.remove('open'); _pmMenuId = null; return;
+  }
+  _pmMenuId = paymentId;
+
+  /* measure menu height before showing */
+  menu.style.visibility = 'hidden';
+  menu.style.display    = 'block';
+  const mH = menu.offsetHeight;
+  menu.style.display    = '';
+  menu.style.visibility = '';
+
+  const r        = btn.getBoundingClientRect();
+  const openUp   = (window.innerHeight - r.bottom - 8) < mH;
+  const rightOff = window.innerWidth - r.right;
+
+  /* position: fixed — coordinates are viewport-relative, no scrollY needed */
+  menu.style.position = 'fixed';
+  menu.style.right    = rightOff + 'px';
+  menu.style.left     = 'auto';
+  if (openUp) {
+    menu.style.top    = 'auto';
+    menu.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+  } else {
+    menu.style.top    = (r.bottom + 4) + 'px';
+    menu.style.bottom = 'auto';
+  }
+
+  menu.classList.add('open');
+  menu.dataset.id   = paymentId;
+  menu.dataset.info = btn.closest('tr').dataset.info;
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.pm-act-btn') && !e.target.closest('#pmMenu')) {
+    document.getElementById('pmMenu').classList.remove('open');
+    _pmMenuId = null;
+  }
+});
+
+window.addEventListener('scroll', function() {
+  document.getElementById('pmMenu').classList.remove('open');
+  _pmMenuId = null;
+}, { passive: true });
+
+async function pmDoView() {
+  const menu = document.getElementById('pmMenu');
+  const id   = menu.dataset.id;
+  menu.classList.remove('open'); _pmMenuId = null;
+
+  document.getElementById('pmDSub').textContent = 'Loading…';
+  document.getElementById('pmOverlay').classList.add('open');
+
+  try {
+    const res  = await fetch('/api/payment/' + id);
+    const data = await res.json();
+    if (data.success) {
+      _fillPmModal(data);
+    } else {
+      document.getElementById('pmDSub').textContent = 'Failed to load details.';
+    }
+  } catch(err) {
+    document.getElementById('pmDSub').textContent = 'Network error.';
+  }
+}
+
+function pmDoEdit() {
+  const menu = document.getElementById('pmMenu');
+  const id   = menu.dataset.id;
+  menu.classList.remove('open'); _pmMenuId = null;
+  window.location.href = `/edit_payment/${id}`;
+}
+
+async function pmDoDelete() {
+  const menu = document.getElementById('pmMenu');
+  const id   = menu.dataset.id;
+  const info = JSON.parse(menu.dataset.info || '{}');
+  menu.classList.remove('open'); _pmMenuId = null;
+
+  if (!confirm(`Delete payment #${id} (${info.contractor || ''})?\nThis cannot be undone.`)) return;
+
+  try {
+    const res  = await fetch(`/delete_payment/${id}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      pmToast('Payment deleted.', 'ok');
+      setTimeout(() => window.location.reload(), 900);
+    } else {
+      pmToast(data.message || 'Delete failed.', 'err');
+    }
+  } catch(e) {
+    pmToast('Network error.', 'err');
+  }
+}
+
+/* ── View Details Modal ────────────────────────────────────────── */
+function _pmFmt(v) {
+  const n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  return '₹ ' + n.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function _pmFmtPct(v) {
+  const n = parseFloat(v);
+  return (!isNaN(n) && n !== 0) ? n + '%' : '0%';
+}
+
+function _fillPmModal(d) {
+  document.getElementById('pmDSub').textContent        = (d.contractor || '—') + ' · PMC ' + (d.pmc || '—');
+  document.getElementById('pmDId').textContent         = '#' + (d.id || '—');
+  document.getElementById('pmDContractor').textContent = d.contractor || '—';
+  document.getElementById('pmDPmc').textContent        = d.pmc     || '—';
+  document.getElementById('pmDInv').textContent        = d.invoice || '—';
+  document.getElementById('pmDAmount').textContent     = _pmFmt(d.amount);
+  document.getElementById('pmDTdsAmt').textContent     = _pmFmt(d.tds_amt);
+  document.getElementById('pmDTotal').textContent      = _pmFmt(d.total);
+  document.getElementById('pmDDate').textContent       = d.date || '—';
+  document.getElementById('pmDUtr').textContent        = d.utr  || '—';
+  const statusEl = document.getElementById('pmDStatus');
+  const cls = (d.status || 'Paid').toLowerCase().replace(/ /g, '-');
+  statusEl.innerHTML = `<span class="pm-badge ${cls}">${d.status || 'Paid'}</span>`;
+}
+
+function pmCloseModal(e) {
+  if (!e || e.target === document.getElementById('pmOverlay') || e.currentTarget === document.querySelector('.pm-modal-close')) {
+    document.getElementById('pmOverlay').classList.remove('open');
+  }
+}
+</script>
+
 {% endblock %}

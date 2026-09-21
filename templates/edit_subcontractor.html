@@ -1,50 +1,337 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <title>Edit SubContractor</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
 
-<h2>Edit Sub-Contractor</h2>
-<form method="POST">
-    <input type="hidden" name="Contractor_Id" value="{{ subcontractor[0] }}">
+<style>
+.sce-page { max-width: 860px; margin: 0 auto; }
 
-    <label>Enter Contractor Name :</label>
-    <input type="text" name="Contractor_Name" value="{{ subcontractor[1] }}" required><br>
+/* Header */
+.sce-header {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px;
+  padding: 22px 28px;
+  margin-bottom: 22px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.sce-header h1 { font-size: 21px; font-weight: 700; margin: 0; }
+.sce-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 9px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.sce-back:hover { background: rgba(255,255,255,.25); }
 
-    <label>Address :</label>
-    <input type="text" name="Address" value="{{ subcontractor[2] }}" required><br>
+/* Form card */
+.sce-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+  padding: 30px 34px;
+}
 
-    <label>Mobile No :</label>
-    <input type="text" name="Mobile_No" value="{{ subcontractor[3] }}" required><br>
+/* Error banner */
+.sce-err-banner {
+  display: none;
+  background: #fff0f0;
+  border: 1px solid #ffc0c0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #c62828;
+  font-size: 13.5px;
+  margin-bottom: 18px;
+}
+.sce-ok-banner {
+  display: none;
+  background: #f0fff5;
+  border: 1px solid #a3e6bc;
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #1a7a3f;
+  font-size: 13.5px;
+  margin-bottom: 18px;
+}
 
-    <label>PAN No :</label>
-    <input type="text" name="PAN_No" value="{{ subcontractor[4] }}" required><br>
+/* Sections */
+.sce-section { margin-bottom: 24px; }
+.sce-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #2a5298;
+  background: #f0f7ff;
+  border-left: 3px solid #2a5298;
+  padding: 5px 12px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 14px;
+  display: inline-block;
+}
+.sce-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+.sce-full { grid-column: 1 / -1; }
 
-    <label>Email :</label>
-    <input type="email" name="Email" value="{{ subcontractor[5] }}" required><br>
+.sce-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+  margin-bottom: 6px;
+}
+.sce-req { color: #d32f2f; margin-left: 2px; }
+.sce-field input,
+.sce-field select,
+.sce-field textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #d8dfeb;
+  border-radius: 10px;
+  background: #fafcff;
+  font-size: 13.5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s;
+}
+.sce-field textarea { min-height: 84px; resize: vertical; }
+.sce-field input:focus,
+.sce-field select:focus,
+.sce-field textarea:focus {
+  border-color: #2d73d5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+}
+.sce-err-msg { font-size: 12px; color: #d32f2f; margin-top: 4px; min-height: 15px; display: block; }
 
-    <label>Gender :</label>
-    <select name="Gender" required>
-        <option value="Male" {% if subcontractor[6]=='Male' %}selected{% endif %}>Male</option>
-        <option value="Female" {% if subcontractor[6]=='Female' %}selected{% endif %}>Female</option>
-        <option value="Other" {% if subcontractor[6]=='Other' %}selected{% endif %}>Other</option>
-    </select><br>
+/* Actions */
+.sce-actions { display: flex; gap: 12px; margin-top: 8px; align-items: center; flex-wrap: wrap; }
+.sce-submit {
+  padding: 12px 34px;
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.sce-submit:disabled { opacity: .5; cursor: not-allowed; }
 
-    <label>GST Registration Type :</label>
-    <input type="text" name="GST_Registration_Type" value="{{ subcontractor[7] }}" required><br>
-
-    <label>GST No :</label>
-    <input type="text" name="GST_No" value="{{ subcontractor[8] }}" required><br>
-
-    <label>Enter New Password :</label>
-    <input type="text" name="Contractor_password" value="{{ subcontractor[9] }}" required><br>
-
-    <button type="submit">Update</button>
-</form>
+@media (max-width: 768px) {
+  .sce-card { padding: 20px 16px; }
+  .sce-grid { grid-template-columns: 1fr; }
+}
+</style>
 
 
-</body>
+<div class="sce-page">
+
+  <!-- Header -->
+  <div class="sce-header">
+    <h1><i class="fas fa-pen" style="margin-right:9px;opacity:.9;"></i>Edit Contractor</h1>
+    <a href="/subcontractor" class="sce-back">
+      <i class="fas fa-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <div class="sce-card">
+
+    <div class="sce-err-banner" id="sceErrBanner"></div>
+    <div class="sce-ok-banner"  id="sceOkBanner"></div>
+
+    <form id="sceForm" onsubmit="submitEdit(event)">
+      <input type="hidden" name="Contractor_Id" value="{{ subcontractor[0] }}">
+
+      <!-- Basic Details -->
+      <div class="sce-section">
+        <div class="sce-section-title"><i class="fas fa-user" style="margin-right:6px;"></i>Basic Details</div>
+        <div class="sce-grid">
+
+          <div class="sce-field">
+            <label>Contractor Name <span class="sce-req">*</span></label>
+            <input type="text" id="e_name" name="Contractor_Name"
+              value="{{ subcontractor[1] or '' }}" autocomplete="off">
+            <span class="sce-err-msg" id="ev_name"></span>
+          </div>
+
+          <div class="sce-field">
+            <label>Mobile No <span class="sce-req">*</span></label>
+            <input type="text" id="e_mobile" name="Mobile_No"
+              maxlength="10" value="{{ subcontractor[3] or '' }}">
+            <span class="sce-err-msg" id="ev_mobile"></span>
+          </div>
+
+          <div class="sce-field">
+            <label>Email</label>
+            <input type="email" id="e_email" name="Email"
+              value="{{ subcontractor[5] or '' }}">
+            <span class="sce-err-msg" id="ev_email"></span>
+          </div>
+
+          <div class="sce-field">
+            <label>Gender</label>
+            <select id="e_gender" name="Gender">
+              <option value="">Select Gender</option>
+              <option value="Male"   {% if subcontractor[6]=='Male'   %}selected{% endif %}>Male</option>
+              <option value="Female" {% if subcontractor[6]=='Female' %}selected{% endif %}>Female</option>
+              <option value="Other"  {% if subcontractor[6]=='Other'  %}selected{% endif %}>Other</option>
+            </select>
+            <span class="sce-err-msg" id="ev_gender"></span>
+          </div>
+
+          <div class="sce-field sce-full">
+            <label>Address</label>
+            <textarea id="e_address" name="Address">{{ subcontractor[2] or '' }}</textarea>
+            <span class="sce-err-msg" id="ev_address"></span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Business Details -->
+      <div class="sce-section">
+        <div class="sce-section-title"><i class="fas fa-briefcase" style="margin-right:6px;"></i>Business Details</div>
+        <div class="sce-grid">
+
+          <div class="sce-field">
+            <label>PAN No <span class="sce-req">*</span></label>
+            <input type="text" id="e_pan" name="PAN_No"
+              maxlength="10" style="text-transform:uppercase"
+              value="{{ subcontractor[4] or '' }}">
+            <span class="sce-err-msg" id="ev_pan"></span>
+          </div>
+
+          <div class="sce-field">
+            <label>GST Registration Type</label>
+            <select id="e_gst_type" name="GST_Registration_Type"
+              onchange="toggleEditGst()">
+              <option value=""            {% if not subcontractor[7] or subcontractor[7]=='' %}selected{% endif %}>Not Registered</option>
+              <option value="Registered"  {% if subcontractor[7]=='Registered'  %}selected{% endif %}>Registered</option>
+              <option value="Composition" {% if subcontractor[7]=='Composition' %}selected{% endif %}>Composition</option>
+              <option value="Unregistered"{% if subcontractor[7]=='Unregistered'%}selected{% endif %}>Unregistered</option>
+            </select>
+          </div>
+
+          <div class="sce-field" id="e_gst_no_wrap">
+            <label>GST No <span class="sce-req" id="e_gst_req"
+              style="{{ 'display:inline' if subcontractor[7] in ('Registered','Composition') else 'display:none' }}">*</span></label>
+            <input type="text" id="e_gst_no" name="GST_No"
+              maxlength="15" style="text-transform:uppercase"
+              placeholder="Enter GST number (required if Registered)"
+              value="{{ subcontractor[8] or '' }}">
+            <span class="sce-err-msg" id="ev_gst"></span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Login Details -->
+      <div class="sce-section">
+        <div class="sce-section-title"><i class="fas fa-key" style="margin-right:6px;"></i>Login Details</div>
+        <div class="sce-grid">
+          <div class="sce-field">
+            <label>Password</label>
+            <input type="text" id="e_password" name="Contractor_password"
+              value="" placeholder="Leave blank to keep existing password" autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+      <div class="sce-actions">
+        <button type="submit" class="sce-submit" id="sceSubmitBtn">Update Contractor</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+
+<script>
+function toggleEditGst() {
+  const v   = document.getElementById('e_gst_type').value;
+  const req = v === 'Registered' || v === 'Composition';
+  const mark = document.getElementById('e_gst_req');
+  if (mark) mark.style.display = req ? 'inline' : 'none';
+}
+
+function setEv(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg;
+}
+
+function validateEdit() {
+  let ok = true;
+  const name   = document.getElementById('e_name').value.trim();
+  const mobile = document.getElementById('e_mobile').value.trim();
+  const email  = document.getElementById('e_email').value.trim();
+  const gender = document.getElementById('e_gender').value;
+  const addr   = document.getElementById('e_address').value.trim();
+  const pan    = document.getElementById('e_pan').value.trim().toUpperCase();
+  const gstT   = document.getElementById('e_gst_type').value;
+  const gstNo  = document.getElementById('e_gst_no') ? document.getElementById('e_gst_no').value.trim() : '';
+
+  if (!name)   { setEv('ev_name',   'Contractor Name is required.');    ok = false; } else setEv('ev_name', '');
+  if (!/^[0-9]{10}$/.test(mobile))        { setEv('ev_mobile', 'Must be exactly 10 digits.');           ok = false; } else setEv('ev_mobile', '');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEv('ev_email', 'Enter a valid email address.'); ok = false; } else setEv('ev_email', '');
+  setEv('ev_gender', '');
+  setEv('ev_address', '');
+  if (!/^[A-Z0-9]{10}$/.test(pan))        { setEv('ev_pan',    'PAN must be 10 uppercase letters/digits.'); ok = false; } else setEv('ev_pan', '');
+
+  const gstReq = gstT === 'Registered' || gstT === 'Composition';
+  if (gstReq && gstNo.length !== 15) { setEv('ev_gst', 'GST No must be exactly 15 characters.'); ok = false; } else setEv('ev_gst', '');
+
+  return ok;
+}
+
+async function submitEdit(e) {
+  e.preventDefault();
+  if (!validateEdit()) return;
+
+  // uppercase
+  document.getElementById('e_pan').value = document.getElementById('e_pan').value.toUpperCase();
+  const gstEl = document.getElementById('e_gst_no');
+  if (gstEl) gstEl.value = gstEl.value.toUpperCase();
+
+  const errBanner = document.getElementById('sceErrBanner');
+  const okBanner  = document.getElementById('sceOkBanner');
+  errBanner.style.display = 'none';
+  okBanner.style.display  = 'none';
+
+  const btn = document.getElementById('sceSubmitBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const res  = await fetch(window.location.href, { method: 'POST', body: new FormData(document.getElementById('sceForm')) });
+    const data = await res.json();
+    if (data.success) {
+      okBanner.textContent = 'Contractor updated successfully. Redirecting…';
+      okBanner.style.display = 'block';
+      setTimeout(() => window.location.href = '/subcontractor', 1000);
+    } else {
+      errBanner.textContent = data.message || 'Failed to update contractor.';
+      errBanner.style.display = 'block';
+      btn.disabled    = false;
+      btn.textContent = 'Update Contractor';
+    }
+  } catch (err) {
+    errBanner.textContent   = 'Network error. Please try again.';
+    errBanner.style.display = 'block';
+    btn.disabled    = false;
+    btn.textContent = 'Update Contractor';
+  }
+}
+</script>
+
 {% endblock %}

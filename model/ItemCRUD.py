@@ -118,7 +118,9 @@ class ItemCRUD:
                     data['Final_Amount'],
                     data['Total_Amount'],
                     data['UTR'],
-                    data['Contractor_ID']
+                    data['Contractor_ID'],
+                    0,  # sort_order
+                    data.get('Invoice_Date')  # gst date
                 ))
                 connection.commit()
 
@@ -232,13 +234,14 @@ class ItemCRUD:
             if self.itemCRUDType.name == "GSTRelease" and data:
 
                 cursor.callproc(storedprocupdate, (
-                    data['p_pmc_no'],       # PMC_No
-                    data['p_invoice_no'],   # Invoice_No
-                    data['p_basic_amount'], # Basic_Amount
-                    data['p_final_amount'], # Final_Amount
-                    data['p_total_amount'], # Total_Amount
-                    data['p_utr'],          # UTR
-                    data['p_gst_release_id']# GST_Release_Id
+                    data['p_pmc_no'],         # PMC_No
+                    data['p_invoice_no'],     # Invoice_No
+                    data['p_basic_amount'],   # Basic_Amount
+                    data['p_final_amount'],   # Final_Amount
+                    data['p_total_amount'],   # Total_Amount
+                    data['p_utr'],            # UTR
+                    data['p_gst_release_id'], # GST_Release_Id
+                    data.get('p_invoice_date')# Invoice_Date
                 ))
                 connection.commit()
 

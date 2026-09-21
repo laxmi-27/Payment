@@ -1,108 +1,1173 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contractor Search</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/report.css') }}">
-    <script src="{{ url_for('static', filename='js/searchContractor.js') }}"></script>
-</head>
-<body>
 
-<div id="report" class="page">
-    <h2>Search Contractor Report</h2>
-    <div>
-        <form id="search-form">
-            <div class="row2">
-                <div>
-                    <label for="subcontractor_name">Subcontractor Name:</label>
-                    <input type="text" id="subcontractor_name" name="subcontractor_name">
-                </div>
-                <div>
-                    <label for="pmc_no">PMC No:</label>
-                    <input type="text" id="pmc_no" name="pmc_no">
-                </div>
-            </div>
-            <div class="row2">
-                <div>
-                    <label for="state">State:</label>
-                    <input type="text" id="state" name="state">
-                </div>
-                <div>
-                    <label for="district">District:</label>
-                    <input type="text" id="district" name="district">
-                </div>
-            </div>
-            <div class="row2">
-                <div>
-                    <label for="block">Block:</label>
-                    <input type="text" id="block" name="block">
-                </div>
-                <div>
-                    <label for="village">Village:</label>
-                    <input type="text" id="village" name="village">
-                </div>
-            </div>
-            <div class="row2">
-                <div>
-                    <label for="year_from">Year From:</label>
-                    <input type="date" id="year_from" name="year_from">
-                </div>
-                <div>
-                    <label for="year_to">Year To:</label>
-                    <input type="date" id="year_to" name="year_to">
-                </div>
-            </div>
-        </form>
+<style>
+/* ── Report Dashboard ─────────────────────────────────────────── */
+.rp-page { max-width: 1400px; margin: 0 auto; }
 
-        <h2>Contractor List</h2>
-        <table border="1" id="result-table">
-            <thead>
-            <tr>
-                <th class="sortable">Contractor Name
-                    <select>
-                        <option value="">🔽</option>
-                        <option value="asc">Ascending</option>
-                        <option value="desc">Descending</option>
-                    </select>
-                </th>
-                <th>PMC No</th>
-                <th class="sortable">State
-                    <select>
-                        <option value="">🔽</option>
-                        <option value="asc">Ascending</option>
-                        <option value="desc">Descending</option>
-                    </select>
-                </th>
-                <th class="sortable">District
-                    <select>
-                        <option value="">🔽</option>
-                        <option value="asc">Ascending</option>
-                        <option value="desc">Descending</option>
-                    </select>
-                </th>
-                <th class="sortable">Block
-                    <select>
-                        <option value="">🔽</option>
-                        <option value="asc">Ascending</option>
-                        <option value="desc">Descending</option>
-                    </select>
-                </th>
-                <th class="sortable">Village
-                    <select>
-                        <option value="">🔽</option>
-                        <option value="asc">Ascending</option>
-                        <option value="desc">Descending</option>
-                    </select>
-                </th>
-            </tr>
-            </thead>
-            <tbody>
-            <!-- Results will be dynamically populated -->
-            </tbody>
-        </table>
+.rp-title {
+  font-size: 21px; font-weight: 700; color: #1d3e73;
+  margin: 0 0 18px; display: flex; align-items: center; gap: 10px;
+}
+
+/* Filter card */
+.rp-filter-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 22px 26px; margin-bottom: 20px;
+}
+.rp-filter-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px;
+}
+.rp-fg label {
+  display: block; font-size: 11px; font-weight: 700; color: #6b7a99;
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px;
+}
+.rp-fg input {
+  width: 100%; padding: 9px 12px; border: 1.5px solid #e0e8f5; border-radius: 9px;
+  background: #f8fbff; font-size: 13.5px; color: #2d3748; outline: none; transition: .2s;
+  box-sizing: border-box;
+}
+.rp-fg input:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.09);
+}
+.rp-fg select {
+  width: 100%; padding: 9px 12px; border: 1.5px solid #e0e8f5; border-radius: 9px;
+  background: #f8fbff; font-size: 13.5px; color: #2d3748; outline: none; transition: .2s;
+  box-sizing: border-box; cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a99' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px;
+}
+.rp-fg select:focus { border-color: #2d73d5; background-color: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.09); }
+.rp-fg select:disabled { opacity: .55; cursor: not-allowed; }
+.rp-ac-wrap { position: relative; }
+.rp-ac-list {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
+  background: #fff; border: 1.5px solid #c9d9f5; border-radius: 9px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 210px; overflow-y: auto; margin-top: 3px;
+}
+.rp-ac-list.open { display: block; }
+.rp-ac-item {
+  padding: 9px 14px; font-size: 13px; color: #2d3748; cursor: pointer;
+  border-bottom: 1px solid #f0f4ff; transition: .12s;
+}
+.rp-ac-item:last-child { border-bottom: none; }
+.rp-ac-item:hover { background: #eef4ff; color: #183b70; }
+.rp-ac-empty { padding: 10px 14px; font-size: 12.5px; color: #9aadcc; font-style: italic; }
+.rp-btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.rp-btn {
+  padding: 9px 20px; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  cursor: pointer; border: none; display: inline-flex; align-items: center;
+  gap: 7px; transition: .15s; text-decoration: none;
+}
+.rp-btn-primary  { background: linear-gradient(90deg,#183b70,#2f68bb); color:#fff; }
+.rp-btn-primary:hover  { opacity:.9; }
+.rp-btn-ghost    { background:#f0f4ff; color:#1d3e73; border:1.5px solid #c9d9f5; }
+.rp-btn-ghost:hover    { background:#e4ecff; }
+.rp-btn-success  { background: linear-gradient(90deg,#1a7a4a,#28a46a); color:#fff; }
+.rp-btn-success:hover  { opacity:.9; }
+.rp-btn-share    { background: linear-gradient(90deg,#7c3aed,#9f67ff); color:#fff; }
+.rp-btn-share:hover    { opacity:.9; }
+.rp-btn:disabled { opacity:.45; cursor:not-allowed; }
+
+/* Summary cards */
+.rp-summary-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px;
+}
+.rp-card {
+  background:#fff; border-radius:14px; box-shadow:0 2px 14px rgba(0,0,0,.05);
+  padding:16px 18px; display:flex; align-items:center; gap:14px;
+  border-left:4px solid var(--cc,#2f68bb);
+}
+.rp-card-icon {
+  width:42px; height:42px; border-radius:10px; background:var(--cb,#eef4ff);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--cc,#2f68bb); font-size:18px; flex-shrink:0;
+}
+.rp-card-label { font-size:10.5px; color:#9aadcc; text-transform:uppercase; letter-spacing:.05em; font-weight:700; }
+.rp-card-val   { font-size:19px; font-weight:700; color:#1d3e73; margin-top:3px; line-height:1.2; }
+
+/* Status badges */
+.st-paid    { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; background:#d1fae5; color:#065f46; }
+.st-partial { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; background:#fef3c7; color:#92400e; }
+.st-pending { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; background:#fee2e2; color:#991b1b; }
+.st-excess  { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; background:#ede9fe; color:#5b21b6; }
+
+/* Mode badge */
+.mode-badge {
+  font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;
+  margin-left:10px; display:inline-flex; align-items:center; gap:5px; vertical-align:middle;
+}
+.mode-badge.overall { background:#eef4ff; color:#1d3e73; border:1px solid #c9d9f5; }
+.mode-badge.detail  { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+
+/* Table card */
+.rp-table-card {
+  background:#fff; border-radius:18px; box-shadow:0 4px 24px rgba(0,0,0,.06); overflow:hidden;
+}
+.rp-table-header {
+  padding:14px 20px; border-bottom:1.5px solid #eef2f7;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+.rp-table-title { font-size:14px; font-weight:700; color:#1d3e73; display:flex; align-items:center; gap:8px; }
+.rp-table-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.rp-search-inp {
+  padding:7px 12px; border:1.5px solid #e0e8f5; border-radius:8px;
+  font-size:13px; outline:none; width:200px; transition:.2s;
+}
+.rp-search-inp:focus { border-color:#2d73d5; }
+.rp-badge-count {
+  background:#eef4ff; color:#1d3e73; padding:5px 14px;
+  border-radius:20px; font-size:12px; font-weight:700;
+}
+
+/* Table */
+.rp-tbl-outer { overflow-x:auto; max-height:490px; overflow-y:auto; }
+.rp-tbl { width:100%; border-collapse:collapse; min-width:960px; }
+.rp-tbl thead th {
+  position:sticky; top:0; z-index:2;
+  background:linear-gradient(90deg,#183b70,#2f68bb); color:#fff;
+  padding:11px 13px; text-align:left; font-size:11px; font-weight:700;
+  white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;
+}
+.rp-tbl thead th[data-col] { cursor:pointer; user-select:none; }
+.rp-tbl thead th[data-col]:hover { background:linear-gradient(90deg,#142f5a,#2558a3); }
+.th-inner { display:flex; align-items:center; gap:5px; }
+.sort-ic { font-size:10px; opacity:.55; width:12px; display:inline-block; text-align:center; }
+th.asc  .sort-ic::after { content:'▲'; opacity:1; }
+th.desc .sort-ic::after { content:'▼'; opacity:1; }
+th:not(.asc):not(.desc) .sort-ic::after { content:'⇅'; }
+.rp-tbl tbody tr { transition:background .1s; }
+.rp-tbl tbody tr:hover { background:#f5f9ff; }
+.rp-tbl tbody td {
+  padding:10px 13px; font-size:13px; color:#374151;
+  border-bottom:1px solid #eef2f8; white-space:nowrap; vertical-align:middle;
+}
+.rp-tbl tbody tr:last-child td { border-bottom:none; }
+.td-num { font-weight:600; color:#1d3e73; text-align:right; }
+.rp-link { color:#2d73d5; text-decoration:none; font-weight:600; }
+.rp-link:hover { text-decoration:underline; }
+.pmc-badge {
+  display:inline-block; padding:2px 9px; border-radius:20px;
+  font-size:11.5px; font-weight:700; background:#eef4ff; color:#1d3e73;
+}
+.rp-empty td { text-align:center; color:#aab; padding:42px; font-size:14px; font-style:italic; }
+.rp-view-btn {
+  padding:4px 12px; font-size:12px; border-radius:7px; border:1.5px solid #c9d9f5;
+  background:#f0f4ff; color:#1d3e73; cursor:pointer; font-weight:600;
+  text-decoration:none; display:inline-flex; align-items:center; gap:5px; transition:.15s;
+}
+.rp-view-btn:hover { background:#e4ecff; }
+
+/* Pagination */
+.rp-pagination {
+  padding:13px 20px; border-top:1.5px solid #eef2f7;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+.rp-pg-info { font-size:12px; color:#7a8fa8; }
+.rp-pg-btns { display:flex; gap:4px; flex-wrap:wrap; }
+.rp-pg-btn {
+  padding:5px 11px; border:1.5px solid #d9e4f5; border-radius:7px;
+  background:#fff; color:#1d3e73; font-size:13px; cursor:pointer;
+  transition:.15s; font-weight:600; line-height:1;
+}
+.rp-pg-btn:hover   { background:#eef4ff; }
+.rp-pg-btn.active  { background:#183b70; color:#fff; border-color:#183b70; }
+.rp-pg-btn:disabled { opacity:.38; cursor:default; pointer-events:none; }
+
+/* Share modal */
+.rp-overlay {
+  display:none; position:fixed; inset:0; background:rgba(10,20,50,.45);
+  z-index:9999; align-items:center; justify-content:center;
+}
+.rp-overlay.open { display:flex; }
+.rp-modal {
+  background:#fff; border-radius:14px; width:94%; max-width:540px;
+  box-shadow:0 24px 64px rgba(0,0,0,.18); position:relative; overflow:hidden;
+}
+
+/* Modal header bar */
+.sm-head {
+  background:linear-gradient(90deg,#183b70,#2f68bb);
+  padding:14px 20px; display:flex; align-items:center; justify-content:space-between;
+}
+.sm-head-title {
+  color:#fff; font-size:13px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.07em; display:flex; align-items:center; gap:8px;
+}
+.sm-head-actions { display:flex; align-items:center; gap:8px; }
+.sm-head-btn {
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25);
+  color:#fff; border-radius:6px; padding:4px 10px; font-size:11.5px; font-weight:600;
+  cursor:pointer; display:flex; align-items:center; gap:5px; transition:.15s;
+}
+.sm-head-btn:hover { background:rgba(255,255,255,.25); }
+.sm-close-btn {
+  background:none; border:none; color:rgba(255,255,255,.7);
+  font-size:18px; cursor:pointer; padding:2px 4px; line-height:1; transition:.15s;
+}
+.sm-close-btn:hover { color:#fff; }
+
+/* Modal body */
+.sm-body { padding:20px 22px 16px; }
+
+/* Meta row */
+.sm-meta {
+  display:grid; grid-template-columns:1fr 1fr; gap:0 20px;
+  background:#f7faff; border:1px solid #e8f0fa; border-radius:8px;
+  padding:10px 14px; margin-bottom:16px;
+}
+.sm-meta-item { display:flex; align-items:baseline; gap:6px; padding:2px 0; }
+.sm-meta-key { font-size:10.5px; color:#9aadcc; font-weight:700; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+.sm-meta-val { font-size:12px; color:#1d3e73; font-weight:600; }
+
+/* Sections */
+.sm-section { margin-bottom:14px; }
+.sm-section:last-of-type { margin-bottom:0; }
+.sm-sec-title {
+  font-size:9.5px; font-weight:800; color:#9aadcc; text-transform:uppercase;
+  letter-spacing:.09em; padding-bottom:6px; border-bottom:1.5px solid #e8f0fa;
+  margin-bottom:8px;
+}
+.sm-rows { display:table; width:100%; }
+.sm-row  { display:table-row; }
+.sm-lbl, .sm-val {
+  display:table-cell; padding:3px 0; font-size:12px; vertical-align:middle;
+}
+.sm-lbl { color:#6b7a99; font-weight:500; width:58%; padding-right:10px; }
+.sm-val { color:#1d3e73; font-weight:700; text-align:right; }
+.sm-val.money { font-family:monospace; font-size:12.5px; }
+.sm-val.pending { color:#dc2626; }
+.sm-val.paid    { color:#059669; }
+
+/* Button row */
+.sm-btn-row {
+  display:flex; gap:8px; padding:14px 22px 16px;
+  border-top:1.5px solid #eef2f7; flex-wrap:wrap;
+}
+.sm-btn {
+  flex:1; min-width:90px; padding:9px 10px; border-radius:8px;
+  font-size:12px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px; transition:.15s;
+  border:1.5px solid transparent;
+}
+.sm-btn-copy  { background:#f0f4ff; color:#1d3e73; border-color:#c9d9f5; }
+.sm-btn-copy:hover  { background:#e4ecff; }
+.sm-btn-wa    { background:#e8faf0; color:#15643a; border-color:#a7e5c5; }
+.sm-btn-wa:hover    { background:#d1f5e2; }
+.sm-btn-email { background:#fef2f2; color:#991b1b; border-color:#fca5a5; }
+.sm-btn-email:hover { background:#fee2e2; }
+.sm-btn-teams { background:#eef0fb; color:#3730a3; border-color:#c7c9f0; }
+.sm-btn-teams:hover { background:#e0e2f7; }
+
+@media (max-width:1100px) {
+  .rp-filter-grid  { grid-template-columns:repeat(2,1fr); }
+  .rp-summary-grid { grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:600px) {
+  .rp-filter-grid  { grid-template-columns:1fr; }
+  .rp-summary-grid { grid-template-columns:1fr; }
+}
+</style>
+
+<div class="rp-page">
+
+  <!-- Title -->
+  <div class="rp-title">
+    <i class="fa fa-chart-bar"></i> Contractor Report Dashboard
+  </div>
+
+  <!-- Filter Card -->
+  <div class="rp-filter-card">
+    <form id="rpForm" autocomplete="off">
+      <div class="rp-filter-grid">
+        <div class="rp-fg rp-ac-wrap" id="acWrap">
+          <label>Subcontractor Name</label>
+          <input type="text" id="subcontractor_name" name="subcontractor_name" placeholder="Type to search contractor…" autocomplete="off">
+          <input type="hidden" id="subcontractor_id" name="subcontractor_id" value="">
+          <div class="rp-ac-list" id="acList"></div>
+        </div>
+        <div class="rp-fg">
+          <label>PMC No</label>
+          <select id="pmc_no" name="pmc_no">
+            <option value="">-- All PMC Nos --</option>
+          </select>
+        </div>
+        <div class="rp-fg">
+          <label>State</label>
+          <select id="state" name="state">
+            <option value="">-- All States --</option>
+          </select>
+        </div>
+        <div class="rp-fg">
+          <label>District</label>
+          <select id="district" name="district" disabled>
+            <option value="">-- All Districts --</option>
+          </select>
+        </div>
+        <div class="rp-fg">
+          <label>Block</label>
+          <select id="block" name="block" disabled>
+            <option value="">-- All Blocks --</option>
+          </select>
+        </div>
+        <div class="rp-fg">
+          <label>Village</label>
+          <select id="village" name="village" disabled>
+            <option value="">-- All Villages --</option>
+          </select>
+        </div>
+        <div class="rp-fg">
+          <label>Date From</label>
+          <input type="date" id="year_from" name="year_from">
+        </div>
+        <div class="rp-fg">
+          <label>Date To</label>
+          <input type="date" id="year_to" name="year_to">
+        </div>
+      </div>
+      <div class="rp-btn-row">
+        <button type="submit" class="rp-btn rp-btn-primary">
+          <i class="fa fa-magnifying-glass"></i> Search
+        </button>
+        <button type="button" class="rp-btn rp-btn-ghost" id="rpReset">
+          <i class="fa fa-rotate-left"></i> Reset
+        </button>
+        <button type="button" class="rp-btn rp-btn-success" id="rpDownload" disabled>
+          <i class="fa fa-file-excel"></i> Download Excel
+        </button>
+        <button type="button" class="rp-btn rp-btn-share" id="rpShare" disabled>
+          <i class="fa fa-share-nodes"></i> Share Summary
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="rp-summary-grid">
+    <div class="rp-card" style="--cc:#2f68bb;--cb:#eef4ff;">
+      <div class="rp-card-icon"><i class="fa fa-users"></i></div>
+      <div>
+        <div class="rp-card-label">Total Contractors</div>
+        <div class="rp-card-val" id="sc-ct">—</div>
+      </div>
     </div>
+    <div class="rp-card" style="--cc:#7c3aed;--cb:#f3eeff;">
+      <div class="rp-card-icon"><i class="fa fa-hashtag"></i></div>
+      <div>
+        <div class="rp-card-label">PMC Records</div>
+        <div class="rp-card-val" id="sc-pmc">—</div>
+      </div>
+    </div>
+    <div class="rp-card" style="--cc:#0891b2;--cb:#e0f5fa;">
+      <div class="rp-card-icon"><i class="fa fa-map-location-dot"></i></div>
+      <div>
+        <div class="rp-card-label">States / Districts</div>
+        <div class="rp-card-val" id="sc-loc">—</div>
+      </div>
+    </div>
+    <div class="rp-card" style="--cc:#059669;--cb:#d1fae5;">
+      <div class="rp-card-icon"><i class="fa fa-house"></i></div>
+      <div>
+        <div class="rp-card-label">Villages Covered</div>
+        <div class="rp-card-val" id="sc-vil">—</div>
+      </div>
+    </div>
+    <div class="rp-card" style="--cc:#d97706;--cb:#fef3c7;">
+      <div class="rp-card-icon"><i class="fa fa-file-invoice-dollar"></i></div>
+      <div>
+        <div class="rp-card-label">Total Invoice Amount</div>
+        <div class="rp-card-val" id="sc-inv">—</div>
+      </div>
+    </div>
+    <div class="rp-card" style="--cc:#059669;--cb:#d1fae5;">
+      <div class="rp-card-icon"><i class="fa fa-circle-check"></i></div>
+      <div>
+        <div class="rp-card-label">Paid Amount</div>
+        <div class="rp-card-val" id="sc-paid">—</div>
+      </div>
+    </div>
+    <div class="rp-card" style="--cc:#dc2626;--cb:#fee2e2;">
+      <div class="rp-card-icon"><i class="fa fa-clock"></i></div>
+      <div>
+        <div class="rp-card-label">Pending Amount</div>
+        <div class="rp-card-val" id="sc-pen">—</div>
+      </div>
+    </div>
+    <div class="rp-card" style="--cc:#ea580c;--cb:#ffedd5;">
+      <div class="rp-card-icon"><i class="fa fa-hourglass-half"></i></div>
+      <div>
+        <div class="rp-card-label">Pending Invoices</div>
+        <div class="rp-card-val" id="sc-rows">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="rp-table-card">
+    <div class="rp-table-header">
+      <span class="rp-table-title">
+        <i class="fa fa-table-list"></i> Contractor List
+        <span class="mode-badge overall" id="rpModeBadge"><i class="fa fa-globe"></i> Overall View</span>
+      </span>
+      <div class="rp-table-controls">
+        <input type="text" class="rp-search-inp" id="rpTblSearch" placeholder="Search table…">
+        <span class="rp-badge-count" id="rpBadge">0 Records</span>
+      </div>
+    </div>
+
+    <div class="rp-tbl-outer">
+      <table class="rp-tbl">
+        <thead id="rpThead">
+          <tr>
+            <th data-col="Contractor_Name"><div class="th-inner">Contractor Name<span class="sort-ic"></span></div></th>
+            <th data-col="PMC_No"><div class="th-inner">PMC No<span class="sort-ic"></span></div></th>
+            <th data-col="State_Name"><div class="th-inner">State<span class="sort-ic"></span></div></th>
+            <th data-col="District_Name"><div class="th-inner">District<span class="sort-ic"></span></div></th>
+            <th data-col="Block_Name"><div class="th-inner">Block<span class="sort-ic"></span></div></th>
+            <th data-col="Village_Name"><div class="th-inner">Village<span class="sort-ic"></span></div></th>
+            <th data-col="Basic_Amount"><div class="th-inner">Basic Amt<span class="sort-ic"></span></div></th>
+            <th data-col="Final_Amount"><div class="th-inner">Final Amt<span class="sort-ic"></span></div></th>
+            <th data-col="Invoice_Date"><div class="th-inner">Invoice Date<span class="sort-ic"></span></div></th>
+            <th style="width:70px;">View</th>
+          </tr>
+        </thead>
+        <tbody id="rpTbody">
+          <tr class="rp-empty"><td colspan="10">Use the filters above and click Search to load data</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rp-pagination">
+      <span class="rp-pg-info" id="rpPgInfo">Showing 0 to 0 of 0 records</span>
+      <div class="rp-pg-btns" id="rpPgBtns"></div>
+    </div>
+  </div>
+
+</div><!-- /.rp-page -->
+
+<!-- Share Modal -->
+<div class="rp-overlay" id="rpOverlay">
+  <div class="rp-modal">
+
+    <!-- Header -->
+    <div class="sm-head">
+      <div class="sm-head-title">
+        <i class="fa fa-file-lines"></i> Contractor Report Summary
+      </div>
+      <div class="sm-head-actions">
+        <button class="sm-head-btn" onclick="rpPrint()">
+          <i class="fa fa-print"></i> Print
+        </button>
+        <button class="sm-close-btn" onclick="rpCloseShare()">&#x2715;</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="sm-body">
+
+      <!-- Generated meta -->
+      <div class="sm-meta">
+        <div class="sm-meta-item">
+          <span class="sm-meta-key">Generated On</span>
+          <span class="sm-meta-val" id="smGenDate">—</span>
+        </div>
+        <div class="sm-meta-item">
+          <span class="sm-meta-key">Generated By</span>
+          <span class="sm-meta-val">Admin</span>
+        </div>
+      </div>
+
+      <!-- Filters Applied -->
+      <div class="sm-section">
+        <div class="sm-sec-title">Filters Applied</div>
+        <div class="sm-rows">
+          <div class="sm-row"><span class="sm-lbl">Subcontractor</span><span class="sm-val" id="smFSub">All</span></div>
+          <div class="sm-row"><span class="sm-lbl">PMC No</span><span class="sm-val" id="smFPmc">All</span></div>
+          <div class="sm-row"><span class="sm-lbl">State</span><span class="sm-val" id="smFSt">All</span></div>
+          <div class="sm-row"><span class="sm-lbl">District</span><span class="sm-val" id="smFDist">All</span></div>
+          <div class="sm-row"><span class="sm-lbl">Block</span><span class="sm-val" id="smFBlk">All</span></div>
+          <div class="sm-row"><span class="sm-lbl">Village</span><span class="sm-val" id="smFVil">All</span></div>
+          <div class="sm-row"><span class="sm-lbl">Date Range</span><span class="sm-val" id="smFDate">All Records</span></div>
+        </div>
+      </div>
+
+      <!-- Report Statistics -->
+      <div class="sm-section">
+        <div class="sm-sec-title">Report Statistics</div>
+        <div class="sm-rows">
+          <div class="sm-row"><span class="sm-lbl">Total Contractors</span><span class="sm-val" id="smSCt">—</span></div>
+          <div class="sm-row"><span class="sm-lbl">PMC Records</span><span class="sm-val" id="smSPmc">—</span></div>
+          <div class="sm-row"><span class="sm-lbl">States / Districts Covered</span><span class="sm-val" id="smSLoc">—</span></div>
+          <div class="sm-row"><span class="sm-lbl">Villages Covered</span><span class="sm-val" id="smSVil">—</span></div>
+          <div class="sm-row"><span class="sm-lbl">Invoice Records</span><span class="sm-val" id="smSInvR">—</span></div>
+        </div>
+      </div>
+
+      <!-- Financial Summary -->
+      <div class="sm-section">
+        <div class="sm-sec-title">Financial Summary</div>
+        <div class="sm-rows">
+          <div class="sm-row"><span class="sm-lbl">Total Invoice Amount</span><span class="sm-val money" id="smFInv">—</span></div>
+          <div class="sm-row"><span class="sm-lbl">Paid Amount</span><span class="sm-val money paid" id="smFPaid">—</span></div>
+          <div class="sm-row"><span class="sm-lbl">Pending Amount</span><span class="sm-val money pending" id="smFPen">—</span></div>
+        </div>
+      </div>
+
+    </div><!-- /.sm-body -->
+
+    <!-- Action buttons -->
+    <div class="sm-btn-row">
+      <button class="sm-btn sm-btn-copy"  id="smCopyBtn"  onclick="rpCopy()">
+        <i class="fa fa-copy"></i> Copy Text
+      </button>
+      <button class="sm-btn sm-btn-wa"    onclick="rpWA()">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </button>
+      <button class="sm-btn sm-btn-email" onclick="rpEmail()">
+        <i class="fa fa-envelope"></i> Email
+      </button>
+      <button class="sm-btn sm-btn-teams" onclick="rpTeams()">
+        <i class="fab fa-microsoft"></i> Teams
+      </button>
+    </div>
+
+  </div><!-- /.rp-modal -->
 </div>
 
-</body>
+<script>
+// ── State ──────────────────────────────────────────────────────
+let _rows = [], _filtered = [], _summary = {};
+let _sortCol = null, _sortDir = 'asc', _page = 1, _mode = 'overall';
+const PAGE_SIZE = 20;
+
+// ── Helpers ────────────────────────────────────────────────────
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function trunc(v, n) {
+  const s = String(v == null ? '' : v);
+  return s.length > n ? s.substring(0, n) + '…' : s;
+}
+function fmtAmt(v) {
+  const n = parseFloat(v);
+  const amt = isNaN(n) ? 0 : n;
+  return '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function txt(v) {
+  const s = (v == null ? '' : String(v)).trim();
+  return s || 'Not provided';
+}
+function fmtAmtShort(v) {
+  const n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  if (n >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+  if (n >= 1e5) return '₹' + (n/1e5).toFixed(2) + ' L';
+  return '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+function _detectMode() {
+  const ids = ['subcontractor_name','pmc_no','state','district','block','village','year_from','year_to'];
+  return ids.some(id => (document.getElementById(id).value || '').trim() !== '') ? 'detail' : 'overall';
+}
+
+// ── Thead definitions ───────────────────────────────────────────
+const OVERALL_HEAD = `<tr>
+  <th data-col="Contractor_Name"><div class="th-inner">Contractor Name<span class="sort-ic"></span></div></th>
+  <th data-col="PMC_No"><div class="th-inner">PMC No<span class="sort-ic"></span></div></th>
+  <th data-col="State_Name"><div class="th-inner">State<span class="sort-ic"></span></div></th>
+  <th data-col="District_Name"><div class="th-inner">District<span class="sort-ic"></span></div></th>
+  <th data-col="Block_Name"><div class="th-inner">Block<span class="sort-ic"></span></div></th>
+  <th data-col="Village_Name"><div class="th-inner">Village<span class="sort-ic"></span></div></th>
+  <th data-col="Basic_Amount"><div class="th-inner">Basic Amt<span class="sort-ic"></span></div></th>
+  <th data-col="Final_Amount"><div class="th-inner">Final Amt<span class="sort-ic"></span></div></th>
+  <th data-col="Invoice_Date"><div class="th-inner">Invoice Date<span class="sort-ic"></span></div></th>
+  <th style="width:70px;">View</th>
+</tr>`;
+
+const DETAIL_HEAD = `<tr>
+  <th data-col="Contractor_Name"><div class="th-inner">Contractor Name<span class="sort-ic"></span></div></th>
+  <th data-col="PMC_No"><div class="th-inner">PMC No<span class="sort-ic"></span></div></th>
+  <th data-col="State_Name"><div class="th-inner">State<span class="sort-ic"></span></div></th>
+  <th data-col="District_Name"><div class="th-inner">District<span class="sort-ic"></span></div></th>
+  <th data-col="Block_Name"><div class="th-inner">Block<span class="sort-ic"></span></div></th>
+  <th data-col="Village_Name"><div class="th-inner">Village<span class="sort-ic"></span></div></th>
+  <th data-col="Invoice_Date"><div class="th-inner">Invoice Date<span class="sort-ic"></span></div></th>
+  <th data-col="Invoice_No"><div class="th-inner">Invoice No<span class="sort-ic"></span></div></th>
+  <th>Invoice Details</th>
+  <th data-col="Basic_Amount"><div class="th-inner">Basic Amt<span class="sort-ic"></span></div></th>
+  <th data-col="GST_Amount"><div class="th-inner">GST Amt<span class="sort-ic"></span></div></th>
+  <th data-col="TDS_Amount"><div class="th-inner">TDS Amt<span class="sort-ic"></span></div></th>
+  <th data-col="Final_Amount"><div class="th-inner">Final Amt<span class="sort-ic"></span></div></th>
+  <th data-col="Payment_Amount"><div class="th-inner">Paid Amt<span class="sort-ic"></span></div></th>
+  <th>UTR</th>
+  <th>Balance</th>
+  <th style="width:90px;">Status / View</th>
+</tr>`;
+
+function rpRebuildHead() {
+  document.getElementById('rpThead').innerHTML = _mode === 'overall' ? OVERALL_HEAD : DETAIL_HEAD;
+  attachSortListeners();
+  const badge = document.getElementById('rpModeBadge');
+  if (_mode === 'overall') {
+    badge.className = 'mode-badge overall';
+    badge.innerHTML = '<i class="fa fa-globe"></i> Overall View';
+  } else {
+    badge.className = 'mode-badge detail';
+    badge.innerHTML = '<i class="fa fa-filter"></i> Filtered View';
+  }
+}
+
+// ── Fetch ──────────────────────────────────────────────────────
+let _debTimer;
+function rpFetch() {
+  const fd = new FormData(document.getElementById('rpForm'));
+  fetch('/search_contractor', { method:'POST', body:fd })
+    .then(r => r.json())
+    .then(d => {
+      _rows     = d.rows    || [];
+      _summary  = d.summary || {};
+      _filtered = [..._rows];
+      _sortCol  = null;
+      _page     = 1;
+      _mode     = _detectMode();
+      rpRebuildHead();
+      rpUpdateCards();
+      rpApplyTblSearch();
+      const hasData = _rows.length > 0;
+      document.getElementById('rpDownload').disabled = !hasData;
+      document.getElementById('rpShare').disabled    = !hasData;
+    })
+    .catch(() => {
+      _rows = []; _filtered = []; _summary = {};
+      rpUpdateCards(); rpRender();
+    });
+}
+
+document.getElementById('rpForm').addEventListener('submit', e => {
+  e.preventDefault(); rpFetch();
+});
+document.querySelectorAll('#rpForm input').forEach(inp => {
+  inp.addEventListener('input', () => {
+    clearTimeout(_debTimer);
+    _debTimer = setTimeout(rpFetch, 420);
+  });
+});
+document.querySelectorAll('#rpForm select').forEach(sel => {
+  sel.addEventListener('change', () => {
+    clearTimeout(_debTimer);
+    _debTimer = setTimeout(rpFetch, 420);
+  });
+});
+
+// ── Reset ──────────────────────────────────────────────────────
+document.getElementById('rpReset').addEventListener('click', () => {
+  document.getElementById('rpForm').reset();
+  document.getElementById('rpTblSearch').value = '';
+  // Reset autocomplete state
+  _selectedContractorId = null;
+  document.getElementById('subcontractor_id').value = '';
+  document.getElementById('acList').classList.remove('open');
+  // Re-disable cascading selects and restore placeholders
+  ['district','block','village'].forEach(id => _resetCascadeSelect(id));
+  _resetPmcSelect();
+  _rows = []; _filtered = []; _summary = {}; _page = 1; _mode = 'overall';
+  rpRebuildHead();
+  rpUpdateCards();
+  rpRender();
+  document.getElementById('rpDownload').disabled = true;
+  document.getElementById('rpShare').disabled    = true;
+});
+
+// ── Summary Cards ──────────────────────────────────────────────
+function rpUpdateCards() {
+  const s = _summary;
+
+  // Common to both modes
+  document.getElementById('sc-inv' ).textContent = s.total_invoice_amount != null ? fmtAmtShort(s.total_invoice_amount) : '—';
+  document.getElementById('sc-paid').textContent = s.paid_amount           != null ? fmtAmtShort(s.paid_amount)           : '—';
+  document.getElementById('sc-rows').textContent = s.pending_invoices      != null ? s.pending_invoices                   : '—';
+  document.getElementById('sc-ct'  ).textContent = s.total_contractors     != null ? s.total_contractors                  : '—';
+
+  // Pending / Excess Paid card
+  const penEl    = document.getElementById('sc-pen');
+  const penCard  = penEl.closest('.rp-card');
+  const penLabel = penCard ? penCard.querySelector('.rp-card-label') : null;
+  const penIcon  = penCard ? penCard.querySelector('.rp-card-icon i') : null;
+  const penAmt   = s.pending_amount != null ? s.pending_amount : null;
+  if (penAmt != null && penAmt < -0.01) {
+    // Excess paid — flip card appearance
+    penEl.textContent = fmtAmtShort(Math.abs(penAmt));
+    if (penLabel) penLabel.textContent = 'Excess / Advance Paid';
+    if (penCard)  { penCard.style.setProperty('--cc','#7c3aed'); penCard.style.setProperty('--cb','#ede9fe'); }
+    if (penIcon)  { penIcon.className = 'fa fa-circle-arrow-up'; }
+  } else {
+    penEl.textContent = penAmt != null ? fmtAmtShort(penAmt) : '—';
+    if (penLabel) penLabel.textContent = 'Pending Amount';
+    if (penCard)  { penCard.style.setProperty('--cc','#dc2626'); penCard.style.setProperty('--cb','#fee2e2'); }
+    if (penIcon)  { penIcon.className = 'fa fa-clock'; }
+  }
+
+  const pmcEl = document.getElementById('sc-pmc');
+  const locEl = document.getElementById('sc-loc');
+  const vilEl = document.getElementById('sc-vil');
+
+  if (_mode === 'overall') {
+    // Overall mode: counts only, no names
+    pmcEl.textContent = s.total_pmc_records != null ? s.total_pmc_records : '—';
+    pmcEl.title = '';
+    locEl.textContent = s.states_covered != null ? `${s.states_covered} / ${s.districts_covered}` : '—';
+    locEl.title = '';
+    vilEl.textContent = s.villages_covered != null ? s.villages_covered : '—';
+    vilEl.title = '';
+  } else {
+    // Detail mode: show actual names when count is small, count + tooltip when many
+    const pmcList = s.pmc_list || [];
+    pmcEl.textContent = pmcList.length
+      ? (pmcList.length <= 6 ? pmcList.join(' / ') : pmcList.length + ' Records')
+      : '—';
+    pmcEl.title = pmcList.length > 6 ? pmcList.join(', ') : '';
+
+    locEl.textContent = s.states_covered != null ? `${s.states_covered} / ${s.districts_covered}` : '—';
+    locEl.title = 'States: ' + (s.state_list||[]).join(', ') + '\nDistricts: ' + (s.district_list||[]).join(', ');
+
+    const vilList = s.village_list || [];
+    vilEl.textContent = vilList.length
+      ? (vilList.length <= 4 ? vilList.join(', ') : vilList.length + ' Villages')
+      : '—';
+    vilEl.title = vilList.length > 4 ? vilList.join(', ') : '';
+  }
+}
+
+// ── Table search ───────────────────────────────────────────────
+document.getElementById('rpTblSearch').addEventListener('input', rpApplyTblSearch);
+function rpApplyTblSearch() {
+  const q = document.getElementById('rpTblSearch').value.toLowerCase().trim();
+  _filtered = q
+    ? _rows.filter(r => Object.values(r).some(v => String(v ?? '').toLowerCase().includes(q)))
+    : [..._rows];
+  _page = 1;
+  rpRender();
+}
+
+// ── Sorting ────────────────────────────────────────────────────
+function attachSortListeners() {
+  document.querySelectorAll('.rp-tbl thead th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      _sortDir = (_sortCol === col && _sortDir === 'asc') ? 'desc' : 'asc';
+      _sortCol = col;
+      document.querySelectorAll('.rp-tbl thead th').forEach(h => h.classList.remove('asc','desc'));
+      th.classList.add(_sortDir);
+      _filtered.sort((a, b) => {
+        let va = a[col] ?? '', vb = b[col] ?? '';
+        const na = parseFloat(va), nb = parseFloat(vb);
+        if (!isNaN(na) && !isNaN(nb)) { va = na; vb = nb; }
+        if (va < vb) return _sortDir === 'asc' ? -1 : 1;
+        if (va > vb) return _sortDir === 'asc' ?  1 : -1;
+        return 0;
+      });
+      _page = 1;
+      rpRender();
+    });
+  });
+}
+attachSortListeners();
+
+// ── Render table ───────────────────────────────────────────────
+function rpRender() {
+  const total  = _filtered.length;
+  const pages  = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (_page > pages) _page = pages;
+  const start  = (_page - 1) * PAGE_SIZE;
+  const end    = Math.min(start + PAGE_SIZE, total);
+  const slice  = _filtered.slice(start, end);
+  const cols   = _mode === 'overall' ? 10 : 17;
+
+  document.getElementById('rpBadge').textContent  = total + ' Record' + (total !== 1 ? 's' : '');
+  document.getElementById('rpPgInfo').textContent = total
+    ? `Showing ${start+1} to ${end} of ${total} records`
+    : 'No records found';
+
+  const tbody = document.getElementById('rpTbody');
+  if (!slice.length) {
+    tbody.innerHTML = `<tr class="rp-empty"><td colspan="${cols}">No results found</td></tr>`;
+    rpRenderPagination(0);
+    return;
+  }
+
+  if (_mode === 'overall') {
+    tbody.innerHTML = slice.map(r => `
+      <tr>
+        <td title="${esc(txt(r.Contractor_Name))}"><a class="rp-link" href="/contractor_report/${r.Contractor_Id}" target="_blank">${esc(trunc(txt(r.Contractor_Name), 22))}</a></td>
+        <td>${r.PMC_No ? `<a class="rp-link" href="/pmc_report/${esc(r.PMC_No)}" target="_blank"><span class="pmc-badge">${esc(r.PMC_No)}</span></a>` : '<span style="color:#b0b7c3;font-style:italic;">Not provided</span>'}</td>
+        <td title="${esc(txt(r.State_Name))}">${esc(trunc(txt(r.State_Name), 16))}</td>
+        <td title="${esc(txt(r.District_Name))}">${esc(trunc(txt(r.District_Name), 16))}</td>
+        <td title="${esc(txt(r.Block_Name))}">${esc(trunc(txt(r.Block_Name), 16))}</td>
+        <td title="${esc(txt(r.Village_Name))}">${esc(trunc(txt(r.Village_Name), 20))}</td>
+        <td class="td-num">${fmtAmt(r.Basic_Amount)}</td>
+        <td class="td-num">${fmtAmt(r.Final_Amount)}</td>
+        <td>${esc(txt(r.Invoice_Date))}</td>
+        <td><a class="rp-view-btn" href="/contractor_report/${r.Contractor_Id}" target="_blank"><i class="fa fa-eye"></i> View</a></td>
+      </tr>`).join('');
+  } else {
+    tbody.innerHTML = slice.map(r => {
+      const ta = parseFloat(r.Total_Amount) || 0;
+      const rowPaid    = ta > 0 ? ta : (parseFloat(r.Payment_Amount)||0) + (parseFloat(r.TDS_Payment_Amount)||0);
+      const rowBalance = (parseFloat(r.Final_Amount)||0) - rowPaid;
+      let stCls, stLabel;
+      if (rowBalance < -0.01)      { stCls = 'st-excess';  stLabel = 'Excess'; }
+      else if (rowBalance <= 0.01) { stCls = 'st-paid';    stLabel = 'Paid'; }
+      else if (rowPaid > 0)        { stCls = 'st-partial'; stLabel = 'Partial'; }
+      else                         { stCls = 'st-pending'; stLabel = 'Pending'; }
+      const det = txt(r.Invoice_Details);
+      return `<tr>
+        <td title="${esc(txt(r.Contractor_Name))}"><a class="rp-link" href="/contractor_report/${r.Contractor_Id}" target="_blank">${esc(trunc(txt(r.Contractor_Name), 22))}</a></td>
+        <td>${r.PMC_No ? `<a class="rp-link" href="/pmc_report/${esc(r.PMC_No)}" target="_blank"><span class="pmc-badge">${esc(r.PMC_No)}</span></a>` : '<span style="color:#b0b7c3;font-style:italic;">Not provided</span>'}</td>
+        <td title="${esc(txt(r.State_Name))}">${esc(trunc(txt(r.State_Name), 14))}</td>
+        <td title="${esc(txt(r.District_Name))}">${esc(trunc(txt(r.District_Name), 14))}</td>
+        <td title="${esc(txt(r.Block_Name))}">${esc(trunc(txt(r.Block_Name), 14))}</td>
+        <td title="${esc(txt(r.Village_Name))}">${esc(trunc(txt(r.Village_Name), 16))}</td>
+        <td>${esc(txt(r.Invoice_Date))}</td>
+        <td>${esc(txt(r.Invoice_No))}</td>
+        <td title="${esc(det)}">${esc(trunc(det, 30))}</td>
+        <td class="td-num">${fmtAmt(r.Basic_Amount)}</td>
+        <td class="td-num">${fmtAmt(r.GST_Amount)}</td>
+        <td class="td-num">${fmtAmt(r.TDS_Amount)}</td>
+        <td class="td-num">${fmtAmt(r.Final_Amount)}</td>
+        <td class="td-num" style="color:#059669;">${fmtAmt(rowPaid)}</td>
+        <td title="${esc(txt(r.UTR))}" style="font-size:11.5px;color:#7a8fa8;">${esc(trunc(txt(r.UTR), 20))}</td>
+        <td class="td-num" style="${rowBalance>0.01?'color:#dc2626;':'color:#059669;'}">${fmtAmt(rowBalance)}</td>
+        <td style="white-space:nowrap;">
+          <span class="${stCls}">${stLabel}</span>
+          <a class="rp-view-btn" href="/contractor_report/${r.Contractor_Id}" target="_blank" style="margin-left:4px;"><i class="fa fa-eye"></i></a>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  rpRenderPagination(pages);
+}
+
+// ── Pagination ─────────────────────────────────────────────────
+function rpRenderPagination(pages) {
+  const c = document.getElementById('rpPgBtns');
+  if (pages <= 1) { c.innerHTML = ''; return; }
+  const range = buildRange(_page, pages);
+  let html = `<button class="rp-pg-btn" ${_page===1?'disabled':''} onclick="rpGoPage(${_page-1})">‹</button>`;
+  range.forEach(p => {
+    if (p === '…') html += `<button class="rp-pg-btn" disabled>…</button>`;
+    else html += `<button class="rp-pg-btn ${p===_page?'active':''}" onclick="rpGoPage(${p})">${p}</button>`;
+  });
+  html += `<button class="rp-pg-btn" ${_page===pages?'disabled':''} onclick="rpGoPage(${_page+1})">›</button>`;
+  c.innerHTML = html;
+}
+function buildRange(cur, total) {
+  if (total <= 7) return Array.from({length:total}, (_,i) => i+1);
+  const r = [1];
+  if (cur > 3) r.push('…');
+  for (let i = Math.max(2,cur-1); i <= Math.min(total-1,cur+1); i++) r.push(i);
+  if (cur < total-2) r.push('…');
+  r.push(total);
+  return r;
+}
+function rpGoPage(p) {
+  const pages = Math.ceil(_filtered.length / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  _page = p; rpRender();
+}
+
+// ── Download ───────────────────────────────────────────────────
+document.getElementById('rpDownload').addEventListener('click', () => {
+  const tmp = document.createElement('form');
+  tmp.method = 'POST'; tmp.action = '/download_filtered_report';
+  new FormData(document.getElementById('rpForm')).forEach((v,k) => {
+    const inp = document.createElement('input');
+    inp.type='hidden'; inp.name=k; inp.value=v;
+    tmp.appendChild(inp);
+  });
+  document.body.appendChild(tmp); tmp.submit(); document.body.removeChild(tmp);
+});
+
+// ── Share ──────────────────────────────────────────────────────
+function _fmtDate(iso) {
+  if (!iso) return 'All Records';
+  const p = iso.split('-');
+  return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : iso;
+}
+function _fmtAmt(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? '—' : 'Rs.' + n.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+function _getShareText() {
+  const s  = _summary;
+  const df = document.getElementById('year_from').value;
+  const dt = document.getElementById('year_to').value;
+  const dr = df || dt ? `${_fmtDate(df)} to ${_fmtDate(dt)}` : 'All Records';
+  const fParts = [
+    document.getElementById('subcontractor_name').value && `Subcontractor: ${document.getElementById('subcontractor_name').value}`,
+    document.getElementById('pmc_no').value   && `PMC No: ${document.getElementById('pmc_no').value}`,
+    document.getElementById('state').value    && `State: ${document.getElementById('state').value}`,
+    document.getElementById('district').value && `District: ${document.getElementById('district').value}`,
+    document.getElementById('block').value    && `Block: ${document.getElementById('block').value}`,
+    document.getElementById('village').value  && `Village: ${document.getElementById('village').value}`,
+    (df || dt) && `Date Range: ${dr}`,
+  ].filter(Boolean);
+  return [
+    'CONTRACTOR REPORT SUMMARY',
+    `Generated On : ${new Date().toLocaleString('en-IN')} | Generated By : Admin`,
+    '',
+    'FILTERS APPLIED',
+    fParts.length ? fParts.join(' | ') : 'No filters applied',
+    '',
+    'REPORT STATISTICS',
+    `Contractors: ${s.total_contractors ?? '—'}  |  PMC Records: ${s.total_pmc_records ?? '—'}  |  Villages: ${s.villages_covered ?? '—'}  |  Invoice Records: ${_rows.length}`,
+    '',
+    'FINANCIAL SUMMARY',
+    `Total Invoice : ${_fmtAmt(s.total_invoice_amount)}`,
+    `Paid Amount   : ${_fmtAmt(s.paid_amount)}`,
+    (s.pending_amount != null && s.pending_amount < -0.01
+      ? `Excess/Advance Paid: ${_fmtAmt(Math.abs(s.pending_amount))}`
+      : `Pending Amount: ${_fmtAmt(s.pending_amount)}`),
+  ].join('\n');
+}
+
+document.getElementById('rpShare').addEventListener('click', () => {
+  const s  = _summary;
+  const df = document.getElementById('year_from').value;
+  const dt = document.getElementById('year_to').value;
+  const dr = df || dt ? `${_fmtDate(df)} to ${_fmtDate(dt)}` : 'All Records';
+
+  // Meta
+  document.getElementById('smGenDate').textContent =
+    new Date().toLocaleString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // Filters
+  const orAll = (id) => document.getElementById(id).value || 'All';
+  document.getElementById('smFSub' ).textContent = orAll('subcontractor_name');
+  document.getElementById('smFPmc' ).textContent = orAll('pmc_no');
+  document.getElementById('smFSt'  ).textContent = orAll('state');
+  document.getElementById('smFDist').textContent = orAll('district');
+  document.getElementById('smFBlk' ).textContent = orAll('block');
+  document.getElementById('smFVil' ).textContent = orAll('village');
+  document.getElementById('smFDate').textContent = dr;
+
+  // Statistics
+  document.getElementById('smSCt'   ).textContent = s.total_contractors ?? '—';
+  document.getElementById('smSPmc'  ).textContent = s.total_pmc_records  ?? '—';
+  document.getElementById('smSLoc'  ).textContent = s.states_covered != null
+    ? `${s.states_covered} States / ${s.districts_covered} Districts` : '—';
+  document.getElementById('smSVil'  ).textContent = s.villages_covered   ?? '—';
+  document.getElementById('smSInvR' ).textContent = _rows.length || '—';
+
+  // Financials
+  document.getElementById('smFInv' ).textContent = s.total_invoice_amount != null ? fmtAmt(s.total_invoice_amount) : '—';
+  document.getElementById('smFPaid').textContent = s.paid_amount           != null ? fmtAmt(s.paid_amount)           : '—';
+  const smPenEl = document.getElementById('smFPen');
+  const smPenLbl = smPenEl.closest('.sm-row')?.querySelector('.sm-lbl');
+  if (s.pending_amount != null && s.pending_amount < -0.01) {
+    smPenEl.textContent = fmtAmt(Math.abs(s.pending_amount));
+    if (smPenLbl) smPenLbl.textContent = 'Excess/Advance Paid';
+    smPenEl.className = 'sm-val money paid';
+  } else {
+    smPenEl.textContent = s.pending_amount != null ? fmtAmt(s.pending_amount) : '—';
+    if (smPenLbl) smPenLbl.textContent = 'Pending Amount';
+    smPenEl.className = 'sm-val money pending';
+  }
+
+  document.getElementById('rpOverlay').classList.add('open');
+});
+
+function rpCloseShare() { document.getElementById('rpOverlay').classList.remove('open'); }
+document.getElementById('rpOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) rpCloseShare(); });
+
+function rpCopy() {
+  const text = _getShareText();
+  navigator.clipboard ? navigator.clipboard.writeText(text) : (()=>{
+    const ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  })();
+  const btn = document.getElementById('smCopyBtn'); const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fa fa-check"></i> Copied';
+  setTimeout(() => btn.innerHTML = orig, 2000);
+}
+function rpWA() {
+  window.open('https://wa.me/?text=' + encodeURIComponent(_getShareText()), '_blank');
+}
+function rpEmail() {
+  window.location.href =
+    'mailto:?subject=' + encodeURIComponent('Contractor Report Summary — Payment Reconciliation') +
+    '&body=' + encodeURIComponent(_getShareText());
+}
+function rpTeams() {
+  const text = _getShareText();
+  navigator.clipboard ? navigator.clipboard.writeText(text) : (()=>{
+    const ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  })();
+  window.open('https://teams.microsoft.com/', '_blank');
+  const btns = document.querySelectorAll('.sm-btn-teams');
+  btns.forEach(b => { const o = b.innerHTML; b.innerHTML = '<i class="fa fa-check"></i> Copied — Paste in Teams'; setTimeout(()=>b.innerHTML=o,3000); });
+}
+function rpPrint() {
+  const body = document.querySelector('.sm-body').innerHTML;
+  const w = window.open('', '_blank', 'width=600,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><title>Contractor Report Summary</title>
+  <style>body{font-family:Arial,sans-serif;padding:24px;color:#1d3e73;}
+  .sm-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f7faff;border:1px solid #e8f0fa;border-radius:6px;padding:10px 14px;margin-bottom:14px;}
+  .sm-meta-item{display:flex;gap:8px;}.sm-meta-key{font-size:10px;color:#9aadcc;font-weight:700;text-transform:uppercase;}.sm-meta-val{font-size:12px;font-weight:600;}
+  .sm-section{margin-bottom:12px;}.sm-sec-title{font-size:9px;font-weight:800;color:#9aadcc;text-transform:uppercase;letter-spacing:.08em;border-bottom:1.5px solid #e8f0fa;padding-bottom:5px;margin-bottom:6px;}
+  .sm-rows{width:100%;}.sm-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11.5px;}
+  .sm-lbl{color:#6b7a99;}.sm-val{font-weight:700;}.money{font-family:monospace;}.paid{color:#059669;}.pending{color:#dc2626;}
+  h2{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px;color:#183b70;border-bottom:2px solid #183b70;padding-bottom:6px;}
+  </style></head><body><h2>Contractor Report Summary</h2>${body}</body></html>`);
+  w.document.close(); w.focus(); w.print();
+}
+
+// ── Cascading Dropdowns & Autocomplete ────────────────────────
+let _selectedContractorId = null;
+
+function _populateSelect(selId, items, idKey, nameKey, placeholder) {
+  const sel = document.getElementById(selId);
+  sel.innerHTML = `<option value="">${placeholder}</option>`;
+  items.forEach(item => {
+    const opt = document.createElement('option');
+    opt.value = item[nameKey];
+    opt.dataset.id = item[idKey];
+    opt.textContent = item[nameKey];
+    sel.appendChild(opt);
+  });
+  sel.disabled = items.length === 0;
+}
+
+function _resetCascadeSelect(selId) {
+  const placeholders = { district: '-- All Districts --', block: '-- All Blocks --', village: '-- All Villages --' };
+  const sel = document.getElementById(selId);
+  sel.innerHTML = `<option value="">${placeholders[selId] || '-- Select --'}</option>`;
+  sel.disabled = true;
+}
+
+function _resetPmcSelect() {
+  const sel = document.getElementById('pmc_no');
+  sel.innerHTML = '<option value="">-- All PMC Nos --</option>';
+}
+
+// Load all states on page load
+async function _loadStates() {
+  try {
+    const res  = await fetch('/api/report/states');
+    const data = await res.json();
+    _populateSelect('state', data.states || [], 'id', 'name', '-- All States --');
+  } catch(e) { console.error('Failed to load states', e); }
+}
+
+// State → District cascade
+document.getElementById('state').addEventListener('change', async function() {
+  _resetCascadeSelect('district');
+  _resetCascadeSelect('block');
+  _resetCascadeSelect('village');
+  const opt = this.options[this.selectedIndex];
+  const stateId = opt && opt.dataset.id ? opt.dataset.id : null;
+  if (!stateId) return;
+  try {
+    const res  = await fetch(`/state_districts/${stateId}`);
+    const data = await res.json();
+    _populateSelect('district', data.districts || [], 'id', 'name', '-- All Districts --');
+  } catch(e) { console.error('Failed to load districts', e); }
+});
+
+// District → Block cascade
+document.getElementById('district').addEventListener('change', async function() {
+  _resetCascadeSelect('block');
+  _resetCascadeSelect('village');
+  const opt = this.options[this.selectedIndex];
+  const districtId = opt && opt.dataset.id ? opt.dataset.id : null;
+  if (!districtId) return;
+  try {
+    const res  = await fetch(`/district_blocks/${districtId}`);
+    const data = await res.json();
+    _populateSelect('block', data.blocks || [], 'id', 'name', '-- All Blocks --');
+  } catch(e) { console.error('Failed to load blocks', e); }
+});
+
+// Block → Village cascade
+document.getElementById('block').addEventListener('change', async function() {
+  _resetCascadeSelect('village');
+  const opt = this.options[this.selectedIndex];
+  const blockId = opt && opt.dataset.id ? opt.dataset.id : null;
+  if (!blockId) return;
+  try {
+    const res  = await fetch(`/block_villages/${blockId}`);
+    const data = await res.json();
+    _populateSelect('village', data.villages || [], 'id', 'name', '-- All Villages --');
+  } catch(e) { console.error('Failed to load villages', e); }
+});
+
+// ── Subcontractor Autocomplete ─────────────────────────────────
+let _acTimer;
+const _acInput = document.getElementById('subcontractor_name');
+const _acList  = document.getElementById('acList');
+
+_acInput.addEventListener('input', function() {
+  _selectedContractorId = null;
+  document.getElementById('subcontractor_id').value = '';
+  _resetPmcSelect();
+  clearTimeout(_acTimer);
+  const q = this.value.trim();
+  if (!q) { _acList.classList.remove('open'); return; }
+  _acTimer = setTimeout(async () => {
+    try {
+      const res  = await fetch(`/api/payment/search_contractors?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const list = data.results || [];
+      if (!list.length) {
+        _acList.innerHTML = '<div class="rp-ac-empty">No contractors found</div>';
+        _acList.classList.add('open');
+        return;
+      }
+      _acList.innerHTML = list.map(c =>
+        `<div class="rp-ac-item" data-id="${c.id}" data-name="${String(c.name).replace(/"/g,'&quot;')}">${c.name}</div>`
+      ).join('');
+      _acList.classList.add('open');
+      _acList.querySelectorAll('.rp-ac-item').forEach(item => {
+        item.addEventListener('mousedown', e => {
+          e.preventDefault();
+          _selectedContractorId = item.dataset.id;
+          _acInput.value = item.dataset.name;
+          document.getElementById('subcontractor_id').value = item.dataset.id;
+          _acList.classList.remove('open');
+          _loadPmcNos(_selectedContractorId);
+          clearTimeout(_debTimer);
+          _debTimer = setTimeout(rpFetch, 420);
+        });
+      });
+    } catch(e) { _acList.classList.remove('open'); }
+  }, 300);
+});
+
+_acInput.addEventListener('blur', () => {
+  setTimeout(() => _acList.classList.remove('open'), 150);
+});
+
+async function _loadPmcNos(contractorId) {
+  if (!contractorId) { _resetPmcSelect(); return; }
+  try {
+    const res  = await fetch(`/get_pmc_nos_by_subcontractor/${contractorId}`);
+    const data = await res.json();
+    const sel  = document.getElementById('pmc_no');
+    sel.innerHTML = '<option value="">-- All PMC Nos --</option>';
+    (data.pmc_nos || []).forEach(pmc => {
+      const opt = document.createElement('option');
+      opt.value = pmc; opt.textContent = pmc;
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.error('Failed to load PMC nos', e); }
+}
+
+// Initialise states dropdown
+_loadStates();
+
+// Focus subcontractor name on load
+window.addEventListener('load', () => document.getElementById('subcontractor_name').focus());
+</script>
+
 {% endblock %}

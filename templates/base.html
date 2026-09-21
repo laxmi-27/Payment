@@ -1,97 +1,1604 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>{% block title %}Payment Reconciliation{% endblock %}</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/base.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    {% block extra_css %}{% endblock %}
+
+    <style>
+
+        /* =========================================================
+           GLOBAL
+        ========================================================= */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background: #f0f4fa;
+            display: flex;
+            min-height: 100vh;
+        }
+
+
+        /* =========================================================
+           SIDEBAR
+        ========================================================= */
+
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+
+            background: #0f1f3d;
+
+            display: flex;
+            flex-direction: column;
+
+            transition:
+                width .28s cubic-bezier(.4, 0, .2, 1),
+                left .28s cubic-bezier(.4, 0, .2, 1);
+
+            overflow: hidden;
+
+            box-shadow: 4px 0 24px rgba(0, 0, 0, .18);
+        }
+
+
+        /* =========================================================
+           LOGO AREA
+        ========================================================= */
+
+        .sb-logo {
+            width: 100%;
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 16px 14px;
+
+            border-bottom: 1px solid rgba(255, 255, 255, .07);
+
+            flex-shrink: 0;
+
+            overflow: hidden;
+        }
+
+
+        /* Logo image */
+
+        .sb-logo-img {
+            width: 44px;
+            height: 44px;
+
+            min-width: 44px;
+            min-height: 44px;
+
+            border-radius: 9px;
+
+            background: #fff;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            overflow: hidden;
+
+            padding: 3px;
+        }
+
+        .sb-logo-img img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: contain;
+
+            display: block;
+        }
+
+
+        /* Fallback logo */
+
+        .sb-logo-fallback {
+            width: 100%;
+            height: 100%;
+
+            border-radius: 7px;
+
+            background: linear-gradient(
+                135deg,
+                #3b82f6,
+                #1d4ed8
+            );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 14px;
+            color: #fff;
+            font-weight: 800;
+        }
+
+
+        /* Logo text container */
+
+        .sb-logo-text {
+            flex: 1;
+            min-width: 0;
+
+            overflow: hidden;
+        }
+
+
+        /* Company name */
+
+        .sb-logo-title {
+            font-size: 12px;
+            font-weight: 700;
+
+            color: #fff;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            line-height: 1.25;
+
+            letter-spacing: .01em;
+        }
+
+
+        /* Services */
+
+        .sb-logo-sub {
+            font-size: 9px;
+
+            color: rgba(255, 255, 255, .48);
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            margin-top: 2px;
+
+            line-height: 1.25;
+        }
+
+
+        /* Product/version row */
+
+        .sb-logo-version {
+            display: flex;
+            align-items: center;
+
+            gap: 5px;
+
+            margin-top: 4px;
+
+            min-width: 0;
+
+            overflow: hidden;
+        }
+
+
+        /* Product name */
+
+        .sb-logo-product {
+            flex: 1;
+            min-width: 0;
+
+            font-size: 7.5px;
+            font-weight: 600;
+
+            color: rgba(255, 255, 255, .38);
+
+            letter-spacing: .03em;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
+        /* Version badge */
+
+        .sb-version {
+            flex-shrink: 0;
+
+            background: rgba(96, 165, 250, .2);
+
+            color: #60a5fa;
+
+            font-size: 7px;
+            font-weight: 700;
+
+            padding: 2px 5px;
+
+            border-radius: 12px;
+
+            letter-spacing: .04em;
+        }
+
+
+        /* =========================================================
+           NAVIGATION
+        ========================================================= */
+
+        .sb-nav {
+            flex: 1;
+
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            padding: 12px 10px 8px;
+        }
+
+        .sb-nav::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .sb-nav::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, .15);
+            border-radius: 4px;
+        }
+
+
+        /* Section */
+
+        .sb-section {
+            font-size: 9.5px;
+
+            font-weight: 700;
+
+            letter-spacing: .12em;
+
+            text-transform: uppercase;
+
+            color: rgba(255, 255, 255, .3);
+
+            padding: 16px 12px 6px;
+
+            white-space: nowrap;
+        }
+
+
+        /* Item */
+
+        .sb-item {
+            margin-bottom: 2px;
+        }
+
+
+        /* Link */
+
+        .sb-link {
+            display: flex;
+            align-items: center;
+
+            gap: 11px;
+
+            padding: 10px 12px;
+
+            border-radius: 10px;
+
+            text-decoration: none;
+
+            color: rgba(255, 255, 255, .65);
+
+            font-size: 13.5px;
+
+            font-weight: 500;
+
+            transition:
+                background .15s,
+                color .15s,
+                transform .15s;
+
+            white-space: nowrap;
+
+            position: relative;
+        }
+
+
+        .sb-link:hover {
+            background: rgba(255, 255, 255, .08);
+            color: #fff;
+        }
+
+
+        .sb-link.active {
+            background: linear-gradient(
+                90deg,
+                rgba(59, 130, 246, .35),
+                rgba(59, 130, 246, .15)
+            );
+
+            color: #fff;
+
+            font-weight: 600;
+
+            box-shadow: inset 3px 0 0 #3b82f6;
+        }
+
+
+        .sb-link i {
+            width: 18px;
+
+            text-align: center;
+
+            font-size: 14px;
+
+            flex-shrink: 0;
+
+            color: rgba(255, 255, 255, .45);
+
+            transition: color .15s;
+        }
+
+
+        .sb-link:hover i,
+        .sb-link.active i {
+            color: #60a5fa;
+        }
+
+
+        .sb-link-text {
+            flex: 1;
+        }
+
+
+        /* Badge */
+
+        .sb-badge {
+            background: #3b82f6;
+
+            color: #fff;
+
+            font-size: 9px;
+
+            font-weight: 700;
+
+            padding: 2px 7px;
+
+            border-radius: 20px;
+
+            letter-spacing: .04em;
+        }
+
+
+        /* Divider */
+
+        .sb-divider {
+            height: 1px;
+
+            background: rgba(255, 255, 255, .07);
+
+            margin: 8px 12px;
+        }
+
+
+        /* =========================================================
+           USER PANEL
+        ========================================================= */
+
+        .sb-user-panel {
+            flex-shrink: 0;
+
+            padding: 10px;
+
+            border-top: 1px solid rgba(255, 255, 255, .07);
+
+            position: relative;
+        }
+
+
+        .sb-user-btn {
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 10px 12px;
+
+            border-radius: 10px;
+
+            cursor: pointer;
+
+            transition: background .15s;
+        }
+
+
+        .sb-user-btn:hover {
+            background: rgba(255, 255, 255, .08);
+        }
+
+
+        .sb-avatar {
+            width: 34px;
+            height: 34px;
+
+            border-radius: 9px;
+
+            flex-shrink: 0;
+
+            background: linear-gradient(
+                135deg,
+                #3b82f6,
+                #6366f1
+            );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            color: #fff;
+
+            letter-spacing: .03em;
+        }
+
+
+        .sb-user-info {
+            flex: 1;
+
+            min-width: 0;
+
+            overflow: hidden;
+        }
+
+
+        .sb-user-name {
+            font-size: 12.5px;
+
+            font-weight: 700;
+
+            color: #fff;
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+        }
+
+
+        .sb-user-role {
+            font-size: 10px;
+
+            color: rgba(255, 255, 255, .4);
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+        }
+
+
+        .sb-chevron {
+            color: rgba(255, 255, 255, .35);
+
+            font-size: 10px;
+
+            flex-shrink: 0;
+
+            transition: transform .2s;
+        }
+
+
+        .sb-user-panel.open .sb-chevron {
+            transform: rotate(180deg);
+        }
+
+
+        /* User dropdown */
+
+        .sb-user-drop {
+            display: none;
+
+            position: absolute;
+
+            bottom: calc(100% + 6px);
+
+            left: 10px;
+            right: 10px;
+
+            z-index: 1200;
+
+            background: #fff;
+
+            border-radius: 12px;
+
+            box-shadow:
+                0 12px 40px rgba(0, 0, 0, .22);
+
+            overflow: hidden;
+        }
+
+
+        .sb-user-panel.open .sb-user-drop {
+            display: block;
+        }
+
+
+        .sb-drop-head {
+            padding: 14px 16px 10px;
+
+            background: #f7faff;
+
+            border-bottom: 1px solid #eef2f7;
+        }
+
+
+        .sb-drop-name {
+            font-size: 13px;
+
+            font-weight: 700;
+
+            color: #1d3e73;
+        }
+
+
+        .sb-drop-role {
+            font-size: 11px;
+
+            color: #7a8fa8;
+
+            margin-top: 2px;
+        }
+
+
+        .sb-drop-link {
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 11px 16px;
+
+            font-size: 13px;
+
+            color: #374151;
+
+            text-decoration: none;
+
+            transition: .15s;
+
+            font-weight: 500;
+        }
+
+
+        .sb-drop-link:hover {
+            background: #f5f8ff;
+            color: #1d3e73;
+        }
+
+
+        .sb-drop-link i {
+            width: 16px;
+
+            text-align: center;
+
+            color: #9aadcc;
+
+            font-size: 13px;
+        }
+
+
+        .sb-drop-link:hover i {
+            color: #1d3e73;
+        }
+
+
+        .sb-drop-sep {
+            height: 1px;
+
+            background: #eef2f7;
+
+            margin: 3px 0;
+        }
+
+
+        .sb-drop-link.sb-logout {
+            color: #dc2626;
+        }
+
+
+        .sb-drop-link.sb-logout i {
+            color: #dc2626;
+        }
+
+
+        .sb-drop-link.sb-logout:hover {
+            background: #fff5f5;
+        }
+
+
+        /* =========================================================
+           TOPBAR
+        ========================================================= */
+
+        .topbar {
+            position: fixed;
+
+            top: 0;
+
+            left: 260px;
+
+            right: 0;
+
+            height: 64px;
+
+            background: #fff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 28px;
+
+            box-shadow:
+                0 1px 0 #e8edf5,
+                0 4px 16px rgba(0, 0, 0, .04);
+
+            transition: left .28s cubic-bezier(.4, 0, .2, 1);
+
+            z-index: 900;
+        }
+
+
+        .topbar-left {
+            display: flex;
+
+            align-items: center;
+
+            gap: 16px;
+        }
+
+
+        .topbar-toggle {
+            width: 36px;
+            height: 36px;
+
+            border: none;
+
+            border-radius: 9px;
+
+            background: #f0f4fa;
+
+            color: #1d3e73;
+
+            font-size: 15px;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            transition: .15s;
+        }
+
+
+        .topbar-toggle:hover {
+            background: #e4ecff;
+        }
+
+
+        .topbar-title {
+            font-size: 15px;
+
+            font-weight: 700;
+
+            color: #1d3e73;
+
+            letter-spacing: -.01em;
+        }
+
+
+        .topbar-right {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+        }
+
+
+        .topbar-logout {
+            display: flex;
+
+            align-items: center;
+
+            gap: 7px;
+
+            padding: 8px 16px;
+
+            border-radius: 9px;
+
+            font-size: 13px;
+
+            font-weight: 600;
+
+            background: #fee2e2;
+
+            color: #dc2626;
+
+            text-decoration: none;
+
+            transition: .15s;
+
+            border: 1px solid #fca5a5;
+        }
+
+
+        .topbar-logout:hover {
+            background: #fecaca;
+        }
+
+
+        /* =========================================================
+           CONTENT
+        ========================================================= */
+
+        .content {
+            margin-left: 260px;
+
+            margin-top: 64px;
+
+            padding: 32px;
+
+            flex: 1;
+
+            min-height: 100vh;
+
+            transition:
+                margin-left .28s cubic-bezier(.4, 0, .2, 1);
+        }
+
+
+        /* Sidebar collapsed */
+
+        .sidebar.collapsed {
+            width: 0;
+        }
+
+
+        .topbar.collapsed {
+            left: 0;
+        }
+
+
+        .content.collapsed {
+            margin-left: 0;
+        }
+
+
+        /* =========================================================
+           DASHBOARD
+        ========================================================= */
+
+        .dashboard-cards {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(280px, 1fr));
+
+            gap: 25px;
+        }
+
+
+        .module-card {
+            background: #fff;
+
+            padding: 30px;
+
+            border-radius: 18px;
+
+            box-shadow:
+                0 8px 25px rgba(0, 0, 0, .05);
+        }
+
+
+        /* =========================================================
+           MOBILE / TABLET
+        ========================================================= */
+
+        @media (max-width: 992px) {
+
+            .sidebar {
+                left: -260px;
+
+                width: 260px;
+            }
+
+
+            .sidebar.mobile-open {
+                left: 0;
+            }
+
+
+            .topbar {
+                left: 0;
+
+                padding: 0 16px;
+            }
+
+
+            .topbar-title {
+                font-size: 13px;
+            }
+
+
+            .content {
+                margin-left: 0;
+
+                padding: 18px;
+            }
+        }
+
+
+        /* =========================================================
+           SMALL MOBILE
+        ========================================================= */
+
+        @media (max-width: 480px) {
+
+            .sb-logo {
+                padding: 14px 12px;
+            }
+
+
+            .sb-logo-img {
+                width: 40px;
+                height: 40px;
+
+                min-width: 40px;
+            }
+
+
+            .sb-logo-title {
+                font-size: 11px;
+            }
+
+
+            .sb-logo-sub {
+                font-size: 8px;
+            }
+
+
+            .sb-logo-product {
+                font-size: 6.8px;
+            }
+
+
+            .sb-version {
+                font-size: 6.5px;
+
+                padding: 1px 4px;
+            }
+
+
+            .topbar {
+                padding: 0 10px;
+            }
+
+
+            .topbar-title {
+                font-size: 11px;
+            }
+
+
+            .topbar-logout {
+                padding: 7px 10px;
+
+                font-size: 11px;
+            }
+
+
+            .content {
+                padding: 14px;
+            }
+        }
+
+    </style>
 </head>
+
+
 <body>
-<!-- Sidebar Toggle Button -->
-<button class="menu-icon" onclick="toggleSidebar()">
-    <i class="fa-solid fa-bars"></i>
-</button>
 
-<!-- Sidebar -->
-<div class="sidebar" id="sidebar">
-    <ul class="nav-menu">
-        <li class="nav-item">
-            <a href="/" class="nav-link active">
-                <i class="fas fa-home"></i> Dashboard
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="/upload_excel_file" class="nav-link">
-                <i class="fas fa-book"></i> Import Excel
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="/report" class="nav-link">
-                <i class="fas fa-cog"></i> Report
-            </a>
-        </li>
-        <li class="card">
-            <a href="/add_state" class="nav-link">
-                <i class="fas fa-arrow-right"></i> State
-            </a>
-        </li>
-        <li class="card">
-            <a href="/add_district" class="nav-link">
-                <i class="fas fa-arrow-right"></i> District
-            </a>
-        </li>
-        <li class="card">
-            <a href="/add_block" class="nav-link">
-                <i class="fas fa-arrow-right"></i> Blocks
-            </a>
-        </li>
-        <li class="card">
-            <a href="/add_village" class="nav-link">
-                <i class="fas fa-arrow-right"></i> village
-            </a>
-        </li>
-        <li class="card">
-            <a href="/subcontractor" class="nav-link">
-                <i class="fas fa-arrow-right"></i> Sub-Contractor
-            </a>
-        </li>
-        <li class="card">
-            <a href="/add_invoice" class="nav-link">
-                <i class="fas fa-arrow-right"></i> Invoice
-            </a>
-        </li>
-        <li class="card">
-            <a href="/add_payment" class="nav-link">
-                <i class="fas fa-arrow-right"></i> Payment
-            </a>
-        </li>
-        <li class="card">
-            <a href="/add_gst_release" class="nav-link">
-                <i class="fas fa-arrow-right"></i> GST Release
-            </a>
-        </li>
-        <li class="card">
-            <a href="/add_hold_type" class="nav-link">
-                <i class="fas fa-arrow-right"></i> Hold Types
-            </a>
-        </li>
-    </ul>
-</div>
 
-<!-- Main Content -->
-<div class="content" id="content">
-    {% block content %}{% endblock %}
-</div>
+    <!-- =========================================================
+         SIDEBAR
+    ========================================================= -->
 
-<!-- Sidebar Toggle Script -->
-<script>
-    function toggleSidebar() {
-        document.getElementById("sidebar").classList.toggle("open");
-        document.getElementById("content").classList.toggle("shift");
-    }
-</script>
+    <div class="sidebar" id="sidebar">
+
+
+        <!-- Logo -->
+
+        <div class="sb-logo">
+
+            <div class="sb-logo-img">
+
+                <img
+                    src="http://lceplpmprod.btltech.xyz/assets/images/lcpl.png"
+                    alt="LCES"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                >
+
+                <div
+                    class="sb-logo-fallback"
+                    style="display:none;"
+                >
+                    LC
+                </div>
+
+            </div>
+
+
+            <div class="sb-logo-text">
+
+                <div class="sb-logo-title">
+                    Laxmi Civil Engineering
+                </div>
+
+                <div class="sb-logo-sub">
+                    Services Pvt. Ltd.
+                </div>
+
+
+                <div class="sb-logo-version">
+
+                    <div class="sb-logo-product">
+                        SOLAPUR PAYMENT RECONCILIATION
+                    </div>
+
+                    <span class="sb-version">
+                        V1
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             NAVIGATION
+        ===================================================== -->
+
+        <nav class="sb-nav">
+
+
+            <!-- MAIN -->
+
+            <div class="sb-section">
+                Main
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/"
+                    class="sb-link {% if request.path == '/' %}active{% endif %}"
+                >
+                    <i class="fas fa-gauge-high"></i>
+                    <span class="sb-link-text">
+                        Dashboard
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/report"
+                    class="sb-link {% if request.path == '/report' %}active{% endif %}"
+                >
+                    <i class="fas fa-chart-bar"></i>
+                    <span class="sb-link-text">
+                        Reports
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/summary_dashboard"
+                    class="sb-link {% if 'summary_dashboard' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-table-columns"></i>
+                    <span class="sb-link-text">
+                        Summary Dashboard
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/upload_excel_file"
+                    class="sb-link {% if 'excel' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-file-excel"></i>
+                    <span class="sb-link-text">
+                        Import Excel
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/excel_history"
+                    class="sb-link {% if 'excel_history' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-clock-rotate-left"></i>
+                    <span class="sb-link-text">
+                        Excel History
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-divider"></div>
+
+
+            <!-- TRANSACTIONS -->
+
+            <div class="sb-section">
+                Transactions
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_invoice"
+                    class="sb-link {% if 'invoice' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-file-invoice"></i>
+                    <span class="sb-link-text">
+                        Invoice
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_payment"
+                    class="sb-link {% if 'payment' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-money-check-dollar"></i>
+                    <span class="sb-link-text">
+                        Payment
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_gst_release"
+                    class="sb-link {% if 'gst' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-percent"></i>
+                    <span class="sb-link-text">
+                        GST Release
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_hold_type"
+                    class="sb-link {% if 'hold_type' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-hand"></i>
+                    <span class="sb-link-text">
+                        Hold Types
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_credit_note"
+                    class="sb-link {% if 'credit' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span class="sb-link-text">
+                        Credit / Debit Note
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/balance_to_debit"
+                    class="sb-link {% if 'balance_to_debit' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-balance-scale"></i>
+                    <span class="sb-link-text">
+                        Balance to Debit
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/hold_release"
+                    class="sb-link {% if 'hold_release' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-lock-open"></i>
+                    <span class="sb-link-text">
+                        Hold Release
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-divider"></div>
+
+
+            <!-- MASTERS -->
+
+            <div class="sb-section">
+                Masters
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/master_data"
+                    class="sb-link {% if 'master' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-database"></i>
+                    <span class="sb-link-text">
+                        Master Data
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/subcontractor"
+                    class="sb-link {% if 'subcontractor' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-users"></i>
+                    <span class="sb-link-text">
+                        Sub Contractors
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_state"
+                    class="sb-link {% if 'state' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-map"></i>
+                    <span class="sb-link-text">
+                        States
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_district"
+                    class="sb-link {% if 'district' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-city"></i>
+                    <span class="sb-link-text">
+                        Districts
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_block"
+                    class="sb-link {% if 'block' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-layer-group"></i>
+                    <span class="sb-link-text">
+                        Blocks
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/add_village"
+                    class="sb-link {% if 'village' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-location-dot"></i>
+                    <span class="sb-link-text">
+                        Villages
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/delete_pmc"
+                    class="sb-link {% if 'delete_pmc' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-trash-alt"></i>
+                    <span class="sb-link-text">
+                        Delete PMC
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-divider"></div>
+
+
+            <!-- SYSTEM -->
+
+            <div class="sb-section">
+                System
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/activity_log"
+                    class="sb-link {% if 'log' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-list-check"></i>
+                    <span class="sb-link-text">
+                        Activity Log
+                    </span>
+                </a>
+            </div>
+
+
+            <div class="sb-item">
+                <a
+                    href="/changelog"
+                    class="sb-link {% if 'changelog' in request.path %}active{% endif %}"
+                >
+                    <i class="fas fa-code-branch"></i>
+                    <span class="sb-link-text">
+                        Changelog
+                    </span>
+                </a>
+            </div>
+
+
+        </nav>
+
+
+
+        <!-- =====================================================
+             USER PANEL
+        ===================================================== -->
+
+        {% if current_user.is_authenticated %}
+
+        {% set uname = current_user.id or 'A' %}
+
+        {% set uparts = uname
+            .replace('.', ' ')
+            .replace('_', ' ')
+            .replace('-', ' ')
+            .split()
+        %}
+
+
+        {% if uparts | length >= 2 %}
+
+            {% set initials =
+                (uparts[0][0] + uparts[1][0]) | upper
+            %}
+
+        {% elif uname | length >= 2 %}
+
+            {% set initials =
+                uname[:2] | upper
+            %}
+
+        {% else %}
+
+            {% set initials =
+                uname[0] | upper
+            %}
+
+        {% endif %}
+
+
+        <div
+            class="sb-user-panel"
+            id="sbUserPanel"
+            onclick="sbToggleDropdown()"
+        >
+
+            <div class="sb-user-btn">
+
+                <div class="sb-avatar">
+                    {{ initials }}
+                </div>
+
+                <div class="sb-user-info">
+
+                    <div class="sb-user-name">
+                        {{ uname }}
+                    </div>
+
+                    <div class="sb-user-role">
+                        {{ session.get('role', 'Administrator') }}
+                    </div>
+
+                </div>
+
+                <i class="fa fa-chevron-up sb-chevron"></i>
+
+            </div>
+
+
+            <div class="sb-user-drop">
+
+                <div class="sb-drop-head">
+
+                    <div class="sb-drop-name">
+                        {{ uname }}
+                    </div>
+
+                    <div class="sb-drop-role">
+                        {{ session.get('role', 'Administrator') }}
+                    </div>
+
+                </div>
+
+
+                <a
+                    href="/profile"
+                    class="sb-drop-link"
+                >
+                    <i class="fa fa-id-card"></i>
+                    View Profile
+                </a>
+
+
+                <a
+                    href="/profile#change-password"
+                    class="sb-drop-link"
+                >
+                    <i class="fa fa-key"></i>
+                    Change Password
+                </a>
+
+
+                <div class="sb-drop-sep"></div>
+
+
+                <a
+                    href="/logout"
+                    class="sb-drop-link sb-logout"
+                >
+                    <i class="fa fa-right-from-bracket"></i>
+                    Logout
+                </a>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+
+
+    <!-- =========================================================
+         TOPBAR
+    ========================================================= -->
+
+    <div class="topbar" id="topbar">
+
+        <div class="topbar-left">
+
+            <button
+                class="topbar-toggle"
+                onclick="toggleSidebar()"
+                title="Toggle sidebar"
+            >
+                <i class="fas fa-bars"></i>
+            </button>
+
+
+            <span class="topbar-title">
+                Laxmi Civil Engineering Services Pvt. Ltd.
+            </span>
+
+        </div>
+
+
+        <div class="topbar-right">
+
+            <a
+                href="/logout"
+                class="topbar-logout"
+            >
+                <i class="fa fa-sign-out-alt"></i>
+                Logout
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         CONTENT
+    ========================================================= -->
+
+    <div
+        class="content"
+        id="content"
+    >
+
+        {% block content %}{% endblock %}
+
+    </div>
+
+
+
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================= -->
+
+    <script>
+
+        var _sbCollapsed = false;
+
+        var _isMobile =
+            window.innerWidth <= 992;
+
+
+        function toggleSidebar() {
+
+            var sb =
+                document.getElementById('sidebar');
+
+            var tb =
+                document.getElementById('topbar');
+
+            var ct =
+                document.getElementById('content');
+
+
+            if (_isMobile) {
+
+                sb.classList.toggle(
+                    'mobile-open'
+                );
+
+            } else {
+
+                _sbCollapsed =
+                    !_sbCollapsed;
+
+
+                sb.classList.toggle(
+                    'collapsed',
+                    _sbCollapsed
+                );
+
+
+                tb.classList.toggle(
+                    'collapsed',
+                    _sbCollapsed
+                );
+
+
+                ct.classList.toggle(
+                    'collapsed',
+                    _sbCollapsed
+                );
+            }
+        }
+
+
+        function sbToggleDropdown() {
+
+            var panel =
+                document.getElementById(
+                    'sbUserPanel'
+                );
+
+
+            if (panel) {
+
+                panel.classList.toggle(
+                    'open'
+                );
+            }
+        }
+
+
+        document.addEventListener(
+            'click',
+            function (e) {
+
+                var panel =
+                    document.getElementById(
+                        'sbUserPanel'
+                    );
+
+
+                if (
+                    panel &&
+                    !panel.contains(e.target)
+                ) {
+
+                    panel.classList.remove(
+                        'open'
+                    );
+                }
+
+            }
+        );
+
+
+        window.addEventListener(
+            'resize',
+            function () {
+
+                _isMobile =
+                    window.innerWidth <= 992;
+
+            }
+        );
+
+    </script>
+
+
+    {% block extra_js %}{% endblock %}
+
 </body>
+
 </html>

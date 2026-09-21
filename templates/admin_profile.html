@@ -1,49 +1,270 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Profile</title>
-</head>
-<body>
-    <div class="container">
-        <h2>Admin Profile</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <p class="{{ category }}">{{ message }}</p>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <form action="{{ url_for('admin_profile') }}" method="POST" enctype="multipart/form-data">
-            <div class="profile-picture">
-<!--                <img id="profile-pic-preview" src="{{ url_for('static', filename='images/' + (profile['profile_picture'] or 'default.png')) }}" alt="Profile Picture" />-->
-                <input type="file" name="profile_picture" id="profile-pic-input" onchange="previewImage()">
-            </div>
-            <label>Username:</label>
-            <input type="text" name="username" value="{{ profile['user_name'] }}" required>
-            <label>Phone:</label>
-            <input type="tel" name="phone" value="{{ profile['mobile'] }}" required>
-            <label>Email:</label>
-            <input type="email" name="email" value="{{ profile['email'] }}" required>
-            <label>New Password:</label>
-            <input type="password" name="new_password">
-            <label>Current Password (required for password change):</label>
-            <input type="password" name="current_password">
-            <button type="submit">Save Changes</button>
-        </form>
+
+<style>
+/* ── Profile Page ─────────────────────────────────── */
+.pr-page { max-width: 860px; margin: 0 auto; }
+
+.pr-title {
+  font-size: 21px; font-weight: 700; color: #1d3e73;
+  margin: 0 0 22px; display: flex; align-items: center; gap: 10px;
+}
+
+/* Flash messages */
+.pr-flash {
+  padding: 11px 16px; border-radius: 10px; font-size: 13.5px;
+  font-weight: 600; margin-bottom: 18px; display: flex; align-items: center; gap: 9px;
+}
+.pr-flash.success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+.pr-flash.danger  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.pr-flash.info    { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+
+/* Profile header card */
+.pr-header-card {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px; padding: 28px 32px; margin-bottom: 22px;
+  display: flex; align-items: center; gap: 24px;
+}
+.pr-avatar-lg {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(255,255,255,.2); border: 3px solid rgba(255,255,255,.45);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 700; color: #fff; letter-spacing: .03em;
+  flex-shrink: 0;
+}
+.pr-header-info { flex: 1; }
+.pr-header-name {
+  font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px;
+}
+.pr-header-role {
+  font-size: 13px; color: rgba(255,255,255,.75); margin-bottom: 10px;
+}
+.pr-status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+  padding: 4px 12px; border-radius: 20px; font-size: 11.5px;
+  color: #fff; font-weight: 600;
+}
+.pr-status-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+}
+
+/* Info cards grid */
+.pr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px; }
+
+.pr-card {
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.06); padding: 24px 26px;
+}
+.pr-card-title {
+  font-size: 11px; font-weight: 800; color: #9aadcc;
+  text-transform: uppercase; letter-spacing: .07em;
+  padding-bottom: 12px; border-bottom: 1.5px solid #eef2f7;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
+}
+.pr-field { display: flex; flex-direction: column; margin-bottom: 14px; }
+.pr-field:last-child { margin-bottom: 0; }
+.pr-field-label {
+  font-size: 11px; font-weight: 700; color: #9aadcc;
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px;
+}
+.pr-field-value {
+  font-size: 14px; font-weight: 600; color: #1d3e73;
+}
+.pr-field-value.muted { color: #7a8fa8; font-weight: 500; }
+
+/* Auth type badge */
+.pr-auth-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+}
+.pr-auth-default { background: #eef4ff; color: #1d3e73; }
+.pr-auth-ldap    { background: #f3eeff; color: #7c3aed; }
+
+/* Change password card */
+.pr-pw-card {
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.06); padding: 24px 26px;
+}
+.pr-pw-title {
+  font-size: 11px; font-weight: 800; color: #9aadcc;
+  text-transform: uppercase; letter-spacing: .07em;
+  padding-bottom: 12px; border-bottom: 1.5px solid #eef2f7;
+  margin-bottom: 18px; display: flex; align-items: center; gap: 7px;
+}
+.pr-pw-notice {
+  background: #f0f4ff; border: 1px solid #c9d9f5;
+  border-radius: 10px; padding: 13px 16px; font-size: 13px;
+  color: #1d3e73; display: flex; align-items: flex-start; gap: 10px;
+}
+.pr-pw-notice i { margin-top: 1px; flex-shrink: 0; color: #2d73d5; }
+
+.pr-pw-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+.pr-fg label {
+  display: block; font-size: 11px; font-weight: 700; color: #6b7a99;
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px;
+}
+.pr-fg input {
+  width: 100%; padding: 10px 13px; border: 1.5px solid #e0e8f5;
+  border-radius: 9px; background: #f8fbff; font-size: 13.5px;
+  color: #2d3748; outline: none; transition: .2s; box-sizing: border-box;
+}
+.pr-fg input:focus {
+  border-color: #2d73d5; background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.09);
+}
+.pr-btn {
+  padding: 10px 28px; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  cursor: pointer; border: none; display: inline-flex; align-items: center;
+  gap: 7px; transition: .15s;
+}
+.pr-btn-primary { background: linear-gradient(90deg,#183b70,#2f68bb); color: #fff; }
+.pr-btn-primary:hover { opacity: .9; }
+
+@media (max-width: 700px) {
+  .pr-grid    { grid-template-columns: 1fr; }
+  .pr-pw-grid { grid-template-columns: 1fr; }
+  .pr-header-card { flex-direction: column; text-align: center; }
+}
+</style>
+
+<div class="pr-page">
+
+  <div class="pr-title">
+    <i class="fa fa-id-card"></i> User Profile
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="pr-flash {{ category }}">
+          <i class="fa {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Profile header -->
+  {%- set uname = user.username or 'A' -%}
+  {%- set uparts = uname.replace('.', ' ').replace('_', ' ').replace('-', ' ').split() -%}
+  {%- if uparts | length >= 2 -%}
+    {%- set initials = (uparts[0][0] + uparts[1][0]) | upper -%}
+  {%- elif uname | length >= 2 -%}
+    {%- set initials = uname[:2] | upper -%}
+  {%- else -%}
+    {%- set initials = uname[0] | upper -%}
+  {%- endif -%}
+
+  <div class="pr-header-card">
+    <div class="pr-avatar-lg">{{ initials }}</div>
+    <div class="pr-header-info">
+      <div class="pr-header-name">{{ user.username }}</div>
+      <div class="pr-header-role">{{ user.role }}</div>
+      <div class="pr-status-badge">
+        <span class="pr-status-dot"></span> Account Active
+      </div>
     </div>
-    <script>
-        function previewImage() {
-            const file = document.getElementById('profile-pic-input').files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('profile-pic-preview').src = e.target.result;
-            };
-            if (file) {
-                reader.readAsDataURL(file);
-            }
-        }
-    </script>
-</body>
+  </div>
+
+  <!-- Info grid -->
+  <div class="pr-grid">
+
+    <!-- Account Details -->
+    <div class="pr-card">
+      <div class="pr-card-title">
+        <i class="fa fa-user"></i> Account Details
+      </div>
+      <div class="pr-field">
+        <span class="pr-field-label">Username</span>
+        <span class="pr-field-value">{{ user.username }}</span>
+      </div>
+      <div class="pr-field">
+        <span class="pr-field-label">Role</span>
+        <span class="pr-field-value">{{ user.role }}</span>
+      </div>
+      <div class="pr-field">
+        <span class="pr-field-label">Account Status</span>
+        <span class="pr-field-value" style="color:#059669;">
+          <i class="fa fa-circle-check" style="font-size:12px;margin-right:4px;"></i>Active
+        </span>
+      </div>
+    </div>
+
+    <!-- Authentication -->
+    <div class="pr-card">
+      <div class="pr-card-title">
+        <i class="fa fa-shield-halved"></i> Authentication
+      </div>
+      <div class="pr-field">
+        <span class="pr-field-label">Auth Type</span>
+        <span class="pr-field-value">
+          {% if user.auth_type == 'default' %}
+            <span class="pr-auth-badge pr-auth-default">
+              <i class="fa fa-lock" style="font-size:11px;"></i> Local Account
+            </span>
+          {% else %}
+            <span class="pr-auth-badge pr-auth-ldap">
+              <i class="fa fa-building" style="font-size:11px;"></i> LDAP / Directory
+            </span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="pr-field">
+        <span class="pr-field-label">Session</span>
+        <span class="pr-field-value" style="color:#059669;">
+          <i class="fa fa-circle-check" style="font-size:12px;margin-right:4px;"></i>Active
+        </span>
+      </div>
+      <div class="pr-field">
+        <span class="pr-field-label">Password Management</span>
+        <span class="pr-field-value {% if user.auth_type != 'default' %}muted{% endif %}">
+          {% if user.auth_type == 'default' %}
+            Self-managed
+          {% else %}
+            Managed by LDAP service
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+  </div><!-- /.pr-grid -->
+
+  <!-- Change Password -->
+  <div class="pr-pw-card" id="change-password">
+    <div class="pr-pw-title">
+      <i class="fa fa-key"></i> Change Password
+    </div>
+
+    {% if user.auth_type == 'default' %}
+      <form method="POST" action="{{ url_for('auth.change_password') }}">
+        <div class="pr-pw-grid">
+          <div class="pr-fg">
+            <label>Current Password</label>
+            <input type="password" name="current_password" required placeholder="Enter current password">
+          </div>
+          <div class="pr-fg">
+            <label>New Password</label>
+            <input type="password" name="new_password" required placeholder="Min. 6 characters">
+          </div>
+          <div class="pr-fg">
+            <label>Confirm New Password</label>
+            <input type="password" name="confirm_password" required placeholder="Re-enter new password">
+          </div>
+        </div>
+        <button type="submit" class="pr-btn pr-btn-primary">
+          <i class="fa fa-floppy-disk"></i> Update Password
+        </button>
+      </form>
+    {% else %}
+      <div class="pr-pw-notice">
+        <i class="fa fa-circle-info"></i>
+        <span>Your password is managed by your organisation's LDAP directory service. To change your password, please contact your system administrator.</span>
+      </div>
+    {% endif %}
+  </div>
+
+</div><!-- /.pr-page -->
+
 {% endblock %}

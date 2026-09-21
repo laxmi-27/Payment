@@ -1,49 +1,289 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Payment</title>
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-<h2>Edit Payment</h2>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<form action="/edit_payment/{{ payment_data[0] }}" method="POST">
-    <!--    <label for="invoice_id">Invoice ID:</label><br>-->
-    <!--    <select id="invoice_id" name="invoice_id" required>-->
-    <!--        {% for invoice in invoices %}-->
-    <!--            <option value="{{ invoice[0] }}" {% if invoice[0] == payment_data[0] %}selected{% endif %}>-->
-    <!--                {{ invoice[1] }}-->
-    <!--            </option>-->
-    <!--        {% endfor %}-->
-    <!--    </select><br><br>-->
+<style>
+/* ── Edit Payment ─────────────────────────────────────────────── */
+.epm-page { max-width: 860px; margin: 0 auto; }
 
-    <label for="PMC_No">PMC No:</label><br>
-    <input type="number" step="0.01" id="PMC_No" name="PMC_No" value="{{ payment_data[1] }}" required><br><br>
+/* Header */
+.epm-header {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px; padding: 22px 28px; margin-bottom: 22px; color: #fff;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.epm-header-left h1 { font-size: 21px; font-weight: 700; margin: 0 0 3px; }
+.epm-header-left p  { margin: 0; font-size: 13px; opacity: .82; }
+.epm-back {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 18px;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+  border-radius: 9px; color: #fff; font-size: 13px; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+}
+.epm-back:hover { background: rgba(255,255,255,.25); color: #fff; }
 
-    <label for="invoice_No">Invoice No:</label><br>
-    <input type="number" step="0.01" id="invoice_No" name="invoice_No" value="{{ payment_data[2] }}" required><br><br>
+/* Toast */
+.epm-toast {
+  position: fixed; top: 22px; right: 22px; z-index: 99999;
+  padding: 12px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+  min-width: 220px; box-shadow: 0 6px 22px rgba(0,0,0,.15); display: none;
+}
+.epm-toast.ok  { background: #f0fff5; border: 1.5px solid #a3e6bc; color: #1a7a3f; }
+.epm-toast.err { background: #fff0f0; border: 1.5px solid #ffc0c0; color: #c62828; }
+
+/* Form card */
+.epm-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 30px 34px;
+}
+
+/* Sections */
+.epm-section { margin-bottom: 26px; }
+.epm-sec-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 5px 12px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: inline-block;
+}
+.epm-g2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+.epm-g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.epm-g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.epm-full { grid-column: 1 / -1; }
+
+.epm-field { display: flex; flex-direction: column; }
+.epm-field label { font-size: 13px; font-weight: 600; color: #344054; margin-bottom: 6px; }
+.epm-req { color: #d32f2f; margin-left: 2px; }
+
+.epm-field input,
+.epm-field select {
+  padding: 11px 14px; border: 1.5px solid #d8dfeb; border-radius: 10px;
+  background: #fafcff; font-size: 13.5px; outline: none; box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s; width: 100%; margin: 0;
+}
+.epm-field input:focus, .epm-field select:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+}
+.epm-field input.epm-soft {
+  background: #f5f8fe; color: #5a7aa3; border-style: dashed; border-color: #c5d9f0;
+}
+.epm-field input.epm-soft:focus {
+  border-style: solid; border-color: #2d73d5;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.1); background: #fff; color: #344054;
+}
+.epm-field input[readonly] {
+  background: #f0f4fa; color: #6b7a99; cursor: not-allowed;
+  border-style: dashed; border-color: #c5d9f0;
+}
+
+/* Footer */
+.epm-footer {
+  display: flex; gap: 12px; padding-top: 18px;
+  border-top: 1px solid #edf1f7; margin-top: 6px; flex-wrap: wrap; align-items: center;
+}
+.epm-submit {
+  padding: 12px 34px; background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff; border: none; border-radius: 10px; font-size: 14.5px;
+  font-weight: 600; cursor: pointer; transition: opacity .2s;
+}
+.epm-submit:hover { opacity: .9; }
+.epm-submit:disabled { opacity: .55; cursor: not-allowed; }
+.epm-cancel {
+  padding: 12px 22px; background: #f0f4fa; color: #1d3e73;
+  border: 1.5px solid #d0dff5; border-radius: 10px; font-size: 14px;
+  font-weight: 600; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.epm-cancel:hover { background: #e4edf8; color: #1d3e73; }
+
+@media (max-width: 768px) {
+  .epm-card { padding: 20px 16px; }
+  .epm-g2, .epm-g3, .epm-g4 { grid-template-columns: 1fr; }
+}
+</style>
 
 
-    <label for="Payment_Amount">Amount:</label><br>
-    <input type="number" step="0.01" id="Payment_Amount" name="Payment_Amount" value="{{ payment_data[3] }}"
-           required><br><br>
+<div class="epm-page">
 
-    <label for="TDS_Payment_Amount">TDS Amount:</label><br>
-    <input type="number" step="0.01" id="TDS_Payment_Amount" name="TDS_Payment_Amount" value="{{ payment_data[4] }}"
-           required><br><br>
+  <!-- Header -->
+  <div class="epm-header">
+    <div class="epm-header-left">
+      <h1><i class="fas fa-money-check-alt" style="margin-right:9px;opacity:.9;"></i>Edit Payment</h1>
+      <p>
+        Payment #{{ payment_data.Payment_Id }}
+        &mdash; {{ payment_data.Contractor_Name or 'Unknown Contractor' }}
+      </p>
+    </div>
+    <a href="{{ url_for('payment_bp.add_payment') }}" class="epm-back">
+      <i class="fas fa-arrow-left"></i> Back to List
+    </a>
+  </div>
 
-    <label for="total_amount">Total Amount:</label><br>
-    <input type="number" step="0.01" id="total_amount" name="total_amount" value="{{ payment_data[5] }}"
-           required><br><br>
+  <!-- Toast -->
+  <div class="epm-toast" id="epmToast"></div>
 
-    <label for="utr">UTR:</label><br>
-    <input type="text" id="utr" name="utr" value="{{ payment_data[6] }}" readonly><br><br>
+  <!-- Form card -->
+  <div class="epm-card">
 
-    <button type="submit">Update Payment</button>
-</form>
+    <form id="epmForm"
+          action="{{ url_for('payment_bp.edit_payment', payment_id=payment_data.Payment_Id) }}"
+          method="POST">
 
-</body>
+      <!-- ── Contractor & Invoice ──────────────────────────── -->
+      <div class="epm-section">
+        <div class="epm-sec-title">
+          <i class="fas fa-hard-hat" style="margin-right:6px;"></i>Contractor &amp; Invoice
+        </div>
+        <div class="epm-g3">
+
+          <div class="epm-field epm-full">
+            <label>Subcontractor Name</label>
+            <input type="text" name="subcontractor"
+              value="{{ payment_data.Contractor_Name or '' }}" readonly>
+          </div>
+
+          <div class="epm-field">
+            <label>PMC No <span class="epm-req">*</span></label>
+            <input type="text" name="PMC_No"
+              value="{{ payment_data.PMC_No or '' }}" required>
+          </div>
+
+          <div class="epm-field">
+            <label>Invoice No</label>
+            <input type="text" name="invoice_No"
+              value="{{ payment_data.Invoice_No or '' }}">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Payment Calculation ──────────────────────────── -->
+      <div class="epm-section">
+        <div class="epm-sec-title">
+          <i class="fas fa-calculator" style="margin-right:6px;"></i>Payment Calculation
+        </div>
+        <div class="epm-g4">
+
+          <div class="epm-field">
+            <label>Amount with TDS (&#8377;) <span class="epm-req">*</span></label>
+            <input type="number" step="0.01" id="epm_amount" name="Amount_with_TDS"
+              value="{{ payment_data.Amount_with_TDS or '' }}"
+              required oninput="epmCalc()">
+          </div>
+
+          <div class="epm-field">
+            <label>TDS Amount (&#8377;)</label>
+            <input type="number" step="0.01" id="epm_tds_amt" name="TDS_Payment_Amount"
+              value="{{ payment_data.TDS_Payment_Amount or '' }}"
+              oninput="epmCalc()">
+          </div>
+
+          <div class="epm-field">
+            <label>Amount after TDS Deduction (&#8377;)</label>
+            <input type="number" step="0.01" id="epm_total" name="total_amount"
+              value="{{ payment_data.Amount_after_TDS_Deduction or '' }}"
+              class="epm-soft">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Transaction Details ──────────────────────────── -->
+      <div class="epm-section">
+        <div class="epm-sec-title">
+          <i class="fas fa-receipt" style="margin-right:6px;"></i>Transaction Details
+        </div>
+        <div class="epm-g3">
+
+          <div class="epm-field epm-full">
+            <label>UTR <span class="epm-req">*</span></label>
+            <input type="text" name="utr"
+              value="{{ payment_data.UTR or '' }}" required>
+          </div>
+
+          <div class="epm-field">
+            <label>Payment Date <span class="epm-req">*</span></label>
+            <input type="date" name="payment_date"
+              value="{{ payment_data.Payment_Date|string if payment_data.Payment_Date else '' }}"
+              required>
+          </div>
+
+          <div class="epm-field">
+            <label>Payment Status</label>
+            <select name="payment_status">
+              {% set cur_status = payment_data.Payment_Status or 'Paid' %}
+              <option value="Paid"          {% if cur_status == 'Paid'          %}selected{% endif %}>Paid</option>
+              <option value="Partial"       {% if cur_status == 'Partial'       %}selected{% endif %}>Partial</option>
+              <option value="Pending"       {% if cur_status == 'Pending'       %}selected{% endif %}>Pending</option>
+              <option value="Overpaid"      {% if cur_status == 'Overpaid'      %}selected{% endif %}>Overpaid</option>
+              <option value="Duplicate UTR" {% if cur_status == 'Duplicate UTR' %}selected{% endif %}>Duplicate UTR</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="epm-footer">
+        <button type="submit" class="epm-submit" id="epmSubmitBtn">Update Payment</button>
+        <a href="{{ url_for('payment_bp.add_payment') }}" class="epm-cancel">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+
+<script>
+function epmToast(msg, type) {
+  const t = document.getElementById('epmToast');
+  t.textContent = msg;
+  t.className = 'epm-toast ' + (type || 'ok');
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+
+window.alert = function(msg) {
+  epmToast(msg, (msg.toLowerCase().includes('error') || msg.toLowerCase().includes('fail')) ? 'err' : 'ok');
+};
+
+function epmCalc() {
+  const amount = parseFloat(document.getElementById('epm_amount').value)  || 0;
+  const tdsAmt = parseFloat(document.getElementById('epm_tds_amt').value) || 0;
+  const total  = amount - tdsAmt;
+  document.getElementById('epm_total').value = total.toFixed(2);
+}
+
+$(document).ready(function () {
+  $('#epmForm').submit(function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('epmSubmitBtn');
+    btn.disabled    = true;
+    btn.textContent = 'Saving…';
+
+    $.ajax({
+      type:     'POST',
+      url:      $(this).attr('action'),
+      data:     $(this).serialize(),
+      dataType: 'json',
+      success: function (response) {
+        if (response.success) {
+          epmToast('Payment updated successfully!', 'ok');
+          setTimeout(() => { window.location.href = "{{ url_for('payment_bp.add_payment') }}"; }, 1200);
+        } else {
+          epmToast(response.message || 'Failed to update payment.', 'err');
+          btn.disabled    = false;
+          btn.textContent = 'Update Payment';
+        }
+      },
+      error: function (xhr) {
+        epmToast('Error: ' + (xhr.responseJSON?.message || 'Something went wrong!'), 'err');
+        btn.disabled    = false;
+        btn.textContent = 'Update Payment';
+      }
+    });
+  });
+});
+</script>
+
 {% endblock %}

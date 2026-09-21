@@ -1,17 +1,152 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <title>Edit State</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+
+<style>
+
+.edit-wrapper{
+max-width:650px;
+margin:70px auto;
+}
+
+.edit-card{
+background:#fff;
+padding:45px;
+border-radius:24px;
+box-shadow:0 10px 35px rgba(0,0,0,.06);
+}
+
+.edit-header{
+text-align:center;
+margin-bottom:35px;
+}
+
+.edit-header h2{
+font-size:32px;
+color:#1d3e73;
+margin-bottom:10px;
+}
+
+.edit-header p{
+color:#666;
+}
+
+.form-group{
+margin-bottom:28px;
+}
+
+label{
+display:block;
+font-weight:600;
+margin-bottom:10px;
+color:#344054;
+}
+
+input{
+width:100%;
+padding:15px 16px;
+border:1px solid #d8dfeb;
+border-radius:12px;
+background:#fafcff;
+font-size:15px;
+outline:none;
+transition:.3s;
+}
+
+input:focus{
+border-color:#2d73d5;
+background:#fff;
+box-shadow:0 0 0 4px rgba(45,115,213,.08);
+}
+
+.button-group{
+display:flex;
+gap:15px;
+margin-top:20px;
+flex-wrap:wrap;
+}
+
+.update-btn{
+background:#1d3e73;
+color:#fff;
+border:none;
+padding:14px 30px;
+border-radius:12px;
+font-weight:600;
+cursor:pointer;
+transition:.3s;
+}
+
+.update-btn:hover{
+background:#14305a;
+}
+
+.cancel-btn{
+background:#6c757d;
+color:#fff;
+text-decoration:none;
+padding:14px 30px;
+border-radius:12px;
+font-weight:600;
+display:inline-block;
+}
+
+.cancel-btn:hover{
+background:#56616b;
+}
+
+@media(max-width:768px){
+
+.edit-card{
+padding:28px 22px;
+}
+
+.edit-header h2{
+font-size:26px;
+}
+
+}
+
+</style>
+
+
+<div class="edit-wrapper">
+
+<div class="edit-card">
+
+<div class="edit-header">
 <h2>Edit State</h2>
+<p>Update state information below</p>
+</div>
 
 <form method="POST">
-    <input type="text" name="state_Name" placeholder="State Name" value="{{ state[1] }}" required>
-    <button type="submit">Update</button>
+
+<div class="form-group">
+<label>State Name</label>
+
+<input
+type="text"
+name="state_Name"
+value="{{ state[1] }}"
+placeholder="Enter State Name"
+required>
+
+</div>
+
+<div class="button-group">
+
+<button type="submit" class="update-btn">
+Update State
+</button>
+
+<a href="/add_state" class="cancel-btn">
+Cancel
+</a>
+
+</div>
+
 </form>
 
+</div>
+</div>
 
-</body>
 {% endblock %}

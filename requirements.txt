@@ -1,4 +1,8 @@
 Flask
+Flask-Login
+python-dotenv
+ldap3
 mysql-connector-python
 openpyxl
 pandas
+Werkzeug

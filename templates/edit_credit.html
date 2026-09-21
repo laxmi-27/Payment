@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+
+.master-page{
+max-width:1150px;
+margin:auto;
+}
+
+/* Form */
+
+#editForm{
+max-width:700px;
+margin:auto;
+background:#fff;
+padding:42px;
+border-radius:24px;
+box-shadow:0 8px 30px rgba(0,0,0,.06);
+margin-top:40px;
+}
+
+#editForm h2{
+font-size:30px;
+color:#1d3e73;
+margin-bottom:28px;
+text-align:center;
+}
+
+label{
+display:block;
+font-weight:600;
+margin-bottom:10px;
+color:#344054;
+}
+
+input, select{
+width:100%;
+padding:14px 16px;
+border:1px solid #d8dfeb;
+border-radius:12px;
+background:#fafcff;
+outline:none;
+margin-bottom:18px;
+}
+
+input:focus, select:focus{
+border-color:#2d73d5;
+background:#fff;
+box-shadow:0 0 0 4px rgba(45,115,213,.08);
+}
+
+.container button{
+background:#1d3e73;
+color:white;
+border:none;
+padding:14px 28px;
+border-radius:12px;
+font-weight:600;
+cursor:pointer;
+width:100%;
+}
+
+.container button:hover{
+background:#2f68bb;
+}
+
+</style>
+
+<div class="master-page">
+
+<div id="editForm" class="container">
+
+<h2>Edit Credit / Debit Note</h2>
+
+<form method="POST">
+
+<label>Note Type</label>
+<select name="note_type" required>
+    <option value="credit" {% if data.Invoice_Details == 'credit note' %}selected{% endif %}>Credit Note</option>
+    <option value="debit" {% if data.Invoice_Details == 'debit note' %}selected{% endif %}>Debit Note</option>
+</select>
+
+<label>PMC No</label>
+<input type="text" name="PMC_No" value="{{ data.PMC_No }}" required>
+
+<label>Invoice No</label>
+<input type="text" name="invoice_No" value="{{ data.invoice_no }}">
+
+<label>Basic Amount</label>
+<input type="number" step="0.01" name="basic_amount" value="{{ data.Basic_Amount }}">
+
+<label>Debit Amount</label>
+<input type="number" step="0.01" name="debit_amount" value="{{ data.Debit_Amount }}">
+
+<label>After Debit Amount</label>
+<input type="number" step="0.01" name="after_debit_amount" value="{{ data.After_Debit_Amount }}">
+
+<label>GST Amount</label>
+<input type="number" step="0.01" name="gst_amount" value="{{ data.GST_Amount }}">
+
+<label>Final Amount</label>
+<input type="number" step="0.01" name="final_amount" value="{{ data.Final_Amount }}">
+
+<label>Payment Amount</label>
+<input type="number" step="0.01" name="Payment_Amount" value="{{ data.Payment_Amount }}">
+
+<label>Total Amount</label>
+<input type="number" step="0.01" name="Total_Amount" value="{{ data.Total_Amount }}">
+
+<label>UTR</label>
+<input type="text" name="UTR" value="{{ data.UTR }}">
+
+<button type="submit">Update Credit Note</button>
+
+</form>
+
+</div>
+
+</div>
+
+{% endblock %}

@@ -1,341 +1,548 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PMC Report</title>
-    <!--    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">-->
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/subcontractor_report.css') }}">
-</head>
+<style>
 
-<body>
+.report-wrapper{
+max-width:1600px;
+margin:auto;
+padding:30px;
+}
 
-    <div class="container">
-        <h2>PMC Report</h2>
+/* heading */
 
-        <div class="info">
-            <h2>Contractor Details</h2>
-            <div class="row2">
-                <div>
-                    <label for="subcontractor">Subcontractor Name:</label>
-                    <input type="text" id="subcontractor" name="subcontractor" value="{{ info.Contractor_Name }}"
-                        readonly />
-                </div>
-                <div>
-                    <label for="Address">Address :</label>
-                    <textarea id="Address" name="Address" readonly>{{ info.Address }}</textarea>
-                </div>
-            </div>
-            <div class="row3">
-                <div>
-                    <label for="PAN_No">PAN No :</label>
-                    <input type="text" id="PAN_No" name="PAN_No" value="{{ info.PAN_No }}" readonly />
-                </div>
-                <div>
-                    <label for="Mobile_No">Mobile Number :</label>
-                    <input type="text" id="Mobile_No" name="Mobile_No" value="{{ info.Mobile_No }}" readonly />
-                </div>
-                <div>
-                    <label for="Email">Email :</label>
-                    <input type="text" id="Email" name="Email" value="{{ info.Email }}" readonly />
-                </div>
-            </div>
-            <div class="row2">
-                <div>
-                    <label for="GST_Registration_Type">GST Registration Type :</label>
-                    <input type="text" id="GST_Registration_Type" name="GST_Registration_Type"
-                        value="{{ info.GST_Registration_Type }}" readonly />
+.page-title{
+font-size:34px;
+font-weight:700;
+color:#1d3e73;
+margin-bottom:25px;
+}
 
-                </div>
-                <div>
-                    <label for="GST_No">GST No:</label>
-                    <input type="text" id="GST_No" name="GST_No" value="{{ info.GST_No }}" readonly />
-                </div>
-            </div>
-            <h2>PMC Report for PMC No: {{ info.PMC_No}}</h2>
-            <div class="row3">
-                <div>
-                    <label for="State">State :</label>
-                    <input type="text" id="State" name="State" value="{{ info.State_Name }}" readonly />
-                </div>
-                <div>
-                    <label for="District">District :</label>
-                    <input type="text" id="District" name="District" value="{{ info.District_Name }}" readonly />
-                </div>
-                <div>
-                    <label for="Block">Block :</label>
-                    <input type="text" id="Block" name="Block" value="{{ info.Block_Name }}" readonly />
-                </div>
-            </div>
-            <div class="row2">
-                <div>
-                    <label for="PMC_No">PMC No:</label>
-                    <input type="text" id="PMC_No" name="PMC_No" value="{{ info.PMC_No }}" readonly />
-                </div>
-                <div>
-                    <label for="Village_Name">Village Name :</label>
-                    <input type="text" id="Village_Name" name="Village_Name"
-                        value="{{ info.Village_Name.capitalize() }}" readonly />
-                </div>
-            </div>
-        </div>
-    </div>
+.section-title{
+font-size:26px;
+color:#1d3e73;
+margin:35px 0 18px;
+border-left:6px solid #2f80ed;
+padding-left:14px;
+}
 
-    <table class="total-table">
-        <tr>
-            <th colspan="2">Summary</th>
-        </tr>
-        <tr>
-            <th>Advance / Suplus</th>
-            <td>{{total["sum_invo_final_amt"]+total["sum_gst_final_amt"]-total["sum_pay_total_amt"]}}</td>
-        </tr>
-        {% if hold_types %}
-        <tr>
-            <th>
-                {% for hold in hold_types %}
-                {{ hold.hold_type }} ||
-                {% endfor %}
-            </th>
-            <td colspan="{{hold_types|length }}">{{total["sum_invo_hold_amt"]}}</td>
+/* cards */
 
-        </tr>
-        {% endif %}
-        <tr>
-            <th>Amount With TDS</th>
-            <td>{{total["sum_invo_tds_amt"]}}</td>
-        </tr>
-    </table>
+.info-card{
+background:#fff;
+padding:35px;
+border-radius:22px;
+box-shadow:0 8px 30px rgba(0,0,0,.05);
+margin-bottom:30px;
+}
 
-    <h3>Invoice Details</h3>
-    <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-            <tr>
-                <th>PMC No</th>
-                <th>Village Name</th>
-                <th>Work Type</th>
-                <th>Invoice Details</th>
-                <th>Invoice Date</th>
-                <th>Invoice No</th>
-                <th>Basic Amount</th>
-                <th>Debit</th>
-                <th>After Debit Amt</th>
-                <th>GST (18%)</th>
-                <th>Amount</th>
-                <th>TDS (1%)</th>
-                <th>SD (5%)</th>
-                <th>On Commission</th>
-                <th>Hydro Testing</th>
+.row2,.row3{
+display:grid;
+gap:20px;
+margin-bottom:18px;
+}
 
-                <!-- Dynamic Hold Types -->
-                {% for ht in hold_types %}
-                <th>{{ ht.hold_type }}</th>
-                {% endfor %}
+.row2{
+grid-template-columns:repeat(2,1fr);
+}
 
-                <th>GST SD (18%)</th>
-                <th>Final Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if invoices %}
-            {% for invoice in invoices %}
-            <tr>
-                <td>{{ invoice.PMC_No }}</td>
-                <td>{{ invoice.Village_Name }}</td>
-                <td>{{ invoice.Work_Type }}</td>
-                <td>{{ invoice.Invoice_Details }}</td>
-                <td>{{ invoice.Invoice_Date }}</td>
-                <td>{{ invoice.invoice_no }}</td>
-                <td>{{ invoice.Basic_Amount }}</td>
-                <td>{{ invoice.Debit_Amount }}</td>
-                <td>{{ invoice.After_Debit_Amount }}</td>
-                <td>{{ invoice.GST_Amount }}</td>
-                <td>{{ invoice.Amount }}</td>
-                <td>{{ invoice.TDS_Amount }}</td>
-                <td>{{ invoice.SD_Amount }}</td>
-                <td>{{ invoice.On_Commission }}</td>
-                <td>{{ invoice.Hydro_Testing }}</td>
+.row3{
+grid-template-columns:repeat(3,1fr);
+}
 
-                <!-- Hold Amounts -->
-                {% for ht in hold_types %}
-                <td>{{ hold_data.get(invoice.Invoice_Id, {}).get(ht.hold_type_id, 0) }}</td>
-                {% endfor %}
+label{
+display:block;
+font-weight:600;
+margin-bottom:8px;
+color:#344054;
+}
 
-                <td>{{ invoice.GST_SD_Amount }}</td>
-                <td>{{ invoice.Final_Amount }}</td>
-            </tr>
-            {% endfor %}
+input,textarea{
+width:100%;
+padding:14px 16px;
+border:1px solid #d8dfeb;
+border-radius:12px;
+background:#f8fbff;
+}
 
-            <!-- Total Row -->
-            <tr>
-                <th colspan="6">Total</th>
-                <th>{{ total.sum_invo_basic_amt }}</th>
-                <th>{{ total.get('sum_invo_debit_amt', 0) }}</th>
-                <th>{{ total.get('sum_invo_after_debit_amt', 0) }}</th>
-                <th>{{ total.get('sum_invo_gst_amt', 0) }}</th>
-                <th>{{ total.get('sum_invo_amt', 0) }}</th>
-                <th>{{ total.get('sum_invo_tds_amt', 0) }}</th>
-                <th>{{ total.get('sum_invo_ds_amt', 0) }}</th>
-                <th>{{ total.get('sum_invo_on_commission', 0) }}</th>
-                <th>{{ total.get('sum_invo_hydro_test', 0) }}</th>
+textarea{
+height:60px;
+resize:none;
+}
 
-                {% if hold_types %}
-                <th colspan="{{hold_types|length }}">{{ total.sum_invo_hold_amt}}</th>
-                {% endif %}
+/* summary */
 
-                <th>{{ total.get('sum_invo_gst_sd_amt', 0) }}</th>
-                <th>{{ total.sum_invo_final_amt }}</th>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="{{ 17 + hold_types|length }}">No invoices found.</td>
-            </tr>
-            {% endif %}
-        </tbody>
-    </table>
+.summary-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:20px;
+margin:25px 0 35px;
+}
 
-    <br>
-    <h3>GST Release Note Details</h3>
+.summary-box{
+background:#fff;
+padding:28px;
+border-radius:18px;
+box-shadow:0 8px 25px rgba(0,0,0,.05);
+}
 
-    <table>
-        <thead>
-            <tr>
-                <th>PMC No</th>
-                <th>Invoice No</th>
-                <th>Basic Amount</th>
-                <th>Final Amount</th>
-                <th>UTR</th>
-            </tr>
-        </thead>
+.summary-box h4{
+color:#667085;
+margin-bottom:12px;
+}
 
-        <tbody>
+.summary-box h2{
+color:#1d3e73;
+}
 
-            {% if gst_rel %}
-            {% for gst in gst_rel %}
-            <tr>
-                <td>{{ gst.PMC_No }}</td>
-                <td>{{ gst.invoice_no }}</td>
-                <td>{{ gst.Basic_Amount }}</td>
-                <td>{{ gst.Final_Amount }}</td>
-                <td>{{gst.UTR}}</td>
-                </TD>
-            </tr>
-            {% endfor %}
+/* table */
 
-            <tr>
-                <th colspan="2">Total</th>
+.table-wrap{
+overflow:auto;
+background:#fff;
+border-radius:20px;
+box-shadow:0 8px 30px rgba(0,0,0,.05);
+margin-top:20px;
+}
 
-                <th>{{ total["sum_gst_basic_amt"] }}</th>
+table{
+width:100%;
+border-collapse:collapse;
+min-width:1200px;
+}
 
-                <th>{{ total["sum_gst_final_amt"] }}</th>
-                <th></th>
+th{
+background:#1d3e73;
+color:#fff;
+padding:14px;
+font-size:14px;
+position:sticky;
+top:0;
+}
 
-            </tr>
+td{
+padding:13px;
+text-align:center;
+border-bottom:1px solid #edf2f7;
+font-size:14px;
+}
 
-            {% else %}
+tr:nth-child(even){
+background:#f9fbfd;
+}
 
-            <tr>
-                <td colspan="5">No GST release found.</td>
-            </tr>
+tr:hover{
+background:#eef5ff;
+}
 
-            {% endif %}
+.total-row th{
+background:#1d3e73;
+color:#fff;
+}
 
-        </tbody>
-    </table>
+/* pmc badge */
 
-    <tr>
-        <h3>Credit Details</h3>
-    </tr>
-    <table>
-        <thead>
-            <tr>
-                <th>PMC No</th>
-                <th>Invoice Details</th>
-                <th>Basic Amount</th>
-                <th>Debit</th>
-                <th>After Debit Amt</th>
-                <th>GST Amount</th>
-                <th>Amount</th>
-                <th>Final Amount</th>
-                <th>Payment Amount</th>
-                <th>Total Amount</th>
-                <th>UTR</th>
+.pmc-badge{
+display:inline-block;
+background:#eef5ff;
+color:#1d3e73;
+padding:12px 20px;
+border-radius:12px;
+font-weight:700;
+margin-bottom:20px;
+}
 
-            </tr>
+/* download */
 
-            {% if credit_note %}
-            {% for credit in credit_note %}
-            <tr>
-                <td>{{ credit["PMC_No"] }}</td>
-                <td>{{ credit["Invoice_Details"] }}</td>
-                <td>{{ credit["Basic_Amount"] }}</td>
-                <td>{{ credit["Debit_Amount"] }}</td>
-                <td>{{ credit["After_Debit_Amount"] }}</td>
-                <td>{{ credit["GST_Amount"] }}</td>
-                <td>{{ credit["Amount"] }}</td>
-                <td>{{ credit["Final_Amount"] }}</td>
-                <td>{{ credit["Payment_Amount"] }}</td>
-                <td>{{ credit["Total_Amount"] }}</td>
-                <td>{{ credit["UTR"] }}</td>
+.download-wrap{
+text-align:center;
+margin-top:35px;
+}
+
+.download-btn{
+background:#1d3e73;
+color:#fff;
+padding:16px 34px;
+border:none;
+border-radius:14px;
+font-size:16px;
+font-weight:600;
+cursor:pointer;
+transition:.3s;
+}
+
+.download-btn:hover{
+background:#14305a;
+transform:translateY(-2px);
+}
+
+@media(max-width:900px){
+
+.row2,.row3{
+grid-template-columns:1fr;
+}
+
+.page-title{
+font-size:28px;
+}
+
+}
+
+</style>
 
 
-            </tr>
-            {% endfor %}
 
-            {% else %}
-            <tr>
-                <td colspan="11">No Credit note found.</td>
-            </tr>
-            {% endif %}
+<div class="report-wrapper">
+
+<h1 class="page-title">
+PMC Report
+</h1>
 
 
-        </thead>
-    </table>
+<div class="pmc-badge">
+PMC No : {{ info.PMC_No }}
+</div>
 
-    <br>
-    <h3>Payment Details</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>PMC No</th>
-                <th>Invoice No</th>
-                <th>Amount</th>
-                <th>TDS Amount @ 1% on BASIC AMOUNT</th>
-                <th>Total Amount Paid</th>
-                <th>UTR</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if payments %}
-            {% for pay in payments %}
-            <tr>
-                <td>{{ pay.pmc_no }}</td>
-                <td>{{ pay.invoice_no }}</td>
-                <td>{{ pay.Payment_Amount }}</td>
-                <td>{{ pay.TDS_Payment_Amount }}</td>
-                <td>{{ pay.Total_amount }}</td>
-                <td>{{ pay.UTR}}</td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <th colspan="2">Total</th>
-                <th>{{total["sum_pay_payment_amt"]}}</th>
-                <th>{{total["sum_pay_tds_payment_amt"]}}</th>
-                <th>{{total["sum_pay_total_amt"]}}</th>
-                <th></th>
-            </tr>
-            {% else %}
 
-            <tr>
-                <td colspan="6">No payment found.</td>
-            </tr>
-            {% endif %}
+<div class="info-card">
 
-        </tbody>
-    </table>
+<h2 class="section-title">
+Contractor Details
+</h2>
 
-    <a href="/download_pmc_report/{{ info.PMC_No}}">
-        <button class="download-btn">Download PMC Report</button>
-    </a>
-</body>
+
+<div class="row2">
+<div>
+<label>Subcontractor Name</label>
+<input value="{{ info.Contractor_Name }}" readonly>
+</div>
+
+<div>
+<label>Address</label>
+<textarea readonly>{{ info.Address }}</textarea>
+</div>
+</div>
+
+
+<div class="row3">
+<div>
+<label>PAN No</label>
+<input value="{{ info.PAN_No }}" readonly>
+</div>
+
+<div>
+<label>Mobile</label>
+<input value="{{ info.Mobile_No }}" readonly>
+</div>
+
+<div>
+<label>Email</label>
+<input value="{{ info.Email }}" readonly>
+</div>
+</div>
+
+
+<div class="row2">
+<div>
+<label>GST Registration Type</label>
+<input value="{{ info.GST_Registration_Type }}" readonly>
+</div>
+
+<div>
+<label>GST No</label>
+<input value="{{ info.GST_No }}" readonly>
+</div>
+</div>
+
+
+<h2 class="section-title">
+PMC Location Details
+</h2>
+
+
+<div class="row3">
+<div>
+<label>State</label>
+<input value="{{ info.State_Name }}" readonly>
+</div>
+
+<div>
+<label>District</label>
+<input value="{{ info.District_Name }}" readonly>
+</div>
+
+<div>
+<label>Block</label>
+<input value="{{ info.Block_Name }}" readonly>
+</div>
+</div>
+
+
+<div class="row2">
+<div>
+<label>PMC No</label>
+<input value="{{ info.PMC_No }}" readonly>
+</div>
+
+<div>
+<label>Village</label>
+<input value="{{ info.Village_Name.capitalize() }}" readonly>
+</div>
+</div>
+
+</div>
+
+
+
+<div class="summary-grid">
+
+<div class="summary-box">
+<h4>Advance / Surplus</h4>
+<h2>
+{{total["sum_invo_final_amt"]+total["sum_gst_final_amt"]-total["sum_pay_total_amt"]}}
+</h2>
+</div>
+
+<div class="summary-box">
+<h4>Total Hold</h4>
+<h2>{{total["sum_invo_hold_amt"]}}</h2>
+</div>
+
+<div class="summary-box">
+<h4>Amount With TDS</h4>
+<h2>{{total["sum_invo_tds_amt"]}}</h2>
+</div>
+
+</div>
+
+
+
+<h2 class="section-title">
+Invoice Details
+</h2>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>PMC</th>
+<th>Village</th>
+<th>Work Type</th>
+<th>Invoice Details</th>
+<th>Date</th>
+<th>Invoice No</th>
+<th>Basic</th>
+<th>Debit</th>
+<th>After Debit</th>
+<th>GST</th>
+<th>Amount</th>
+<th>TDS</th>
+<th>SD</th>
+<th>Commission</th>
+<th>Hydro</th>
+
+{% for ht in hold_types %}
+<th>{{ ht.hold_type }}</th>
+{% endfor %}
+
+<th>GST SD</th>
+<th>Final Amount</th>
+
+</tr>
+</thead>
+
+<tbody>
+
+{% for invoice in invoices %}
+<tr>
+<td>{{ invoice.PMC_No }}</td>
+<td>{{ invoice.Village_Name }}</td>
+<td>{{ invoice.Work_Type }}</td>
+<td>{{ invoice.Invoice_Details }}</td>
+<td>{{ invoice.Invoice_Date }}</td>
+<td>{{ invoice.invoice_no }}</td>
+<td>{{ invoice.Basic_Amount }}</td>
+<td>{{ invoice.Debit_Amount }}</td>
+<td>{{ invoice.After_Debit_Amount }}</td>
+<td>{{ invoice.GST_Amount }}</td>
+<td>{{ invoice.Amount }}</td>
+<td>{{ invoice.TDS_Amount }}</td>
+<td>{{ invoice.SD_Amount }}</td>
+<td>{{ invoice.On_Commission }}</td>
+<td>{{ invoice.Hydro_Testing }}</td>
+
+{% for ht in hold_types %}
+<td>{{ hold_data.get(invoice.Invoice_Id,{}).get(ht.hold_type_id,0) }}</td>
+{% endfor %}
+
+<td>{{ invoice.GST_SD_Amount }}</td>
+<td>{{ invoice.Final_Amount }}</td>
+
+</tr>
+{% endfor %}
+
+<tr class="total-row">
+<th colspan="6">Total</th>
+<th>{{ total.sum_invo_basic_amt }}</th>
+<th>{{ total.get('sum_invo_debit_amt',0) }}</th>
+<th>{{ total.get('sum_invo_after_debit_amt',0) }}</th>
+<th>{{ total.get('sum_invo_gst_amt',0) }}</th>
+<th>{{ total.get('sum_invo_amt',0) }}</th>
+<th>{{ total.get('sum_invo_tds_amt',0) }}</th>
+<th>{{ total.get('sum_invo_ds_amt',0) }}</th>
+<th>{{ total.get('sum_invo_on_commission',0) }}</th>
+<th>{{ total.get('sum_invo_hydro_test',0) }}</th>
+
+{% if hold_types %}
+<th colspan="{{hold_types|length}}">
+{{ total.sum_invo_hold_amt }}
+</th>
+{% endif %}
+
+<th>{{ total.get('sum_invo_gst_sd_amt',0) }}</th>
+<th>{{ total.sum_invo_final_amt }}</th>
+
+</tr>
+
+</tbody>
+</table>
+</div>
+
+
+
+<h2 class="section-title">
+GST Release Note
+</h2>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>PMC</th>
+<th>Invoice No</th>
+<th>Basic</th>
+<th>Final</th>
+<th>UTR</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for gst in gst_rel %}
+<tr>
+<td>{{ gst.PMC_No }}</td>
+<td>{{ gst.invoice_no }}</td>
+<td>{{ gst.Basic_Amount }}</td>
+<td>{{ gst.Final_Amount }}</td>
+<td>{{ gst.UTR }}</td>
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+</div>
+
+
+
+<h2 class="section-title">
+Credit Details
+</h2>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>PMC</th>
+<th>Invoice Details</th>
+<th>Basic</th>
+<th>Debit</th>
+<th>After Debit</th>
+<th>GST</th>
+<th>Amount</th>
+<th>Final</th>
+<th>Payment</th>
+<th>Total</th>
+<th>UTR</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for credit in credit_note %}
+<tr>
+<td>{{ credit["PMC_No"] }}</td>
+<td>{{ credit["Invoice_Details"] }}</td>
+<td>{{ credit["Basic_Amount"] }}</td>
+<td>{{ credit["Debit_Amount"] }}</td>
+<td>{{ credit["After_Debit_Amount"] }}</td>
+<td>{{ credit["GST_Amount"] }}</td>
+<td>{{ credit["Amount"] }}</td>
+<td>{{ credit["Final_Amount"] }}</td>
+<td>{{ credit["Payment_Amount"] }}</td>
+<td>{{ credit["Total_Amount"] }}</td>
+<td>{{ credit["UTR"] }}</td>
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+</div>
+
+
+
+<h2 class="section-title">
+Payment Details
+</h2>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>PMC</th>
+<th>Invoice No</th>
+<th>Amount</th>
+<th>TDS</th>
+<th>Total Paid</th>
+<th>UTR</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for pay in payments %}
+<tr>
+<td>{{ pay.pmc_no }}</td>
+<td>{{ pay.invoice_no }}</td>
+<td>{{ pay.Payment_Amount }}</td>
+<td>{{ pay.TDS_Payment_Amount }}</td>
+<td>{{ pay.Total_amount }}</td>
+<td>{{ pay.UTR }}</td>
+</tr>
+{% endfor %}
+
+<tr class="total-row">
+<th colspan="2">Total</th>
+<th>{{total["sum_pay_payment_amt"]}}</th>
+<th>{{total["sum_pay_tds_payment_amt"]}}</th>
+<th>{{total["sum_pay_total_amt"]}}</th>
+<th></th>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+
+
+<div class="download-wrap">
+<a href="/download_pmc_report/{{ info.PMC_No}}">
+<button class="download-btn">
+Download PMC Report
+</button>
+</a>
+</div>
+
+
+</div>
+
 {% endblock %}

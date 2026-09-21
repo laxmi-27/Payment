@@ -1,73 +1,686 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<head>
-    <title>Manage Hold Types</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- <script src="{{ url_for('static', filename='js/hold_types.js') }}"></script> -->
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/search_on_table.js') }}"></script>
-</head>
+<style>
+/* ── Hold Type Management ───────────────────────────────────────────── */
+.ht-page { max-width: 1100px; margin: 0 auto; }
 
-<body>
+/* Header */
+.ht-header {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px; padding: 26px 32px; margin-bottom: 22px; color: #fff;
+}
+.ht-header h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; }
+.ht-header p  { margin: 0; font-size: 13.5px; opacity: .82; }
 
-    <div class="button-container">
-        <button id="addButton" class="action-button">Add</button>
-        <button id="displayButton" class="action-button">Display</button>
-    </div>
+/* Tabs */
+.ht-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.ht-tab-btn {
+  padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 2px solid #d0dff5; background: #fff; color: #1d3e73;
+  transition: .2s; display: inline-flex; align-items: center; gap: 7px;
+}
+.ht-tab-btn.active {
+  background: linear-gradient(90deg, #183b70, #2f68bb); color: #fff;
+  border-color: transparent; box-shadow: 0 4px 12px rgba(24,59,112,.18);
+}
+.ht-tab-btn:hover:not(.active) { background: #f0f7ff; border-color: #b3cff0; }
 
-    <div id="addForm">
-        <h2>Add Hold Types</h2>
-        <form id="holdTypeForm" method="POST" action="{{ url_for('hold_types.add_hold_type') }}">
-            <label>Enter Hold Amount Type:</label>
-            <input type="text" id="hold_type" name="hold_type" placeholder="Enter Type" required>
-            <span id="holdTypeMessage"></span>
-            <button type="submit" value="Add Hold Type" id="successPopup">Add Hold Type</button>
-        </form>
-    </div>
+/* Toast */
+.ht-toast {
+  position: fixed; top: 22px; right: 22px; z-index: 99999;
+  padding: 12px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+  min-width: 240px; box-shadow: 0 6px 22px rgba(0,0,0,.15); display: none;
+}
+.ht-toast.ok  { background: #f0fff5; border: 1.5px solid #a3e6bc; color: #1a7a3f; }
+.ht-toast.err { background: #fff0f0; border: 1.5px solid #ffc0c0; color: #c62828; }
 
-    <div id="addTable" style="display: none;">
-        <div class="search-container">
-            <h2>Hold Type List</h2>
-            <input type="text" id="searchBar" placeholder="Searching..." onkeyup="searchTable()">
+/* ── Add Form ─────────────────────────────────────────────────────── */
+.ht-form-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 30px 34px;
+}
+.ht-section { margin-bottom: 26px; }
+.ht-sec-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 5px 12px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: inline-block;
+}
+.ht-g2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+.ht-g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.ht-full { grid-column: 1 / -1; }
+
+.ht-field { display: flex; flex-direction: column; }
+.ht-field label { font-size: 13px; font-weight: 600; color: #344054; margin-bottom: 6px; }
+.ht-req { color: #d32f2f; margin-left: 2px; }
+.ht-field input, .ht-field select, .ht-field textarea {
+  padding: 11px 14px; border: 1.5px solid #d8dfeb; border-radius: 10px;
+  background: #fafcff; font-size: 13.5px; outline: none;
+  transition: border-color .15s, box-shadow .15s; width: 100%; box-sizing: border-box;
+  font-family: inherit;
+}
+.ht-field textarea { resize: vertical; min-height: 80px; }
+.ht-field input:focus, .ht-field select:focus, .ht-field textarea:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+}
+.ht-hint { font-size: 11.5px; color: #8fa3c4; margin-top: 4px; }
+
+/* Form footer */
+.ht-form-footer {
+  display: flex; gap: 12px; padding-top: 16px;
+  border-top: 1px solid #edf1f7; margin-top: 4px; flex-wrap: wrap;
+}
+.ht-submit-btn {
+  padding: 12px 34px; background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff; border: none; border-radius: 10px; font-size: 14.5px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s;
+}
+.ht-submit-btn:hover { opacity: .9; }
+.ht-submit-btn:disabled { opacity: .55; cursor: not-allowed; }
+.ht-clear-btn {
+  padding: 12px 22px; background: #f0f4fa; color: #1d3e73;
+  border: 1.5px solid #d0dff5; border-radius: 10px; font-size: 14px;
+  font-weight: 600; cursor: pointer;
+}
+.ht-clear-btn:hover { background: #e4edf8; }
+
+/* ── List Table ────────────────────────────────────────────────────── */
+.ht-list-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); overflow: hidden;
+}
+.ht-list-hd {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 18px 24px 14px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #edf1f7;
+}
+.ht-list-hd h2 { font-size: 16px; font-weight: 700; color: #1d3e73; margin: 0 0 2px; }
+.ht-list-count { font-size: 12px; color: #8fa3c4; }
+.ht-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ht-sw { position: relative; }
+.ht-sw input {
+  padding: 8px 13px 8px 33px; border: 1.5px solid #d8dfeb; border-radius: 8px;
+  font-size: 13px; width: 200px; outline: none; background: #fafcff;
+}
+.ht-sw input:focus { border-color: #2d73d5; box-shadow: 0 0 0 3px rgba(45,115,213,.08); }
+.ht-sw i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #8fa3c4; font-size: 12px; }
+.ht-fsel {
+  padding: 8px 12px; border: 1.5px solid #d8dfeb; border-radius: 8px;
+  font-size: 13px; outline: none; background: #fafcff; color: #344054; cursor: pointer;
+}
+.ht-fsel:focus { border-color: #2d73d5; }
+
+.ht-table-wrap { overflow-x: auto; }
+.ht-table { width: 100%; border-collapse: collapse; }
+.ht-table thead tr { background: linear-gradient(90deg, #183b70, #2f68bb); }
+.ht-table th {
+  padding: 11px 13px; font-size: 12px; font-weight: 600; color: #fff;
+  text-align: left; white-space: nowrap;
+}
+.ht-table td {
+  padding: 10px 13px; font-size: 13px; color: #344054;
+  border-bottom: 1px solid #edf1f7; vertical-align: middle;
+}
+.ht-table tbody tr:hover { background: #f8fbff; }
+.ht-id-cell  { font-family: monospace; font-size: 12.5px; color: #8fa3c4; width: 52px; }
+.ht-name-cell { font-weight: 600; color: #1d3e73; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ht-pct-cell  { font-family: monospace; font-size: 12.5px; text-align: right; width: 80px; }
+.ht-empty { text-align: center; padding: 52px 24px; color: #8fa3c4; }
+.ht-empty i { font-size: 36px; margin-bottom: 10px; display: block; }
+
+/* Category badges */
+.ht-cat {
+  display: inline-block; padding: 3px 9px; border-radius: 6px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+}
+.ht-cat-quality    { background: #e8f0fe; color: #1a56db; }
+.ht-cat-dpr        { background: #ede9fe; color: #5b21b6; }
+.ht-cat-security   { background: #fce7f3; color: #9d174d; }
+.ht-cat-material   { background: #d1fae5; color: #065f46; }
+.ht-cat-penalty    { background: #fee2e2; color: #991b1b; }
+.ht-cat-tax        { background: #fef3c7; color: #92400e; }
+.ht-cat-misc       { background: #f3f4f6; color: #6b7280; }
+
+/* Status badges */
+.ht-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 12px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
+}
+.ht-badge.active   { background: #d1fae5; color: #065f46; }
+.ht-badge.inactive { background: #fee2e2; color: #991b1b; }
+
+/* Actions dropdown */
+.ht-act-btn {
+  padding: 5px 11px; background: #f0f4fa; border: 1.5px solid #d0dff5;
+  border-radius: 7px; font-size: 12px; font-weight: 600; color: #1d3e73;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.ht-act-btn:hover { background: #e4edf8; }
+.ht-act-menu {
+  display: none; position: fixed; background: #fff; border: 1px solid #dce8f8;
+  border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.13);
+  min-width: 162px; z-index: 9999; overflow: hidden;
+}
+.ht-act-menu.open { display: block; }
+.ht-act-item {
+  display: flex; align-items: center; gap: 9px; padding: 10px 16px;
+  font-size: 13px; color: #344054; cursor: pointer; background: none;
+  border: none; width: 100%; text-align: left; transition: background .12s;
+}
+.ht-act-item:hover    { background: #f0f7ff; color: #1d3e73; }
+.ht-act-item.ht-dng   { color: #c62828; }
+.ht-act-item.ht-dng:hover { background: #fff0f0; }
+.ht-act-div { height: 1px; background: #edf1f7; margin: 3px 0; }
+
+/* Modal */
+.ht-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(20,35,70,.45); z-index: 10000; align-items: center; justify-content: center;
+}
+.ht-overlay.open { display: flex; }
+.ht-modal {
+  background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  width: 600px; max-width: calc(100vw - 32px); max-height: 92vh; overflow-y: auto;
+}
+.ht-modal-head {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  padding: 20px 26px; border-radius: 20px 20px 0 0; color: #fff;
+}
+.ht-modal-head h3 { margin: 0 0 3px; font-size: 17px; }
+.ht-modal-head p  { margin: 0; font-size: 12.5px; opacity: .8; }
+.ht-modal-close {
+  float: right; background: rgba(255,255,255,.18); border: none;
+  color: #fff; width: 28px; height: 28px; border-radius: 50%;
+  cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;
+}
+.ht-modal-body { padding: 22px 26px; }
+.ht-ms {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 4px 11px; border-radius: 0 7px 7px 0; display: inline-block; margin-bottom: 12px;
+}
+.ht-dg  { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 16px; }
+.ht-dg3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
+.ht-di label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: #8fa3c4; display: block; margin-bottom: 3px;
+}
+.ht-di span { font-size: 13.5px; color: #1d3e73; font-weight: 600; }
+.ht-di.ht-full-di { grid-column: 1 / -1; }
+.ht-desc-val { font-size: 13px; color: #344054; font-weight: 400; line-height: 1.6; word-break: break-word; }
+.ht-modal-foot {
+  padding: 14px 26px 20px; display: flex; gap: 10px;
+  justify-content: flex-end; border-top: 1px solid #edf1f7;
+}
+.ht-mc { padding:9px 20px; background:#f0f4fa; border:1.5px solid #d0dff5;
+  border-radius:8px; font-size:13px; font-weight:600; color:#1d3e73; cursor:pointer; }
+.ht-me { padding:9px 20px; background:linear-gradient(90deg,#183b70,#2f68bb);
+  color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+
+@media (max-width: 768px) {
+  .ht-form-card { padding: 20px 16px; }
+  .ht-g2, .ht-g3 { grid-template-columns: 1fr; }
+  .ht-dg, .ht-dg3 { grid-template-columns: 1fr; }
+  .ht-filters { flex-direction: column; align-items: stretch; }
+  .ht-sw input, .ht-fsel { width: 100%; }
+}
+</style>
+
+
+<div class="ht-page">
+
+  <!-- Header -->
+  <div class="ht-header">
+    <h1><i class="fas fa-hand-paper" style="margin-right:10px;opacity:.9;"></i>Hold Type Management</h1>
+    <p>Define and manage hold types used across invoices and payment deductions.</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="ht-tabs">
+    <button id="htAddBtn" class="ht-tab-btn" onclick="htTab('form')">
+      <i class="fas fa-plus-circle"></i> Add Hold Type
+    </button>
+    <button id="htListBtn" class="ht-tab-btn active" onclick="htTab('list')">
+      <i class="fas fa-list"></i> Hold Type List
+    </button>
+  </div>
+
+  <!-- Toast -->
+  <div class="ht-toast" id="htToast"></div>
+
+  <!-- ── Add Form ──────────────────────────────────────────────────── -->
+  <div id="htAddForm" class="ht-form-card" style="display:none;">
+    <form id="htForm" onsubmit="htSubmit(event)">
+
+      <!-- Section: Basic Info -->
+      <div class="ht-section">
+        <div class="ht-sec-title"><i class="fas fa-tag" style="margin-right:6px;"></i>Basic Information</div>
+        <div class="ht-g2">
+
+          <div class="ht-field">
+            <label>Hold Type Name <span class="ht-req">*</span></label>
+            <input type="text" id="htName" name="hold_type" required placeholder="e.g. DPR Excess Hold">
+          </div>
+
+          <div class="ht-field">
+            <label>Hold Category <span class="ht-req">*</span></label>
+            <select id="htCategory" name="hold_category" required>
+              <option value="">Select Category</option>
+              <option value="Quality Hold">Quality Hold</option>
+              <option value="DPR Hold">DPR Hold</option>
+              <option value="Security Deposit Hold">Security Deposit Hold</option>
+              <option value="Material Recovery">Material Recovery</option>
+              <option value="Penalty Hold">Penalty Hold</option>
+              <option value="Tax Related Hold">Tax Related Hold</option>
+              <option value="Miscellaneous">Miscellaneous</option>
+            </select>
+          </div>
+
+          <div class="ht-field ht-full">
+            <label>Description / Reason</label>
+            <textarea id="htDesc" name="description" placeholder="Describe when and why this hold type is applied…"></textarea>
+          </div>
+
         </div>
-        <table id="sortableTable" border="1">
-            <tr>
-                <th>ID</th>
-                <th class="sortable-header">
-                    Hold Type
-                    <span class="sort-buttons">
-                        <span class="sort-asc">⬆️</span>
-                        <span class="sort-desc">⬇️</span>
-                    </span>
-                </th>
-                <th>Update</th>
-                <th>Delete</th>
-            </tr>
-            {% for htd in Hold_Types_data %}
-            <tr>
-                <td>{{ htd['hold_type_id'] }}</td>
-                <td>{{ htd['hold_type'] }}</td>
-                <td style="text-align:center;">
-                    <a href="{{ url_for('hold_types.edit_hold_type', id=htd['hold_type_id']) }}">
-                        <img src="{{ url_for('static', filename='images/icons/pen_blue_icon.png') }}" alt="Edit"
-                            class="icon">
-                    </a>
-                </td>
+      </div>
 
-                <td style="text-align:center;">
-                    <a href="{{ url_for('hold_types.delete_hold_type', id=htd['hold_type_id']) }}"
-                        onclick="return confirm('Are you sure you want to delete this hold type?');">
+      <!-- Section: Settings -->
+      <div class="ht-section">
+        <div class="ht-sec-title"><i class="fas fa-cog" style="margin-right:6px;"></i>Settings</div>
+        <div class="ht-g3">
 
-                        <img src="{{ url_for('static', filename='images/icons/bin_red_icon.png') }}" alt="Delete"
-                            class="icon">
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
+          <div class="ht-field">
+            <label>Default Hold % <span style="color:#8fa3c4;font-weight:400;">(optional)</span></label>
+            <input type="number" step="0.01" min="0" max="100" id="htPct" name="default_hold_percentage" placeholder="e.g. 5.00">
+            <span class="ht-hint">Leave blank if no default percentage.</span>
+          </div>
 
-        <a href="/">Back to Dashboard</a>
+          <div class="ht-field">
+            <label>Status <span class="ht-req">*</span></label>
+            <select id="htStatus" name="status">
+              <option value="Active" selected>Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="ht-form-footer">
+        <button type="submit" class="ht-submit-btn" id="htSubmitBtn">Add Hold Type</button>
+        <button type="button" class="ht-clear-btn" onclick="htClearForm()">Clear</button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ── Hold Type List ────────────────────────────────────────────── -->
+  <div id="htTable" class="ht-list-card">
+
+    <div class="ht-list-hd">
+      <div>
+        <h2>Hold Type List</h2>
+        <span class="ht-list-count" id="htCount">{{ hold_types|length }} record{{ 's' if hold_types|length != 1 else '' }}</span>
+      </div>
+      <div class="ht-filters">
+        <div class="ht-sw">
+          <i class="fas fa-search"></i>
+          <input type="text" id="htSearch" placeholder="Search by name…" oninput="htFilter()">
+        </div>
+        <select class="ht-fsel" id="htFStatus" onchange="htFilter()">
+          <option value="">All Status</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+        <select class="ht-fsel" id="htFCat" onchange="htFilter()">
+          <option value="">All Categories</option>
+          <option value="Quality Hold">Quality Hold</option>
+          <option value="DPR Hold">DPR Hold</option>
+          <option value="Security Deposit Hold">Security Deposit Hold</option>
+          <option value="Material Recovery">Material Recovery</option>
+          <option value="Penalty Hold">Penalty Hold</option>
+          <option value="Tax Related Hold">Tax Related Hold</option>
+          <option value="Miscellaneous">Miscellaneous</option>
+        </select>
+      </div>
     </div>
-</body>
+
+    <div class="ht-table-wrap">
+      <table class="ht-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Hold Type Name</th>
+            <th>Category</th>
+            <th style="text-align:right;">Default %</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="htTbody">
+          {% if hold_types %}
+            {% for h in hold_types %}
+              {% set info = {
+                'id':       h.hold_type_id,
+                'name':     (h.hold_type or ''),
+                'category': (h.hold_category or ''),
+                'status':   (h.status or 'Active'),
+              } %}
+              <tr data-id="{{ h.hold_type_id }}" data-info='{{ info | tojson }}'>
+                <td class="ht-id-cell">{{ h.hold_type_id }}</td>
+                <td class="ht-name-cell" title="{{ h.hold_type or '' }}">{{ h.hold_type or '—' }}</td>
+                <td>
+                  {% if h.hold_category == 'Quality Hold' %}<span class="ht-cat ht-cat-quality">Quality Hold</span>
+                  {% elif h.hold_category == 'DPR Hold' %}<span class="ht-cat ht-cat-dpr">DPR Hold</span>
+                  {% elif h.hold_category == 'Security Deposit Hold' %}<span class="ht-cat ht-cat-security">Security Deposit</span>
+                  {% elif h.hold_category == 'Material Recovery' %}<span class="ht-cat ht-cat-material">Material Recovery</span>
+                  {% elif h.hold_category == 'Penalty Hold' %}<span class="ht-cat ht-cat-penalty">Penalty Hold</span>
+                  {% elif h.hold_category == 'Tax Related Hold' %}<span class="ht-cat ht-cat-tax">Tax Related</span>
+                  {% else %}<span class="ht-cat ht-cat-misc">{{ h.hold_category or 'Miscellaneous' }}</span>{% endif %}
+                </td>
+                <td class="ht-pct-cell">
+                  {% if h.default_hold_percentage is not none and h.default_hold_percentage != '' %}
+                    {{ h.default_hold_percentage }}%
+                  {% else %}
+                    <span style="color:#c0ccdc;">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="ht-badge {{ (h.status or 'Active')|lower }}">
+                    {{ h.status or 'Active' }}
+                  </span>
+                </td>
+                <td>
+                  <button class="ht-act-btn" onclick="htOpenMenu(this, {{ h.hold_type_id }})">
+                    Actions <i class="fas fa-chevron-down" style="font-size:10px;"></i>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="ht-empty">
+                <i class="fas fa-hand-paper"></i>
+                <p style="font-weight:600;">No hold types defined yet</p>
+                <p>Click <b>Add Hold Type</b> to create the first entry.</p>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div><!-- /ht-page -->
+
+
+<!-- Actions Dropdown -->
+<div class="ht-act-menu" id="htMenu">
+  <button class="ht-act-item" onclick="htDoView()">
+    <i class="fas fa-eye" style="width:14px;color:#2a5298;"></i> View Details
+  </button>
+  <button class="ht-act-item" onclick="htDoEdit()">
+    <i class="fas fa-pen" style="width:14px;color:#2a5298;"></i> Edit
+  </button>
+  <div class="ht-act-div"></div>
+  <button class="ht-act-item ht-dng" onclick="htDoDelete()">
+    <i class="fas fa-trash" style="width:14px;"></i> Delete
+  </button>
+</div>
+
+
+<!-- View Details Modal -->
+<div class="ht-overlay" id="htOverlay">
+  <div class="ht-modal" onclick="event.stopPropagation()">
+    <div class="ht-modal-head">
+      <button class="ht-modal-close" onclick="htCloseModal()">&times;</button>
+      <h3><i class="fas fa-hand-paper" style="margin-right:8px;"></i>Hold Type Details</h3>
+      <p id="htDSub" style="opacity:.85;">—</p>
+    </div>
+    <div class="ht-modal-body">
+
+      <div class="ht-ms"><i class="fas fa-info-circle" style="margin-right:5px;"></i>Basic Details</div>
+      <div class="ht-dg3">
+        <div class="ht-di"><label>Hold Type ID</label><span id="htDId">—</span></div>
+        <div class="ht-di"><label>Status</label><span id="htDStatus">—</span></div>
+        <div class="ht-di"><label>Default Hold %</label><span id="htDPct">—</span></div>
+      </div>
+      <div class="ht-dg" style="margin-bottom:8px;">
+        <div class="ht-di"><label>Hold Type Name</label><span id="htDName">—</span></div>
+        <div class="ht-di"><label>Hold Category</label><span id="htDCategory">—</span></div>
+      </div>
+      <div class="ht-di ht-full-di" style="margin-bottom:16px;">
+        <label>Description / Reason</label>
+        <span id="htDDesc" class="ht-desc-val">—</span>
+      </div>
+
+      <div class="ht-ms"><i class="fas fa-clock" style="margin-right:5px;"></i>System Details</div>
+      <div class="ht-dg">
+        <div class="ht-di"><label>Created Date</label><span id="htDCreated">—</span></div>
+        <div class="ht-di"><label>Last Updated</label><span id="htDUpdated">—</span></div>
+      </div>
+
+    </div>
+    <div class="ht-modal-foot">
+      <button class="ht-mc" onclick="htCloseModal()">Close</button>
+      <button class="ht-me" onclick="htEditFromModal()">
+        <i class="fas fa-pen" style="margin-right:5px;"></i>Edit
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+let _htMenuId  = null;
+let _htViewId  = null;
+
+/* ── Tab switching ──────────────────────────────────────────────── */
+function htTab(tab) {
+  const form   = document.getElementById('htAddForm');
+  const table  = document.getElementById('htTable');
+  const addBtn = document.getElementById('htAddBtn');
+  const lstBtn = document.getElementById('htListBtn');
+  if (tab === 'form') {
+    form.style.display  = 'block';  table.style.display = 'none';
+    addBtn.classList.add('active'); lstBtn.classList.remove('active');
+  } else {
+    form.style.display  = 'none';   table.style.display = 'block';
+    lstBtn.classList.add('active'); addBtn.classList.remove('active');
+  }
+}
+
+/* ── Toast ──────────────────────────────────────────────────────── */
+function htToast(msg, type) {
+  const t = document.getElementById('htToast');
+  t.textContent = msg;
+  t.className = 'ht-toast ' + (type || 'ok');
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+
+/* ── Form Submit ────────────────────────────────────────────────── */
+async function htSubmit(e) {
+  e.preventDefault();
+  const btn = document.getElementById('htSubmitBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const res  = await fetch('/add_hold_type', {
+      method: 'POST',
+      body:   new FormData(document.getElementById('htForm'))
+    });
+    const data = await res.json();
+    if (data.success) {
+      htToast('Hold Type added successfully!', 'ok');
+      setTimeout(() => window.location.reload(), 1100);
+    } else {
+      htToast(data.message || 'Failed to add hold type.', 'err');
+      btn.disabled    = false;
+      btn.textContent = 'Add Hold Type';
+    }
+  } catch(err) {
+    htToast('Network error. Please try again.', 'err');
+    btn.disabled    = false;
+    btn.textContent = 'Add Hold Type';
+  }
+}
+
+function htClearForm() {
+  document.getElementById('htForm').reset();
+}
+
+/* ── Filter ─────────────────────────────────────────────────────── */
+function htFilter() {
+  const q      = document.getElementById('htSearch').value.toLowerCase().trim();
+  const fSt    = document.getElementById('htFStatus').value;
+  const fCat   = document.getElementById('htFCat').value;
+  let   count  = 0;
+
+  document.querySelectorAll('#htTbody tr[data-id]').forEach(tr => {
+    const d     = JSON.parse(tr.dataset.info);
+    const nameM = !q   || (d.name     || '').toLowerCase().includes(q);
+    const stM   = !fSt  || (d.status   || '') === fSt;
+    const catM  = !fCat || (d.category || '') === fCat;
+    const show  = nameM && stM && catM;
+    tr.style.display = show ? '' : 'none';
+    if (show) count++;
+  });
+  document.getElementById('htCount').textContent = count + ' record' + (count !== 1 ? 's' : '');
+}
+
+/* ── Actions Dropdown ──────────────────────────────────────────── */
+function htOpenMenu(btn, id) {
+  const menu = document.getElementById('htMenu');
+  if (_htMenuId === id && menu.classList.contains('open')) {
+    menu.classList.remove('open'); _htMenuId = null; return;
+  }
+  _htMenuId = id;
+
+  menu.style.visibility = 'hidden';
+  menu.style.display    = 'block';
+  const mH = menu.offsetHeight;
+  menu.style.display    = '';
+  menu.style.visibility = '';
+
+  const r      = btn.getBoundingClientRect();
+  const openUp = (window.innerHeight - r.bottom - 8) < mH;
+  menu.style.position = 'fixed';
+  menu.style.right    = (window.innerWidth - r.right) + 'px';
+  menu.style.left     = 'auto';
+  if (openUp) {
+    menu.style.top    = 'auto';
+    menu.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+  } else {
+    menu.style.top    = (r.bottom + 4) + 'px';
+    menu.style.bottom = 'auto';
+  }
+  menu.classList.add('open');
+  menu.dataset.id = id;
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.ht-act-btn') && !e.target.closest('#htMenu')) {
+    document.getElementById('htMenu').classList.remove('open');
+    _htMenuId = null;
+  }
+});
+window.addEventListener('scroll', function() {
+  document.getElementById('htMenu').classList.remove('open');
+  _htMenuId = null;
+}, { passive: true });
+
+/* ── View Details ──────────────────────────────────────────────── */
+async function htDoView() {
+  const menu = document.getElementById('htMenu');
+  const id   = menu.dataset.id;
+  _htViewId  = id;
+  menu.classList.remove('open'); _htMenuId = null;
+
+  document.getElementById('htDSub').textContent = 'Loading…';
+  document.getElementById('htOverlay').classList.add('open');
+
+  try {
+    const res  = await fetch('/api/hold_type/' + id);
+    const data = await res.json();
+    if (data.success) {
+      _fillHtModal(data);
+    } else {
+      document.getElementById('htDSub').textContent = 'Failed to load details.';
+    }
+  } catch(err) {
+    document.getElementById('htDSub').textContent = 'Network error.';
+  }
+}
+
+function htDoEdit() {
+  const id = document.getElementById('htMenu').dataset.id;
+  document.getElementById('htMenu').classList.remove('open'); _htMenuId = null;
+  window.location.href = '/edit_hold_type/' + id;
+}
+
+async function htDoDelete() {
+  const menu = document.getElementById('htMenu');
+  const id   = menu.dataset.id;
+  menu.classList.remove('open'); _htMenuId = null;
+
+  if (!confirm('Delete Hold Type #' + id + '?\nThis cannot be undone.')) return;
+
+  try {
+    const res  = await fetch('/delete_hold_type/' + id, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      htToast('Hold Type deleted.', 'ok');
+      setTimeout(() => window.location.reload(), 900);
+    } else {
+      htToast(data.message || 'Delete failed.', 'err');
+    }
+  } catch(e) {
+    htToast('Network error.', 'err');
+  }
+}
+
+/* ── Modal fill ────────────────────────────────────────────────── */
+const _htCatClass = {
+  'Quality Hold':         'ht-cat-quality',
+  'DPR Hold':             'ht-cat-dpr',
+  'Security Deposit Hold':'ht-cat-security',
+  'Material Recovery':    'ht-cat-material',
+  'Penalty Hold':         'ht-cat-penalty',
+  'Tax Related Hold':     'ht-cat-tax',
+  'Miscellaneous':        'ht-cat-misc',
+};
+
+function _fillHtModal(d) {
+  document.getElementById('htDSub').textContent      = (d.name || '—') + ' · ' + (d.category || '—');
+  document.getElementById('htDId').textContent       = '#' + (d.id || '—');
+  document.getElementById('htDName').textContent     = d.name     || '—';
+  document.getElementById('htDDesc').textContent     = d.description || '—';
+  document.getElementById('htDPct').textContent      = d.default_pct ? d.default_pct + '%' : '—';
+  document.getElementById('htDCreated').textContent  = d.created  || '—';
+  document.getElementById('htDUpdated').textContent  = d.updated  || '—';
+
+  const catEl = document.getElementById('htDCategory');
+  const cls   = _htCatClass[d.category] || 'ht-cat-misc';
+  catEl.innerHTML = '<span class="ht-cat ' + cls + '">' + (d.category || '—') + '</span>';
+
+  const stEl  = document.getElementById('htDStatus');
+  const stCls = (d.status || 'Active').toLowerCase();
+  stEl.innerHTML = '<span class="ht-badge ' + stCls + '">' + (d.status || 'Active') + '</span>';
+}
+
+function htEditFromModal() {
+  if (_htViewId) window.location.href = '/edit_hold_type/' + _htViewId;
+}
+
+function htCloseModal() {
+  document.getElementById('htOverlay').classList.remove('open');
+}
+document.getElementById('htOverlay').addEventListener('click', function(e) {
+  if (e.target === this) htCloseModal();
+});
+</script>
+
 {% endblock %}

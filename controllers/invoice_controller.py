@@ -46,6 +46,62 @@ def add_invoice():
     return render_template('add_invoice.html', invoices=invoices, villages=villages)
 
 
+# ------------------------------- Get Invoice (View Details API) -------------------------------
+@invoice_bp.route('/api/invoice/<int:invoice_id>', methods=['GET'])
+@login_required
+@handle_exception
+def api_get_invoice(invoice_id):
+    invoice = get_invoice_by_id(invoice_id)
+    if not invoice:
+        return jsonify({"success": False}), 404
+
+    def fstr(v):
+        return str(v) if v is not None else '0.00'
+
+    def calc_pct(amount, base):
+        try:
+            b = float(base or 0)
+            return str(round((float(amount or 0) / b) * 100, 2)) if b != 0 else '0.00'
+        except Exception:
+            return '0.00'
+
+    base  = invoice.get('After_Debit_Amount') or 0
+    holds = invoice.get('hold_amounts', [])
+
+    return jsonify({
+        "success":        True,
+        "id":             invoice.get('Invoice_Id'),
+        "contractor":     invoice.get('Contractor_Name') or '',
+        "village":        invoice.get('Village_Name')    or '',
+        "pmc":            str(invoice.get('PMC_No')      or ''),
+        "work_type":      invoice.get('Work_Type')       or '',
+        "details":        invoice.get('Invoice_Details') or '',
+        "inv_no":         str(invoice.get('invoice_no')  or ''),
+        "date":           str(invoice.get('Invoice_Date')) if invoice.get('Invoice_Date') else '',
+        "basic":          fstr(invoice.get('Basic_Amount')),
+        "debit":          fstr(invoice.get('Debit_Amount')),
+        "after_debit":    fstr(invoice.get('After_Debit_Amount')),
+        "gst_pct":        calc_pct(invoice.get('GST_Amount'),    base),
+        "gst":            fstr(invoice.get('GST_Amount')),
+        "amount":         fstr(invoice.get('Amount')),
+        "tds_pct":        calc_pct(invoice.get('TDS_Amount'),    base),
+        "tds":            fstr(invoice.get('TDS_Amount')),
+        "sd_pct":         calc_pct(invoice.get('SD_Amount'),     base),
+        "sd":             fstr(invoice.get('SD_Amount')),
+        "commission_pct": calc_pct(invoice.get('On_Commission'), base),
+        "commission":     fstr(invoice.get('On_Commission')),
+        "hydro_pct":      calc_pct(invoice.get('Hydro_Testing'), base),
+        "hydro":          fstr(invoice.get('Hydro_Testing')),
+        "gst_sd":         fstr(invoice.get('GST_SD_Amount')),
+        "final":          fstr(invoice.get('Final_Amount')),
+        "holds": [
+            {"type":   h.get('hold_type',   ''),
+             "amount": fstr(h.get('hold_amount', 0))}
+            for h in holds
+        ]
+    })
+
+
 # ------------------------------- Search Subcontractor -------------------------------
 @invoice_bp.route('/search_subcontractor', methods=['POST'])
 @login_required

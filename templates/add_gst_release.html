@@ -1,209 +1,750 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add GST Release</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/search_on_table.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/invoice.js') }}"></script>
-</head>
-<body>
 
-<!-- Button Container to Center Buttons -->
-<div class="button-container">
-    <button id="addButton" class="action-button">Add</button>
-    <button id="displayButton" class="action-button">Display</button>
-</div>
- 
-<div id="addForm" style="display: none;">
-    <h2>Add GST Release</h2>
-    <form action="/add_gst_release" method="POST" onsubmit="showSuccessAlert(event)">
-        <div class="row1">
-           <div>
-    <label for="subcontractor">Subcontractor Name:</label>
-    <!-- Text input for user-friendly autocomplete -->
-    <input type="text" id="subcontractor" name="subcontractor" required autocomplete="off"/>
-    
-    <!-- Hidden input for backend; must match model's Contractor_ID -->
-    <input type="hidden" id="subcontractor_id" name="Contractor_ID"/>
-    
-    <div id="subcontractor_list" class="autocomplete-items"></div>
-</div>
+<style>
+/* ── GST Release Management ─────────────────────────────────────────── */
+.gr-page { max-width: 1240px; margin: 0 auto; }
+
+/* Header */
+.gr-header {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  border-radius: 18px; padding: 26px 32px; margin-bottom: 22px; color: #fff;
+}
+.gr-header h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; }
+.gr-header p  { margin: 0; font-size: 13.5px; opacity: .82; }
+
+/* Tabs */
+.gr-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.gr-tab-btn {
+  padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 2px solid #d0dff5; background: #fff; color: #1d3e73;
+  transition: .2s; display: inline-flex; align-items: center; gap: 7px;
+}
+.gr-tab-btn.active {
+  background: linear-gradient(90deg, #183b70, #2f68bb); color: #fff;
+  border-color: transparent; box-shadow: 0 4px 12px rgba(24,59,112,.18);
+}
+.gr-tab-btn:hover:not(.active) { background: #f0f7ff; border-color: #b3cff0; }
+
+/* Toast */
+.gr-toast {
+  position: fixed; top: 22px; right: 22px; z-index: 99999;
+  padding: 12px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+  min-width: 230px; box-shadow: 0 6px 22px rgba(0,0,0,.15); display: none;
+}
+.gr-toast.ok  { background: #f0fff5; border: 1.5px solid #a3e6bc; color: #1a7a3f; }
+.gr-toast.err { background: #fff0f0; border: 1.5px solid #ffc0c0; color: #c62828; }
+
+/* ── Add Form ─────────────────────────────────────────────────────── */
+.gr-form-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 30px 34px;
+}
+.gr-section { margin-bottom: 26px; }
+.gr-sec-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 5px 12px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: inline-block;
+}
+.gr-g2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+.gr-g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.gr-full { grid-column: 1 / -1; }
+
+.gr-field { display: flex; flex-direction: column; position: relative; }
+.gr-field label { font-size: 13px; font-weight: 600; color: #344054; margin-bottom: 6px; }
+.gr-req { color: #d32f2f; margin-left: 2px; }
+.gr-field input, .gr-field select {
+  padding: 11px 14px; border: 1.5px solid #d8dfeb; border-radius: 10px;
+  background: #fafcff; font-size: 13.5px; outline: none; box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s; width: 100%; margin: 0;
+}
+.gr-field input:focus, .gr-field select:focus {
+  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+}
+
+/* Autocomplete */
+.gr-ac-wrap { position: relative; }
+.gr-ac-list {
+  display: none; position: absolute; z-index: 300; background: #fff;
+  border: 1.5px solid #d0dff5; border-top: none; border-radius: 0 0 10px 10px;
+  max-height: 180px; overflow-y: auto; width: 100%;
+  box-shadow: 0 6px 18px rgba(0,0,0,.1);
+}
+.gr-ac-item { padding: 10px 14px; cursor: pointer; font-size: 13.5px; color: #344054; }
+.gr-ac-item:hover { background: #f0f7ff; color: #1d3e73; }
+
+/* Form footer */
+.gr-form-footer {
+  display: flex; gap: 12px; padding-top: 16px;
+  border-top: 1px solid #edf1f7; margin-top: 4px; flex-wrap: wrap;
+}
+.gr-submit-btn {
+  padding: 12px 34px; background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff; border: none; border-radius: 10px; font-size: 14.5px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s;
+}
+.gr-submit-btn:hover { opacity: .9; }
+.gr-submit-btn:disabled { opacity: .55; cursor: not-allowed; }
+.gr-clear-btn {
+  padding: 12px 22px; background: #f0f4fa; color: #1d3e73;
+  border: 1.5px solid #d0dff5; border-radius: 10px; font-size: 14px;
+  font-weight: 600; cursor: pointer;
+}
+.gr-clear-btn:hover { background: #e4edf8; }
+
+/* ── GST Release History Table ────────────────────────────────────── */
+.gr-list-card {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); overflow: hidden;
+}
+.gr-list-hd {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 24px 14px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #edf1f7;
+}
+.gr-list-hd h2 { font-size: 16px; font-weight: 700; color: #1d3e73; margin: 0; }
+.gr-list-count  { font-size: 12px; color: #8fa3c4; }
+.gr-sw { position: relative; }
+.gr-sw input {
+  padding: 8px 13px 8px 33px; border: 1.5px solid #d8dfeb; border-radius: 8px;
+  font-size: 13px; width: 210px; outline: none; background: #fafcff;
+}
+.gr-sw input:focus { border-color: #2d73d5; box-shadow: 0 0 0 3px rgba(45,115,213,.08); }
+.gr-sw i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #8fa3c4; font-size: 12px; }
+
+.gr-table-wrap { overflow-x: auto; }
+.gr-table { width: 100%; border-collapse: collapse; min-width: 980px; }
+.gr-table thead tr { background: linear-gradient(90deg, #183b70, #2f68bb); }
+.gr-table th {
+  padding: 11px 13px; font-size: 12px; font-weight: 600; color: #fff;
+  text-align: left; white-space: nowrap; position: sticky; top: 0; z-index: 2;
+}
+.gr-table td {
+  padding: 11px 13px; font-size: 13px; color: #344054;
+  border-bottom: 1px solid #edf1f7; vertical-align: middle;
+}
+.gr-table tbody tr:hover { background: #f8fbff; }
+.gr-name-cell { font-weight: 600; color: #1d3e73; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gr-mono  { font-family: monospace; font-size: 12.5px; }
+.gr-total { font-weight: 700; color: #1a7a3f; font-family: monospace; }
+.gr-utr-cell { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-family: monospace; color: #5a7aa3; }
+.gr-empty { text-align: center; padding: 52px 24px; color: #8fa3c4; }
+.gr-empty i { font-size: 36px; margin-bottom: 10px; display: block; }
+
+/* Actions dropdown */
+.gr-act-btn {
+  padding: 5px 11px; background: #f0f4fa; border: 1.5px solid #d0dff5;
+  border-radius: 7px; font-size: 12px; font-weight: 600; color: #1d3e73;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.gr-act-btn:hover { background: #e4edf8; }
+.gr-act-menu {
+  display: none; position: fixed; background: #fff; border: 1px solid #dce8f8;
+  border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.13);
+  min-width: 162px; z-index: 9999; overflow: hidden;
+}
+.gr-act-menu.open { display: block; }
+.gr-act-item {
+  display: flex; align-items: center; gap: 9px; padding: 10px 16px;
+  font-size: 13px; color: #344054; cursor: pointer; background: none;
+  border: none; width: 100%; text-align: left; transition: background .12s;
+}
+.gr-act-item:hover  { background: #f0f7ff; color: #1d3e73; }
+.gr-act-item.gr-dng { color: #c62828; }
+.gr-act-item.gr-dng:hover { background: #fff0f0; }
+.gr-act-div { height: 1px; background: #edf1f7; margin: 3px 0; }
+
+/* Modal */
+.gr-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(20,35,70,.45); z-index: 10000; align-items: center; justify-content: center;
+}
+.gr-overlay.open { display: flex; }
+.gr-modal {
+  background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  width: 640px; max-width: calc(100vw - 32px); max-height: 92vh; overflow-y: auto;
+}
+.gr-modal-head {
+  background: linear-gradient(135deg, #183b70, #2f68bb);
+  padding: 20px 26px; border-radius: 20px 20px 0 0; color: #fff;
+}
+.gr-modal-head h3 { margin: 0 0 3px; font-size: 17px; }
+.gr-modal-head p  { margin: 0; font-size: 12.5px; opacity: .8; }
+.gr-modal-close {
+  float: right; background: rgba(255,255,255,.18); border: none;
+  color: #fff; width: 28px; height: 28px; border-radius: 50%;
+  cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;
+}
+.gr-modal-body { padding: 22px 26px; }
+.gr-ms {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 4px 11px; border-radius: 0 7px 7px 0; display: inline-block; margin-bottom: 12px;
+}
+.gr-dg  { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
+.gr-dg2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 16px; }
+.gr-di label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: #8fa3c4; display: block; margin-bottom: 3px;
+}
+.gr-di span { font-size: 13.5px; color: #1d3e73; font-weight: 600; word-break: break-all; }
+.gr-dv-total { color: #1a7a3f !important; font-weight: 700 !important; font-size: 15px !important; }
+.gr-modal-foot {
+  padding: 14px 26px 20px; display: flex; gap: 10px;
+  justify-content: flex-end; border-top: 1px solid #edf1f7;
+}
+.gr-mc { padding:9px 20px; background:#f0f4fa; border:1.5px solid #d0dff5;
+  border-radius:8px; font-size:13px; font-weight:600; color:#1d3e73; cursor:pointer; }
+.gr-me { padding:9px 20px; background:linear-gradient(90deg,#183b70,#2f68bb);
+  color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+
+@media (max-width: 768px) {
+  .gr-form-card { padding: 20px 16px; }
+  .gr-g2, .gr-g3 { grid-template-columns: 1fr; }
+  .gr-dg, .gr-dg2 { grid-template-columns: 1fr 1fr; }
+}
+</style>
+
+
+<div class="gr-page">
+
+  <!-- Header -->
+  <div class="gr-header">
+    <h1><i class="fas fa-file-invoice-dollar" style="margin-right:10px;opacity:.9;"></i>GST Release Management</h1>
+    <p>Record and track GST release payments against invoices.</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="gr-tabs">
+    <button id="grAddBtn" class="gr-tab-btn" onclick="grTab('form')">
+      <i class="fas fa-plus-circle"></i> Add GST Release
+    </button>
+    <button id="grListBtn" class="gr-tab-btn active" onclick="grTab('list')">
+      <i class="fas fa-list"></i> GST Release History
+    </button>
+  </div>
+
+  <!-- Toast -->
+  <div class="gr-toast" id="grToast"></div>
+
+  <!-- ── Add GST Release Form ──────────────────────────────────────── -->
+  <div id="grAddForm" class="gr-form-card" style="display:none;">
+    <form id="grForm" onsubmit="grSubmit(event)">
+
+      <!-- Section 1: Contractor & Invoice -->
+      <div class="gr-section">
+        <div class="gr-sec-title"><i class="fas fa-hard-hat" style="margin-right:6px;"></i>Contractor &amp; Invoice</div>
+        <div class="gr-g3">
+
+          <div class="gr-field gr-full gr-ac-wrap">
+            <label>Subcontractor Name <span class="gr-req">*</span></label>
+            <input type="text" id="grSubcontractor" name="subcontractor"
+              placeholder="Type to search contractor…" autocomplete="off" required>
+            <input type="hidden" id="grSubcontractorId" name="Contractor_ID">
+            <div id="grAcList" class="gr-ac-list"></div>
+          </div>
+
+          <div class="gr-field">
+            <label>PMC No <span class="gr-req">*</span></label>
+            <select id="grPMCNo" name="PMC_No" required>
+              <option value="">Select PMC No</option>
+            </select>
+          </div>
+
+          <div class="gr-field">
+            <label>Invoice No <span class="gr-req">*</span></label>
+            <input type="text" id="grInvoiceNo" name="Invoice_No" required placeholder="Invoice number">
+          </div>
+
+          <div class="gr-field">
+            <label>GST Date</label>
+            <input type="date" id="grInvoiceDate" name="Invoice_Date">
+          </div>
+
         </div>
+      </div>
 
-        <label for="PMC_No">PMC No:</label><br>
-        <select id="PMC_No" name="PMC_No" required>
-            <option value="">Select PMC No</option>
-            {% for option in pmc_options %}
-                <option value="{{ option.PMC_No }}">{{ option.PMC_No }} - {{ option.Subcontractor_Name }}</option>
-            {% endfor %}
-        </select><br><br>
+      <!-- Section 2: Amount Details -->
+      <div class="gr-section">
+        <div class="gr-sec-title"><i class="fas fa-rupee-sign" style="margin-right:6px;"></i>Amount Details</div>
+        <div class="gr-g3">
 
-        <label for="invoice_No">Invoice No:</label><br>
-        <input type="text" id="invoice_No" name="Invoice_No" required><br><br>
+          <div class="gr-field">
+            <label>Basic Amount (&#8377;) <span class="gr-req">*</span></label>
+            <input type="number" step="0.01" id="grBasicAmt" name="Basic_Amount" placeholder="0.00" required>
+          </div>
 
-        <label for="basic_amount">Basic Amount:</label><br>
-        <input type="number" step="0.01" id="basic_amount" name="Basic_Amount" placeholder="₹ - 00.00" required><br><br>
+          <div class="gr-field">
+            <label>Final Amount (&#8377;) <span class="gr-req">*</span></label>
+            <input type="number" step="0.01" id="grFinalAmt" name="Final_Amount" placeholder="0.00" required>
+          </div>
 
-        <label for="final_amount">Final Amount:</label><br>
-        <input type="number" step="0.01" id="final_amount" name="Final_Amount" placeholder="₹ - 00.00" required><br><br>
+          <div class="gr-field">
+            <label>Total Amount (&#8377;) <span class="gr-req">*</span></label>
+            <input type="number" step="0.01" id="grTotalAmt" name="Total_Amount" placeholder="0.00" required>
+          </div>
 
-        <label for="total_amount">Total Amount:</label><br>
-        <input type="number" step="0.01" id="total_amount" name="Total_Amount" placeholder="₹ - 00.00" required><br><br>
+        </div>
+      </div>
 
-        <label for="utr">UTR:</label><br>
-        <input type="text"  id="utr" name="UTR"  required><br><br>
+      <!-- Section 3: Transaction Details -->
+      <div class="gr-section">
+        <div class="gr-sec-title"><i class="fas fa-receipt" style="margin-right:6px;"></i>Transaction Details</div>
+        <div class="gr-field" style="max-width:100%;">
+          <label>UTR Number <span class="gr-req">*</span></label>
+          <input type="text" id="grUTR" name="UTR" required placeholder="Bank transaction reference / UTR number">
+        </div>
+      </div>
 
-        <button type="submit">Submit GST Release</button>
+      <div class="gr-form-footer">
+        <button type="submit" class="gr-submit-btn" id="grSubmitBtn">Submit GST Release</button>
+        <button type="button" class="gr-clear-btn" onclick="grClearForm()">Clear</button>
+      </div>
+
     </form>
-</div>
+  </div>
 
-<!-- Success Popup -->
-<div id="successPopup" class="success-popup">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                    <i>&#10004;</i> {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-</div>
+  <!-- ── GST Release History ────────────────────────────────────────── -->
+  <div id="grTable" class="gr-list-card">
 
-<!-- GST Release History Table -->
-<div id="addTable" style="display: none;">
-    <div class="search-container">
+    <div class="gr-list-hd">
+      <div>
         <h2>GST Release History</h2>
-        <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchTable()">
+        <span class="gr-list-count" id="grCount">{{ gst_releases|length }} record{{ 's' if gst_releases|length != 1 else '' }}</span>
+      </div>
+      <div>
+        <div class="gr-sw">
+          <i class="fas fa-search"></i>
+          <input type="text" id="grSearch" placeholder="Search…" oninput="grFilter()">
+        </div>
+      </div>
     </div>
-    <table id="sortableTable" border="1">
+
+    <div class="gr-table-wrap">
+      <table class="gr-table">
         <thead>
-            <tr>
-                <th class="sortable-header">GST_Release_Id</th>
-                <th class="sortable-header">PMC_No</th>
-                <th>Invoice_No</th>
-                <th>Basic_Amount</th>
-                <th>Final_Amount</th>
-                <th>Total_Amount</th>
-                <th>UTR</th>
-                <th>Update</th>
-                <th>Delete</th>
-            </tr>
+          <tr>
+            <th>#</th>
+            <th>GST Release ID</th>
+            <th>Subcontractor</th>
+            <th>PMC No</th>
+            <th>Invoice No</th>
+            <th>GST Date</th>
+            <th>Basic Amt (&#8377;)</th>
+            <th>Final Amt (&#8377;)</th>
+            <th>Total Amt (&#8377;)</th>
+            <th>UTR</th>
+            <th>Actions</th>
+          </tr>
         </thead>
-        <tbody>
-            {% for gst_rel in gst_releases %}
-            <tr>
-                <td>{{ gst_rel.gst_release_id }}</td>
-                <td>{{ gst_rel.pmc_no }}</td>
-                <td>{{ gst_rel.invoice_no }}</td>
-                <td>{{ gst_rel.basic_amount }}</td>
-                <td>{{ gst_rel.final_amount }}</td>
-                <td>{{ gst_rel.total_amount }}</td>
-                <td>{{ gst_rel.utr }}</td>
-                <td>
-                    <a href="{{ url_for('gst_release_bp.edit_gst_release', gst_release_id=gst_rel.gst_release_id) }}">
-                        <img src="{{ url_for('static', filename='images/icons/pen_blue_icon.png') }}" alt="Edit" class="icon">
-                    </a>
+        <tbody id="grTbody">
+          {% if gst_releases %}
+            {% for r in gst_releases %}
+              {% set d = {
+                'id':        r.GST_Release_Id,
+                'contractor':(r.Contractor_Name or ''),
+                'pmc':       (r.PMC_No or '')|string,
+                'invoice':   (r.Invoice_No or ''),
+                'date':      (r.Invoice_Date|string if r.Invoice_Date else ''),
+                'basic':     (r.Basic_Amount or 0)|string,
+                'final_amt': (r.Final_Amount or 0)|string,
+                'total':     (r.Total_Amount or 0)|string,
+                'utr':       (r.UTR or ''),
+              } %}
+              <tr data-id="{{ r.GST_Release_Id }}" data-info='{{ d | tojson }}'>
+                <td class="gr-mono">{{ loop.index }}</td>
+                <td class="gr-mono">{{ r.GST_Release_Id }}</td>
+                <td class="gr-name-cell" title="{{ r.Contractor_Name or '' }}">{{ r.Contractor_Name or '—' }}</td>
+                <td class="gr-mono">{{ r.PMC_No or '—' }}</td>
+                <td>{{ r.Invoice_No or '—' }}</td>
+                <td class="gr-mono">{{ r.Invoice_Date or '—' }}</td>
+                <td class="gr-mono">{{ r.Basic_Amount or '—' }}</td>
+                <td class="gr-mono">{{ r.Final_Amount or '—' }}</td>
+                <td class="gr-total">{{ r.Total_Amount or '—' }}</td>
+                <td class="gr-utr-cell" title="{{ r.UTR or '' }}">
+                  {{ (r.UTR or '')[:40] }}{% if r.UTR and r.UTR|length > 40 %}…{% endif %}
                 </td>
                 <td>
-                    <a href="{{ url_for('gst_release_bp.delete_gst_release', gst_release_id=gst_rel.gst_release_id) }}" 
-                       onclick="return confirm('Are you sure you want to delete this GST Release?')">
-                        <img src="{{ url_for('static', filename='images/icons/bin_red_icon.png') }}" alt="Delete" class="icon">
-                    </a>
+                  <button class="gr-act-btn" onclick="grOpenMenu(this, {{ r.GST_Release_Id }})">
+                    Actions <i class="fas fa-chevron-down" style="font-size:10px;"></i>
+                  </button>
                 </td>
-            </tr>
+              </tr>
             {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="11" class="gr-empty">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <p style="font-weight:600;">No GST releases recorded yet</p>
+                <p>Click <b>Add GST Release</b> to record the first entry.</p>
+              </td>
+            </tr>
+          {% endif %}
         </tbody>
-    </table>
+      </table>
+    </div>
+
+  </div>
+
+</div><!-- /gr-page -->
+
+
+<!-- Actions Dropdown (fixed position) -->
+<div class="gr-act-menu" id="grMenu">
+  <button class="gr-act-item" onclick="grDoView()">
+    <i class="fas fa-eye" style="width:14px;color:#2a5298;"></i> View Details
+  </button>
+  <button class="gr-act-item" onclick="grDoEdit()">
+    <i class="fas fa-pen" style="width:14px;color:#2a5298;"></i> Edit
+  </button>
+  <div class="gr-act-div"></div>
+  <button class="gr-act-item gr-dng" onclick="grDoDelete()">
+    <i class="fas fa-trash" style="width:14px;"></i> Delete
+  </button>
 </div>
+
+
+<!-- View Details Modal -->
+<div class="gr-overlay" id="grOverlay">
+  <div class="gr-modal" onclick="event.stopPropagation()">
+    <div class="gr-modal-head">
+      <button class="gr-modal-close" onclick="grCloseModal()">&times;</button>
+      <h3><i class="fas fa-file-invoice-dollar" style="margin-right:8px;"></i>GST Release Details</h3>
+      <p id="grDSub" style="opacity:.85;">—</p>
+    </div>
+    <div class="gr-modal-body">
+
+      <div class="gr-ms"><i class="fas fa-hard-hat" style="margin-right:5px;"></i>Contractor &amp; Invoice</div>
+      <div class="gr-dg">
+        <div class="gr-di"><label>GST Release ID</label><span id="grDId">—</span></div>
+        <div class="gr-di"><label>PMC No</label><span id="grDPmc">—</span></div>
+        <div class="gr-di"><label>Invoice No</label><span id="grDInv">—</span></div>
+        <div class="gr-di"><label>GST Date</label><span id="grDDate">—</span></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div class="gr-di"><label>Subcontractor Name</label>
+          <span id="grDContractor" style="font-size:14px;font-weight:600;color:#1d3e73;">—</span>
+        </div>
+      </div>
+
+      <div class="gr-ms"><i class="fas fa-rupee-sign" style="margin-right:5px;"></i>Amount Details</div>
+      <div class="gr-dg">
+        <div class="gr-di"><label>Basic Amount</label><span id="grDBasic">—</span></div>
+        <div class="gr-di"><label>Final Amount</label><span id="grDFinal">—</span></div>
+        <div class="gr-di"><label>Total Amount</label><span id="grDTotal" class="gr-dv-total">—</span></div>
+      </div>
+
+      <div class="gr-ms"><i class="fas fa-receipt" style="margin-right:5px;"></i>Transaction Details</div>
+      <div class="gr-di" style="margin-bottom:8px;">
+        <label>UTR Number</label>
+        <span id="grDUtr" style="word-break:break-all;font-family:monospace;font-size:13px;color:#344054;">—</span>
+      </div>
+
+    </div>
+    <div class="gr-modal-foot">
+      <button class="gr-mc" onclick="grCloseModal()">Close</button>
+      <button class="gr-me" onclick="grEditFromModal()">
+        <i class="fas fa-pen" style="margin-right:5px;"></i>Edit
+      </button>
+    </div>
+  </div>
+</div>
+
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+let _grMenuId   = null;
+let _grViewId   = null;
 
-    const subcontractorInput = document.getElementById("subcontractor");
-    const subcontractorIdInput = document.getElementById("subcontractor_id");
-    const subcontractorList = document.getElementById("subcontractor_list");
-    const pmcDropdown = document.getElementById("PMC_No");
-    const form = document.querySelector('form');
+/* ── Tab switching ─────────────────────────────────────────────── */
+function grTab(tab) {
+  const form   = document.getElementById('grAddForm');
+  const table  = document.getElementById('grTable');
+  const addBtn = document.getElementById('grAddBtn');
+  const lstBtn = document.getElementById('grListBtn');
+  if (tab === 'form') {
+    form.style.display  = 'block';  table.style.display = 'none';
+    addBtn.classList.add('active'); lstBtn.classList.remove('active');
+  } else {
+    form.style.display  = 'none';   table.style.display = 'block';
+    lstBtn.classList.add('active'); addBtn.classList.remove('active');
+  }
+}
 
-    // --------------------------
-    // Subcontractor autocomplete
-    // --------------------------
-    subcontractorInput.addEventListener("input", function () {
-        const query = this.value;
+/* ── Toast ──────────────────────────────────────────────────────── */
+function grToast(msg, type) {
+  const t = document.getElementById('grToast');
+  t.textContent = msg;
+  t.className = 'gr-toast ' + (type || 'ok');
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
 
-        if (query.length < 2) {
-            subcontractorList.innerHTML = '';
-            subcontractorIdInput.value = ''; // reset hidden id
-            pmcDropdown.innerHTML = '<option value="">Select PMC No</option>'; // reset PMC dropdown
-            return;
-        }
+/* ── Subcontractor autocomplete ────────────────────────────────── */
+let _grAcTimer;
+document.getElementById('grSubcontractor').addEventListener('input', function () {
+  clearTimeout(_grAcTimer);
+  const q = this.value.trim();
+  if (q.length < 1) { grHideAc(); return; }
+  _grAcTimer = setTimeout(() => grSearchContractors(q), 280);
+});
+document.getElementById('grSubcontractor').addEventListener('blur', function() {
+  setTimeout(grHideAc, 200);
+});
 
-        fetch(`/search_subcontractor?query=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                subcontractorList.innerHTML = '';
-                data.results.forEach(item => {
-                    const div = document.createElement("div");
-                    div.setAttribute("data-id", item.id);
-                    div.textContent = item.name;
-                    subcontractorList.appendChild(div);
-                });
-            });
+async function grSearchContractors(q) {
+  try {
+    const res  = await fetch('/api/payment/search_contractors?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    const list = document.getElementById('grAcList');
+    list.innerHTML = '';
+    if (!data.results || !data.results.length) { list.style.display = 'none'; return; }
+    data.results.forEach(r => {
+      const d = document.createElement('div');
+      d.className = 'gr-ac-item';
+      d.textContent = r.name;
+      d.addEventListener('mousedown', () => grSelectContractor(r.id, r.name));
+      list.appendChild(d);
     });
+    list.style.display = 'block';
+  } catch(e) { grHideAc(); }
+}
 
-    // --------------------------
-    // Subcontractor selection
-    // --------------------------
-    subcontractorList.addEventListener("click", function (e) {
-        const selectedId = e.target.getAttribute("data-id");
-        const selectedName = e.target.textContent;
+function grSelectContractor(id, name) {
+  document.getElementById('grSubcontractor').value   = name;
+  document.getElementById('grSubcontractorId').value = id;
+  grHideAc();
+  grLoadPMC(id);
+}
 
-        if (selectedId) {
-            // Set hidden field for backend
-            subcontractorIdInput.value = selectedId;
+function grHideAc() {
+  document.getElementById('grAcList').style.display = 'none';
+}
 
-            // Set text input to selected name
-            subcontractorInput.value = selectedName;
-
-            // Clear the autocomplete list
-            subcontractorList.innerHTML = "";
-
-            // Fetch and populate PMC dropdown
-            fetch(`/get_pmc_nos_by_subcontractor/${encodeURIComponent(selectedId)}`)
-                .then(response => response.json())
-                .then(data => {
-                    pmcDropdown.innerHTML = '<option value="">Select PMC No</option>';
-                    data.pmc_nos.forEach(pmc => {
-                        const option = document.createElement("option");
-                        option.value = pmc;
-                        option.textContent = pmc;
-                        pmcDropdown.appendChild(option);
-                    });
-                });
-        }
+/* ── Load PMC Nos ──────────────────────────────────────────────── */
+async function grLoadPMC(contractorId) {
+  const sel = document.getElementById('grPMCNo');
+  sel.innerHTML = '<option value="">Loading…</option>';
+  try {
+    const res  = await fetch('/get_pmc_nos_by_subcontractor/' + contractorId);
+    const data = await res.json();
+    sel.innerHTML = '<option value="">Select PMC No</option>';
+    (data.pmc_nos || []).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p; opt.textContent = p;
+      sel.appendChild(opt);
     });
+    if (!data.pmc_nos || !data.pmc_nos.length) {
+      sel.innerHTML = '<option value="">No PMC found</option>';
+    }
+  } catch(e) {
+    sel.innerHTML = '<option value="">Error loading PMC</option>';
+  }
+}
 
-    // --------------------------
-    // Form submit validation
-    // --------------------------
-    form.addEventListener('submit', function(e) {
-        if (!subcontractorIdInput.value) {
-            e.preventDefault();
-            alert("Please select a subcontractor from the list.");
-            subcontractorInput.focus();
-        } else if (!pmcDropdown.value) {
-            e.preventDefault();
-            alert("Please select a PMC No.");
-            pmcDropdown.focus();
-        }
+/* ── Form Submit ───────────────────────────────────────────────── */
+async function grSubmit(e) {
+  e.preventDefault();
+  const cid = document.getElementById('grSubcontractorId').value;
+  if (!cid) { grToast('Please select a subcontractor from the list.', 'err'); return; }
+
+  const btn = document.getElementById('grSubmitBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const res  = await fetch('/add_gst_release', {
+      method: 'POST',
+      body: new FormData(document.getElementById('grForm'))
     });
+    const data = await res.json();
+    if (data.success) {
+      grToast('GST Release added successfully!', 'ok');
+      setTimeout(() => window.location.reload(), 1100);
+    } else {
+      grToast(data.message || 'Failed to add GST release.', 'err');
+      btn.disabled    = false;
+      btn.textContent = 'Submit GST Release';
+    }
+  } catch(err) {
+    grToast('Network error. Please try again.', 'err');
+    btn.disabled    = false;
+    btn.textContent = 'Submit GST Release';
+  }
+}
 
+function grClearForm() {
+  document.getElementById('grForm').reset();
+  document.getElementById('grPMCNo').innerHTML     = '<option value="">Select PMC No</option>';
+  document.getElementById('grSubcontractorId').value = '';
+}
+
+/* ── Search / filter ─────────────────────────────────────────── */
+function grFilter() {
+  const q     = document.getElementById('grSearch').value.trim().toLowerCase();
+  const tbody = document.getElementById('grTbody');
+  let count   = 0;
+
+  document.querySelectorAll('#grTbody tr[data-id]').forEach(tr => {
+    const d     = JSON.parse(tr.dataset.info);
+    const match = !q
+      || (d.contractor || '').toLowerCase().includes(q)
+      || String(d.id        || '').includes(q)
+      || (d.pmc        || '').toLowerCase().includes(q)
+      || (d.invoice    || '').toLowerCase().includes(q)
+      || (d.utr        || '').toLowerCase().includes(q)
+      || String(d.basic     || '').includes(q)
+      || String(d.final_amt || '').includes(q)
+      || String(d.total     || '').includes(q);
+    tr.style.display = match ? '' : 'none';
+    if (match) count++;
+  });
+
+  document.getElementById('grCount').textContent =
+    count + ' record' + (count !== 1 ? 's' : '');
+
+  /* no-results placeholder */
+  let noRow = document.getElementById('grNoResults');
+  if (count === 0 && q) {
+    if (!noRow) {
+      noRow = document.createElement('tr');
+      noRow.id = 'grNoResults';
+      noRow.innerHTML =
+        '<td colspan="11" class="gr-empty" style="padding:32px 0;">'
+        + '<i class="fas fa-search" style="font-size:28px;color:#9aadcc;display:block;margin-bottom:10px;"></i>'
+        + '<p style="font-weight:600;color:#374151;margin:0 0 4px;">No matching records found</p>'
+        + '<p style="color:#9aadcc;margin:0;">Try a different search term.</p>'
+        + '</td>';
+      tbody.appendChild(noRow);
+    }
+    noRow.style.display = '';
+  } else if (noRow) {
+    noRow.style.display = 'none';
+  }
+}
+
+/* ── Actions Dropdown ──────────────────────────────────────────── */
+function grOpenMenu(btn, id) {
+  const menu = document.getElementById('grMenu');
+  if (_grMenuId === id && menu.classList.contains('open')) {
+    menu.classList.remove('open'); _grMenuId = null; return;
+  }
+  _grMenuId = id;
+
+  menu.style.visibility = 'hidden';
+  menu.style.display    = 'block';
+  const mH = menu.offsetHeight;
+  menu.style.display    = '';
+  menu.style.visibility = '';
+
+  const r        = btn.getBoundingClientRect();
+  const openUp   = (window.innerHeight - r.bottom - 8) < mH;
+  const rightOff = window.innerWidth - r.right;
+  menu.style.position = 'fixed';
+  menu.style.right    = rightOff + 'px';
+  menu.style.left     = 'auto';
+  if (openUp) {
+    menu.style.top    = 'auto';
+    menu.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+  } else {
+    menu.style.top    = (r.bottom + 4) + 'px';
+    menu.style.bottom = 'auto';
+  }
+  menu.classList.add('open');
+  menu.dataset.id   = id;
+  menu.dataset.info = btn.closest('tr').dataset.info;
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.gr-act-btn') && !e.target.closest('#grMenu')) {
+    document.getElementById('grMenu').classList.remove('open');
+    _grMenuId = null;
+  }
+});
+window.addEventListener('scroll', function() {
+  document.getElementById('grMenu').classList.remove('open');
+  _grMenuId = null;
+}, { passive: true });
+
+/* ── View Details ──────────────────────────────────────────────── */
+async function grDoView() {
+  const menu = document.getElementById('grMenu');
+  const id   = menu.dataset.id;
+  _grViewId  = id;
+  menu.classList.remove('open'); _grMenuId = null;
+
+  document.getElementById('grDSub').textContent = 'Loading…';
+  document.getElementById('grOverlay').classList.add('open');
+
+  try {
+    const res  = await fetch('/api/gst_release/' + id);
+    const data = await res.json();
+    if (data.success) {
+      _fillGrModal(data);
+    } else {
+      document.getElementById('grDSub').textContent = 'Failed to load details.';
+    }
+  } catch(err) {
+    document.getElementById('grDSub').textContent = 'Network error.';
+  }
+}
+
+function grDoEdit() {
+  const id = document.getElementById('grMenu').dataset.id;
+  document.getElementById('grMenu').classList.remove('open'); _grMenuId = null;
+  window.location.href = '/edit_gst_release/' + id;
+}
+
+async function grDoDelete() {
+  const menu = document.getElementById('grMenu');
+  const id   = menu.dataset.id;
+  menu.classList.remove('open'); _grMenuId = null;
+
+  if (!confirm('Delete GST Release #' + id + '?\nThis cannot be undone.')) return;
+
+  try {
+    const res  = await fetch('/delete_gst_release/' + id, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      grToast('GST Release deleted.', 'ok');
+      setTimeout(() => window.location.reload(), 900);
+    } else {
+      grToast(data.message || 'Delete failed.', 'err');
+    }
+  } catch(e) {
+    grToast('Network error.', 'err');
+  }
+}
+
+/* ── Modal fill ────────────────────────────────────────────────── */
+function _grFmt(v) {
+  const n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  return '₹ ' + n.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function _fillGrModal(d) {
+  document.getElementById('grDSub').textContent        = (d.contractor || '—') + ' · PMC ' + (d.pmc || '—');
+  document.getElementById('grDId').textContent         = '#' + (d.id || '—');
+  document.getElementById('grDContractor').textContent = d.contractor || '—';
+  document.getElementById('grDPmc').textContent        = d.pmc     || '—';
+  document.getElementById('grDInv').textContent        = d.invoice || '—';
+  document.getElementById('grDDate').textContent       = d.date    || '—';
+  document.getElementById('grDBasic').textContent      = _grFmt(d.basic);
+  document.getElementById('grDFinal').textContent      = _grFmt(d.final_amt);
+  document.getElementById('grDTotal').textContent      = _grFmt(d.total);
+  document.getElementById('grDUtr').textContent        = d.utr || '—';
+}
+
+function grEditFromModal() {
+  if (_grViewId) window.location.href = '/edit_gst_release/' + _grViewId;
+}
+
+function grCloseModal() {
+  document.getElementById('grOverlay').classList.remove('open');
+}
+document.getElementById('grOverlay').addEventListener('click', function(e) {
+  if (e.target === this) grCloseModal();
 });
 </script>
 
-<script src="{{ url_for('static', filename='js/showSuccessAlert.js') }}"></script>
-</body>
 {% endblock %}

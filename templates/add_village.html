@@ -1,129 +1,685 @@
-{% extends 'base.html' %} {% block content %}
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Village Management</title>
-  <link
-    rel="stylesheet"
-    type="text/css"
-    href="{{ url_for('static', filename='css/style.css') }}"
-  />
-  <script src="{{ url_for('static', filename='js/village.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/search_on_table.js') }}"></script>
-</head>
-<body>
-  <!-- Button Container to Center Buttons -->
-  <div class="button-container">
-    <button id="addButton" class="action-button">Add</button>
-    <button id="displayButton" class="action-button">Display</button>
+{% extends 'base.html' %}
+{% block content %}
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+.dm-page { max-width: 1200px; margin: 0 auto; }
+
+.dm-header {
+  background: #fff; border-radius: 16px; padding: 22px 28px;
+  margin-bottom: 22px; box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  border: 1px solid #e8edf5; display: flex;
+  justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 14px;
+}
+.dm-header-left { display: flex; align-items: center; gap: 16px; }
+.dm-header-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: linear-gradient(135deg,#183b70,#2f68bb);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dm-header-icon i { font-size: 22px; color: #fff; }
+.dm-header-title { font-size: 20px; font-weight: 700; color: #1d3e73; margin: 0 0 3px; }
+.dm-header-sub   { font-size: 12.5px; color: #6b7fa3; margin: 0; }
+.dm-header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.dm-nav-links { display:flex; gap:6px; flex-wrap:wrap; margin-left:6px; padding-left:12px; border-left:1px solid #e2e8f0; }
+.dm-nav-link {
+  font-size:12px; padding:5px 12px; border-radius:8px;
+  background:#eef3fc; color:#2a5298; text-decoration:none;
+  font-weight:600; border:1px solid #d0dff5; transition:.2s;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.dm-nav-link:hover { background:#2a5298; color:#fff; border-color:#2a5298; }
+.dm-nav-link.active { background:#1d3e73; color:#fff; border-color:#1d3e73; pointer-events:none; }
+
+.dm-btn {
+  padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: .2s; white-space: nowrap;
+}
+.dm-btn-primary   { background: linear-gradient(90deg,#183b70,#2f68bb); color: #fff; }
+.dm-btn-primary:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(24,59,112,.3); }
+.dm-btn-secondary { background: #eef3fc; color: #2a5298; border: 1.5px solid #d0dff5; }
+.dm-btn-secondary:hover { background: #dce8fb; }
+.dm-btn-outline   { background: #fff; color: #4a5568; border: 1.5px solid #d1d5db; }
+.dm-btn-outline:hover { background: #f3f4f6; }
+
+.dm-section { display: none; }
+.dm-section.active { display: block; }
+
+.dm-card {
+  background: #fff; border-radius: 16px; padding: 28px 32px;
+  box-shadow: 0 3px 16px rgba(0,0,0,.06); border: 1px solid #edf1f7;
+  margin-bottom: 16px;
+}
+.dm-card-head {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 18px; margin-bottom: 22px;
+  border-bottom: 1px solid #edf1f7;
+}
+.dm-card-head-icon  { font-size: 16px; color: #2a5298; }
+.dm-card-head-title { font-size: 15px; font-weight: 700; color: #1d3e73; }
+.dm-card-head-sub   { font-size: 12.5px; color: #6b7fa3; margin-left: auto; }
+
+.dm-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .dm-form-row { grid-template-columns: 1fr; } }
+.dm-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media(max-width:768px){ .dm-form-row-3 { grid-template-columns: 1fr 1fr; } }
+@media(max-width:500px){ .dm-form-row-3 { grid-template-columns: 1fr; } }
+.dm-form-group { margin-bottom: 16px; }
+.dm-label { display: block; font-size: 12.5px; font-weight: 700; color: #344054; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+.dm-req { color: #dc2626; margin-left: 2px; }
+.dm-helper { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+.dm-input, .dm-select {
+  width: 100%; padding: 11px 14px; border: 1.5px solid #d8dfeb;
+  border-radius: 10px; background: #fafcff; font-size: 14px;
+  outline: none; transition: .2s; color: #2d3748;
+}
+.dm-input:focus, .dm-select:focus {
+  border-color: #2d73d5; background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.08);
+}
+.dm-input:disabled, .dm-select:disabled { background: #f0f4fa; color: #94a3b8; cursor: not-allowed; }
+
+.check-bar {
+  padding: 12px 16px; border-radius: 10px; font-size: 13.5px;
+  font-weight: 600; margin: 12px 0; display: none;
+}
+.check-bar.available { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.check-bar.error-bar { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+.dm-save-btn {
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff; border: none; padding: 12px 30px; border-radius: 10px;
+  font-weight: 700; font-size: 14px; cursor: pointer; transition: .2s; margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.dm-save-btn:hover { opacity: .9; transform: translateY(-1px); }
+.dm-save-btn:disabled { background: #9eb1cf; cursor: not-allowed; transform: none; }
+
+.dm-controls {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+  margin-bottom: 16px; padding: 14px 18px;
+  background: #f8faff; border-radius: 10px; border: 1px solid #e8edf5;
+}
+.dm-ctrl-group { display: flex; flex-direction: column; gap: 5px; }
+.dm-ctrl-label { font-size: 11px; font-weight: 700; color: #6b7fa3; text-transform: uppercase; letter-spacing: .5px; }
+.dm-search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 300px; }
+.dm-search-wrap i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px; }
+.dm-search-input {
+  width: 100%; padding: 9px 12px 9px 34px; border: 1.5px solid #d8dfeb;
+  border-radius: 9px; background: #fff; font-size: 13.5px; outline: none; transition: .2s;
+}
+.dm-search-input:focus { border-color: #2d73d5; }
+.dm-filter-select {
+  padding: 9px 12px; border: 1.5px solid #d8dfeb; border-radius: 9px;
+  background: #fff; font-size: 13.5px; outline: none; min-width: 130px;
+}
+.dm-result-pill {
+  margin-left: auto; background: #eef3fc; color: #2a5298; border-radius: 20px;
+  padding: 4px 12px; font-size: 12px; font-weight: 700; white-space: nowrap; align-self: center;
+}
+
+.dm-table-wrap {
+  overflow-x: auto; max-height: 60vh; overflow-y: auto;
+  border-radius: 10px; border: 1px solid #edf1f7;
+}
+#sortableTable {
+  width: 100%; border-collapse: collapse; min-width: 1000px; font-size: 13.5px;
+}
+#sortableTable thead tr {
+  background: linear-gradient(90deg, #183b70, #2f68bb); position: sticky; top: 0; z-index: 5;
+}
+#sortableTable thead th {
+  padding: 13px 16px; text-align: left; font-weight: 600;
+  color: #fff; font-size: 12.5px; white-space: nowrap; letter-spacing: .3px;
+}
+#sortableTable thead th.sortable-header { cursor: pointer; user-select: none; }
+#sortableTable thead th.sortable-header:hover { background: rgba(255,255,255,.1); }
+#sortableTable tbody tr { border-bottom: 1px solid #edf1f7; transition: .12s; }
+#sortableTable tbody tr:hover { background: #f5f8ff; }
+#sortableTable tbody td { padding: 12px 16px; vertical-align: middle; color: #2d3748; }
+
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+.badge-active   { background: #dcfce7; color: #166534; }
+.badge-inactive { background: #fee2e2; color: #991b1b; }
+
+.act-drop { position: relative; display: inline-block; }
+.act-drop-btn {
+  padding: 6px 14px; background: #f1f5fb; border: 1.5px solid #d1d8e8;
+  border-radius: 8px; cursor: pointer; font-size: 12.5px; font-weight: 700;
+  color: #1d3e73; white-space: nowrap; transition: .15s;
+}
+.act-drop-btn:hover { background: #dce8f8; }
+.act-drop-menu {
+  display: none; position: absolute; right: 0; top: calc(100% + 4px);
+  background: #fff; border: 1.5px solid #e0e8f5; border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14); z-index: 200; min-width: 190px; overflow: hidden;
+}
+.act-drop-menu.open { display: block; }
+.act-drop-item {
+  display: block; padding: 10px 16px; font-size: 13px; color: #2d3748;
+  text-decoration: none; cursor: pointer; border: none; border-bottom: 1px solid #f3f4f6;
+  background: none; width: 100%; text-align: left; transition: .1s;
+}
+.act-drop-item:last-child { border-bottom: none; }
+.act-drop-item:hover { background: #f0f7ff; color: #1d3e73; }
+.act-drop-item.danger:hover { background: #fff5f5; color: #dc2626; }
+.act-drop-item.success-item:hover { background: #f0fdf4; color: #166534; }
+.act-drop-divider { height: 1px; background: #edf1f7; margin: 3px 0; }
+
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 2000;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: #fff; border-radius: 20px; padding: 34px;
+  max-width: 480px; width: 100%; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+.modal-box h3 { font-size: 19px; color: #1d3e73; margin-bottom: 12px; font-weight: 700; }
+.modal-box p  { font-size: 13.5px; color: #4a5568; line-height: 1.6; margin-bottom: 8px; }
+.modal-footer { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: flex-end; }
+.modal-btn { padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: .15s; }
+.modal-btn-danger  { background: #dc2626; color: #fff; }
+.modal-btn-danger:hover { background: #b91c1c; }
+.modal-btn-outline { background: #fff; color: #374151; border: 1.5px solid #d1d5db; }
+.modal-btn-outline:hover { background: #f3f4f6; }
+.warning-box {
+  background: #fef3c7; border-left: 4px solid #d97706;
+  padding: 12px 16px; border-radius: 0 8px 8px 0;
+  color: #92400e; font-size: 12.5px; margin: 10px 0; line-height: 1.55;
+}
+.empty-state-cell { text-align: center; padding: 40px; color: #94a3b8; font-style: italic; }
+</style>
+
+
+<div class="dm-page">
+
+<!-- ── Page Header ── -->
+<div class="dm-header">
+  <div class="dm-header-left">
+    <div class="dm-header-icon"><i class="fas fa-home"></i></div>
+    <div>
+      <h1 class="dm-header-title">Village Management</h1>
+      <p class="dm-header-sub">Add and manage villages within blocks</p>
+    </div>
+  </div>
+  <div class="dm-header-actions">
+    <button class="dm-btn dm-btn-primary" data-section="add" onclick="showSection('add')">
+      <i class="fas fa-plus"></i> Add Village
+    </button>
+    <button class="dm-btn dm-btn-secondary" data-section="list" onclick="showSection('list')">
+      <i class="fas fa-list"></i> Village List
+      <span style="background:#2a5298;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:2px;">
+        {{ villages|length }}
+      </span>
+    </button>
+    <a class="dm-btn dm-btn-outline" href="/master_data">
+      <i class="fas fa-sitemap"></i> Master Data
+    </a>
+    <div class="dm-nav-links">
+      <a href="/add_state"    class="dm-nav-link"><i class="fas fa-map"></i> State</a>
+      <a href="/add_district" class="dm-nav-link"><i class="fas fa-city"></i> District</a>
+      <a href="/add_block"    class="dm-nav-link"><i class="fas fa-layer-group"></i> Block</a>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION: ADD
+════════════════════════════════════════ -->
+<div id="section-add" class="dm-section">
+<div class="dm-card">
+  <div class="dm-card-head">
+    <i class="fas fa-plus-circle dm-card-head-icon"></i>
+    <span class="dm-card-head-title">Add New Village</span>
+    <span class="dm-card-head-sub">Select state → district → block → enter village name</span>
   </div>
 
-  <div id="addForm" style="display: none">
-    <div class="container">
-      <div class="form-block">
-        <h2>Add a New Village</h2>
-        <form id="villageForm" method="POST">
-          <label for="state_Id">State:</label>
-          <select id="state_Id" name="state_Id" required>
-            <option value="" disabled selected>Select State</option>
-            {% for state in states %}
-            <option value="{{ state[0] }}">{{ state[1] }}</option>
-            {% endfor %}
-          </select>
+  <form id="villageForm" method="POST" autocomplete="off">
 
-          <label for="district_Id">District:</label>
-          <select id="district_Id" name="district_Id" required disabled>
-            <option value="" disabled selected>Select District</option>
-          </select>
+    <div class="dm-form-row-3">
+      <div class="dm-form-group">
+        <label class="dm-label">State <span class="dm-req">*</span></label>
+        <select class="dm-select" id="state_Id" onchange="loadDistricts(this.value)" required>
+          <option value="" disabled selected>Select State</option>
+          {% for state in states %}
+          <option value="{{ state[0] }}">{{ state[1] }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-          <label for="block_Id">Block:</label>
-          <select id="block_Id" name="block_Id" required disabled>
-            <option value="" disabled selected>Select Block</option>
-          </select>
+      <div class="dm-form-group">
+        <label class="dm-label">District <span class="dm-req">*</span></label>
+        <select class="dm-select" id="district_Id" onchange="loadBlocks(this.value)" disabled required>
+          <option value="" disabled selected>Select District</option>
+        </select>
+      </div>
 
-          <label for="Village_Name">Village Name:</label>
-          <input
-            type="text"
-            id="Village_Name"
-            name="Village_Name"
-            placeholder="Enter Village Name"
-            required
-          />
-          <span id="villageMessage"></span>
-
-          <button type="submit" id="submitVillage" disabled>Add Village</button>
-        </form>
+      <div class="dm-form-group">
+        <label class="dm-label">Block <span class="dm-req">*</span></label>
+        <select class="dm-select" name="block_Id" id="block_Id" disabled required>
+          <option value="" disabled selected>Select Block</option>
+        </select>
       </div>
     </div>
-  </div>
 
-  <div id="addTable" style="display: none">
-    <div class="search-container">
-      <h2>Display Villages</h2>
-      <input
-        type="text"
-        id="searchBar"
-        placeholder="Searching..."
-        onkeyup="searchTable()"
-      />
+    <div class="dm-form-row">
+      <div class="dm-form-group">
+        <label class="dm-label">Village Name <span class="dm-req">*</span></label>
+        <input class="dm-input" type="text" id="Village_Name" name="Village_Name"
+          placeholder="Enter Village Name" required>
+        <p class="dm-helper">Letters only. Checked for duplicates within the selected block.</p>
+      </div>
+
+      <div class="dm-form-group">
+        <label class="dm-label">Status</label>
+        <select class="dm-select" name="village_Status" id="village_Status">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+        <p class="dm-helper">Active villages appear in beneficiary forms.</p>
+      </div>
     </div>
 
-    <table id="sortableTable" border="1">
-      <tr>
-        <th>Village Sr No</th>
-        <th class="sortable-header">
-          Village Name
-          <span class="sort-buttons">
-            <span class="sort-asc">⬆️</span>
-            <span class="sort-desc">⬇️</span>
-          </span>
-        </th>
-        <th class="sortable-header">
-          Block Name
-          <span class="sort-buttons">
-            <span class="sort-asc">⬆️</span>
-            <span class="sort-desc">⬇️</span>
-          </span>
-        </th>
-        <th>Update</th>
-        <th>Delete</th>
-      </tr>
-      {% for village in villages %}
-      <tr>
-        <td>{{ village[0] }}</td>
-        <td>{{ village[1] }}</td>
-        <td>{{ village[2] }}</td>
-        <td>
-          <a
-            href="{{ url_for('village.edit_village', village_id=village[0]) }}"
-          >
-            <img
-              src="{{ url_for('static', filename='images/icons/pen_blue_icon.png') }}"
-              alt="Edit"
-              class="icon"
-            />
-          </a>
-        </td>
-        <td>
-       <a href="javascript:void(0);" 
-   onclick="deleteVillage('{{ village[0] }}', this)">
-    <img src="{{ url_for('static', filename='images/icons/bin_red_icon.png') }}" 
-         class="icon">
-</a>
-        </td>
-      </tr>
-      {% endfor %}
+    <div id="checkBar" class="check-bar"></div>
+
+    <button type="submit" id="submitButton" class="dm-save-btn" disabled>
+      <i class="fas fa-save"></i> Save Village
+    </button>
+
+  </form>
+</div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION: LIST
+════════════════════════════════════════ -->
+<div id="section-list" class="dm-section">
+<div class="dm-card">
+  <div class="dm-card-head">
+    <i class="fas fa-table dm-card-head-icon"></i>
+    <span class="dm-card-head-title">All Villages</span>
+    <span class="dm-card-head-sub">Click column headers to sort</span>
+  </div>
+
+  <div class="dm-controls">
+    <div class="dm-ctrl-group dm-search-wrap">
+      <i class="fas fa-search"></i>
+      <input class="dm-search-input" id="searchBar" placeholder="Search village name…"
+        oninput="applyFilters()">
+    </div>
+    <div class="dm-ctrl-group">
+      <span class="dm-ctrl-label">Status</span>
+      <select class="dm-filter-select" id="statusFilter" onchange="applyFilters()">
+        <option value="">All Status</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+    </div>
+    <div class="dm-result-pill" id="resultCount">{{ villages|length }} villages</div>
+  </div>
+
+  <div class="dm-table-wrap">
+    <table id="sortableTable">
+      <thead>
+        <tr>
+          <th style="width:60px;">ID</th>
+          <th class="sortable-header">Village Name <span style="font-size:10px;opacity:.7;">↕</span></th>
+          <th class="sortable-header">Block <span style="font-size:10px;opacity:.7;">↕</span></th>
+          <th>District</th>
+          <th>State</th>
+          <th style="width:100px;">Status</th>
+          <th style="width:120px;">Created</th>
+          <th style="width:100px;text-align:center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="villageTableBody">
+        {% for v in villages %}
+        <tr data-status="{{ v[5] }}">
+          <td style="color:#94a3b8;font-size:12px;font-weight:600;">{{ v[0] }}</td>
+          <td style="font-weight:600;">{{ v[1] }}</td>
+          <td style="color:#6b7fa3;">{{ v[2] }}</td>
+          <td style="color:#6b7fa3;">{{ v[3] }}</td>
+          <td style="color:#6b7fa3;">{{ v[4] }}</td>
+          <td>
+            <span class="badge {{ 'badge-active' if v[5] == 'Active' else 'badge-inactive' }}">
+              {{ v[5] }}
+            </span>
+          </td>
+          <td style="color:#6b7fa3;font-size:13px;">
+            {{ v[6].strftime('%d %b %Y') if v[6] else '—' }}
+          </td>
+          <td style="text-align:center;">
+            <div class="act-drop">
+              <button class="act-drop-btn" onclick="toggleDrop(this)">Actions ▾</button>
+              <div class="act-drop-menu">
+                <a class="act-drop-item"
+                   href="{{ url_for('village.edit_village', village_id=v[0]) }}">
+                  <i class="fas fa-pen" style="width:16px;margin-right:6px;color:#2a5298;"></i>Edit Village
+                </a>
+                {% if v[5] == 'Active' %}
+                <button class="act-drop-item"
+                  onclick="handleStatusChange({{ v[0] }}, 'deactivate', '{{ v[1]|replace("'","\\'") }}')">
+                  <i class="fas fa-pause" style="width:16px;margin-right:6px;color:#d97706;"></i>Deactivate
+                </button>
+                {% else %}
+                <button class="act-drop-item success-item"
+                  onclick="handleStatusChange({{ v[0] }}, 'activate', '{{ v[1]|replace("'","\\'") }}')">
+                  <i class="fas fa-play" style="width:16px;margin-right:6px;color:#166534;"></i>Activate
+                </button>
+                {% endif %}
+                <div class="act-drop-divider"></div>
+                <a class="act-drop-item" href="/master_data">
+                  <i class="fas fa-sitemap" style="width:16px;margin-right:6px;color:#6b7fa3;"></i>Open in Master Data
+                </a>
+                <div class="act-drop-divider"></div>
+                <button class="act-drop-item danger"
+                  onclick="handleDelete({{ v[0] }}, '{{ v[1]|replace("'","\\'") }}')">
+                  <i class="fas fa-trash" style="width:16px;margin-right:6px;"></i>Delete
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="empty-state-cell">No villages added yet. Click "Add Village" to get started.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
   </div>
-  <!-- Flash Alerts -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <script>
-            {% for category, message in messages %}
-                alert("{{ message }}");
-            {% endfor %}
-        </script>
-    {% endif %}
-{% endwith %}
-</body>
+
+</div>
+</div><!-- /section-list -->
+
+</div><!-- /dm-page -->
+
+
+<!-- ════════════ CONFIRM DELETE MODAL ════════════ -->
+<div id="confirmDeleteModal" class="modal-overlay">
+<div class="modal-box">
+  <h3><i class="fas fa-trash" style="color:#dc2626;margin-right:8px;"></i>Delete Village</h3>
+  <p id="confirmDeleteMsg"></p>
+  <div class="warning-box">This action is permanent and cannot be undone.</div>
+  <div class="modal-footer">
+    <button class="modal-btn modal-btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
+    <button class="modal-btn modal-btn-outline" onclick="closeModal('confirmDeleteModal')">Cancel</button>
+  </div>
+</div>
+</div>
+
+
+<script>
+let pendingDeleteId = null;
+
+/* ─────────────────────────────────
+   SECTION TOGGLE
+───────────────────────────────── */
+function showSection(name) {
+  document.querySelectorAll('.dm-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelectorAll('.dm-header-actions .dm-btn[data-section]').forEach(b => {
+    b.style.boxShadow = b.getAttribute('data-section') === name
+      ? 'inset 0 0 0 2px rgba(255,255,255,.5)' : '';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const hasData = document.querySelector('#villageTableBody tr[data-status]');
+  showSection(hasData ? 'list' : 'add');
+});
+
+/* ─────────────────────────────────
+   CASCADING DROPDOWNS
+───────────────────────────────── */
+function loadDistricts(stateId) {
+  const dSel = document.getElementById('district_Id');
+  const bSel = document.getElementById('block_Id');
+  dSel.innerHTML = '<option value="" disabled selected>Loading…</option>';
+  dSel.disabled = true;
+  bSel.innerHTML = '<option value="" disabled selected>Select Block</option>';
+  bSel.disabled = true;
+  hideCheckBar();
+  document.getElementById('submitButton').disabled = true;
+
+  fetch('/get_districts/' + stateId)
+  .then(r => r.json())
+  .then(list => {
+    dSel.innerHTML = '<option value="" disabled selected>Select District</option>';
+    list.forEach(d => { dSel.innerHTML += `<option value="${d.id}">${d.name}</option>`; });
+    dSel.disabled = false;
+  })
+  .catch(() => {
+    dSel.innerHTML = '<option value="" disabled selected>Failed to load</option>';
+    dSel.disabled = false;
+  });
+}
+
+function loadBlocks(districtId) {
+  const sel = document.getElementById('block_Id');
+  sel.innerHTML = '<option value="" disabled selected>Loading…</option>';
+  sel.disabled = true;
+  hideCheckBar();
+  document.getElementById('submitButton').disabled = true;
+
+  fetch('/get_blocks/' + districtId)
+  .then(r => r.json())
+  .then(list => {
+    sel.innerHTML = '<option value="" disabled selected>Select Block</option>';
+    list.forEach(b => { sel.innerHTML += `<option value="${b.id}">${b.name}</option>`; });
+    sel.disabled = false;
+  })
+  .catch(() => {
+    sel.innerHTML = '<option value="" disabled selected>Failed to load</option>';
+    sel.disabled = false;
+  });
+}
+
+/* ─────────────────────────────────
+   DUPLICATE CHECK
+───────────────────────────────── */
+function runCheck() {
+  const name    = document.getElementById('Village_Name').value.trim();
+  const blockId = document.getElementById('block_Id').value;
+  if (!name || !blockId) {
+    hideCheckBar();
+    document.getElementById('submitButton').disabled = true;
+    return;
+  }
+  fetch('/check_village', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ block_Id: blockId, Village_Name: name })
+  })
+  .then(r => r.json())
+  .then(data => {
+    const avail = data.status === 'available';
+    showCheckBar(avail ? 'available' : 'error-bar',
+      (avail ? '✓ ' : '✗ ') + (data.message || ''));
+    document.getElementById('submitButton').disabled = !avail;
+  })
+  .catch(() => {
+    showCheckBar('error-bar', '⚠ Connection error.');
+    document.getElementById('submitButton').disabled = true;
+  });
+}
+
+document.getElementById('Village_Name').addEventListener('input', function () {
+  this.value = this.value.replace(/[^A-Za-z ]/g, '');
+  runCheck();
+});
+document.getElementById('block_Id').addEventListener('change', runCheck);
+
+function showCheckBar(cls, msg) {
+  const bar = document.getElementById('checkBar');
+  bar.className = 'check-bar ' + cls;
+  bar.textContent = msg;
+  bar.style.display = 'block';
+}
+function hideCheckBar() {
+  document.getElementById('checkBar').style.display = 'none';
+}
+
+/* ─────────────────────────────────
+   FORM SUBMIT
+───────────────────────────────── */
+document.getElementById('villageForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitButton');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  fetch('/add_village', { method: 'POST', body: new FormData(this) })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === 'success') {
+      showCheckBar('available', '✓ ' + data.message);
+      setTimeout(() => location.reload(), 900);
+    } else {
+      showCheckBar('error-bar', '⚠ ' + (data.message || 'Failed.'));
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Save Village';
+    }
+  })
+  .catch(() => {
+    showCheckBar('error-bar', '⚠ Connection error.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save Village';
+  });
+});
+
+/* ─────────────────────────────────
+   ACTIVATE / DEACTIVATE
+───────────────────────────────── */
+function handleStatusChange(id, action, name) {
+  if (!confirm((action === 'activate' ? 'Activate' : 'Deactivate') + ' "' + name + '"?')) return;
+  const url = action === 'activate'
+    ? '/activate_village/' + id
+    : '/deactivate_village/' + id;
+  fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  .then(r => r.json())
+  .then(d => {
+    if (d.status === 'success') location.reload();
+    else alert(d.message || 'Failed.');
+  })
+  .catch(() => alert('Request failed.'));
+}
+
+/* ─────────────────────────────────
+   DELETE
+───────────────────────────────── */
+function handleDelete(id, name) {
+  document.querySelectorAll('.act-drop-menu.open').forEach(m => m.classList.remove('open'));
+  pendingDeleteId = id;
+  document.getElementById('confirmDeleteMsg').textContent =
+    'Delete village "' + name + '"? This cannot be undone.';
+  document.getElementById('confirmDeleteBtn').onclick = confirmDelete;
+  openModal('confirmDeleteModal');
+}
+
+function confirmDelete() {
+  if (!pendingDeleteId) return;
+  fetch('/delete_village/' + pendingDeleteId, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  .then(r => r.json())
+  .then(d => {
+    closeModal('confirmDeleteModal');
+    if (d.status === 'success') location.reload();
+    else alert(d.message || 'Failed.');
+  })
+  .catch(() => alert('Delete failed.'));
+}
+
+/* ─────────────────────────────────
+   TABLE FILTER + SORT
+───────────────────────────────── */
+function applyFilters() {
+  const q  = (document.getElementById('searchBar').value || '').trim().toLowerCase();
+  const st = document.getElementById('statusFilter').value;
+  let vis = 0;
+  const tbody = document.getElementById('villageTableBody');
+  const rows  = tbody.querySelectorAll('tr[data-status]');
+  rows.forEach(row => {
+    const txt   = (row.cells[1] ? row.cells[1].textContent.trim().toLowerCase() : '');
+    const rowSt = row.getAttribute('data-status');
+    const show  = (!q || txt.includes(q)) && (!st || rowSt === st);
+    row.style.display = show ? '' : 'none';
+    if (show) vis++;
+  });
+  document.getElementById('resultCount').textContent = vis + ' village' + (vis !== 1 ? 's' : '');
+  let noRes = document.getElementById('vmNoResults');
+  if (!noRes) {
+    noRes = document.createElement('tr');
+    noRes.id = 'vmNoResults';
+    noRes.innerHTML = '<td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;font-style:italic;">No villages match your search.</td>';
+    tbody.appendChild(noRes);
+  }
+  noRes.style.display = vis === 0 && rows.length > 0 ? '' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.sortable-header').forEach(th => {
+    let asc = true;
+    th.addEventListener('click', function () {
+      const idx = Array.from(this.parentNode.children).indexOf(this);
+      const tbody = document.getElementById('villageTableBody');
+      const rows  = Array.from(tbody.querySelectorAll('tr[data-status]'));
+      rows.sort((a, b) => {
+        const x = a.cells[idx]?.textContent.trim().toLowerCase() || '';
+        const y = b.cells[idx]?.textContent.trim().toLowerCase() || '';
+        return asc ? x.localeCompare(y) : y.localeCompare(x);
+      });
+      asc = !asc;
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+});
+
+/* ─────────────────────────────────
+   ACTION DROPDOWN
+───────────────────────────────── */
+function _closeAllDrops() {
+  document.querySelectorAll('.act-drop-menu.open').forEach(function(m) {
+    m.classList.remove('open');
+    m.style.cssText = '';
+  });
+}
+function toggleDrop(btn) {
+  const menu    = btn.nextElementSibling;
+  const wasOpen = menu.classList.contains('open');
+  _closeAllDrops();
+  if (!wasOpen) {
+    const r = btn.getBoundingClientRect();
+    menu.style.cssText = 'position:fixed;visibility:hidden;display:block;top:-9999px;left:-9999px;';
+    const mH = menu.offsetHeight;
+    const openUp   = (window.innerHeight - r.bottom - 8) < mH;
+    const rightOff = window.innerWidth - r.right;
+    if (openUp) {
+      menu.style.cssText = 'position:fixed;z-index:9999;right:' + rightOff + 'px;left:auto;top:auto;bottom:' + (window.innerHeight - r.top + 4) + 'px;';
+    } else {
+      menu.style.cssText = 'position:fixed;z-index:9999;right:' + rightOff + 'px;left:auto;top:' + (r.bottom + 4) + 'px;bottom:auto;';
+    }
+    menu.classList.add('open');
+  }
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.act-drop')) _closeAllDrops();
+});
+document.addEventListener('scroll', function() { _closeAllDrops(); }, true);
+
+/* ─────────────────────────────────
+   MODAL HELPERS
+───────────────────────────────── */
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); });
+});
+</script>
 {% endblock %}

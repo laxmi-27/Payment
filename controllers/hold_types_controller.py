@@ -1,70 +1,65 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required
 from model.HoldTypes import HoldTypes
-# from model.GST import GST
 
 hold_bp = Blueprint("hold_types", __name__)
+hold_service = HoldTypes()
 
-hold = HoldTypes()
-# ---------------- ADD HOLD TYPE ----------------
-@hold_bp.route('/add_hold_type', methods=['GET','POST'])
+
+# ---------------- LIST / ADD HOLD TYPE ----------------
+@hold_bp.route('/add_hold_type', methods=['GET', 'POST'])
 @login_required
 def add_hold_type():
     if request.method == 'POST':
-        hold.AddHoldType(request)
-        # Always redirect to same page (NO JSON)
-        return redirect(url_for("hold_types.add_hold_type"))
+        hold_service.AddHoldType(request)
+        return jsonify({"success": hold_service.isSuccess, "message": hold_service.resultMessage})
 
-    # GET request → show data
-    hold_types = hold.GetAllHoldTypes()
+    hold_types = hold_service.GetAllHoldTypes()
+    return render_template('add_hold_type.html', hold_types=hold_types)
 
-    return render_template(
-        "add_hold_type.html",
-        Hold_Types_data=hold_types
-    )
 
-# ---------------- CHECK HOLD TYPE (OPTIONAL LIKE BLOCK) ----------------
-@hold_bp.route('/check_hold_type', methods=['POST'])
+# ---------------- API: GET SINGLE HOLD TYPE ----------------
+@hold_bp.route('/api/hold_type/<int:hold_type_id>', methods=['GET'])
 @login_required
-def check_hold_type():
+def api_get_hold_type(hold_type_id):
+    data = hold_service.GetHoldTypeByID(hold_type_id)
+    if not data:
+        return jsonify({"success": False}), 404
 
-    return hold.CheckHoldType(request)   # if exists
+    def fstr(v):
+        return str(v) if v is not None else ''
+
+    return jsonify({
+        "success":     True,
+        "id":          data.get('hold_type_id'),
+        "name":        data.get('hold_type') or '',
+        "category":    data.get('hold_category') or '',
+        "description": data.get('description') or '',
+        "default_pct": fstr(data.get('default_hold_percentage')),
+        "status":      data.get('status') or 'Active',
+        "created":     str(data.get('created_date')) if data.get('created_date') else '',
+        "updated":     str(data.get('last_updated_date')) if data.get('last_updated_date') else '',
+    })
 
 
 # ---------------- EDIT HOLD TYPE ----------------
-@hold_bp.route('/edit_hold_type/<int:id>', methods=['GET','POST'])
+@hold_bp.route('/edit_hold_type/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_hold_type(id):
-
     if request.method == 'POST':
-        hold.EditHoldType(request, id)   
-        return hold.resultMessage
+        hold_service.EditHoldType(request, id)
+        flash(hold_service.resultMessage, 'success' if hold_service.isSuccess else 'error')
+        return redirect(url_for('hold_types.add_hold_type'))
 
-    hold_data = hold.GetHoldTypeByID(id)  
-
-    return render_template(
-        "edit_hold_type.html",
-        hold_type=hold_data
-    )
+    hold_data = hold_service.GetHoldTypeByID(id)
+    if not hold_data:
+        return "Hold Type not found", 404
+    return render_template('edit_hold_type.html', hold_type=hold_data)
 
 
 # ---------------- DELETE HOLD TYPE ----------------
-@hold_bp.route('/delete_hold_type/<int:id>')
+@hold_bp.route('/delete_hold_type/<int:id>', methods=['POST'])
 @login_required
 def delete_hold_type(id):
-
-    hold.DeleteHoldType(request, id)   
-    return redirect(url_for("hold_types.add_hold_type"))
-
-
-# ---------------- GST ----------------
-# @hold_bp.route('/unreleased_gst')
-# @login_required
-# def unreleased_gst():
-
-#     data = GST.get_unreleased_gst()
-
-#     return render_template(
-#         "unreleased_gst.html",  
-#         data=data
-#     )
+    hold_service.DeleteHoldType(id)
+    return jsonify({"success": hold_service.isSuccess, "message": hold_service.resultMessage})

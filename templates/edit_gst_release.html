@@ -1,45 +1,154 @@
 {% extends 'base.html' %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit GST Release</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+
+<style>
+
+.master-page{
+max-width:700px;
+margin:60px auto;
+}
+
+/* Card */
+
+.form-card{
+background:#fff;
+padding:40px;
+border-radius:24px;
+box-shadow:0 8px 30px rgba(0,0,0,.06);
+}
+
+.form-card h2{
+font-size:28px;
+color:#1d3e73;
+margin-bottom:25px;
+text-align:center;
+}
+
+label{
+display:block;
+font-weight:600;
+margin-bottom:10px;
+color:#344054;
+}
+
+input{
+width:100%;
+padding:14px 16px;
+border:1px solid #d8dfeb;
+border-radius:12px;
+background:#fafcff;
+outline:none;
+margin-bottom:18px;
+}
+
+input:focus{
+border-color:#2d73d5;
+background:#fff;
+box-shadow:0 0 0 4px rgba(45,115,213,.08);
+}
+
+input[readonly]{
+background:#eef2f8;
+cursor:not-allowed;
+}
+
+/* Buttons */
+
+.button-group{
+display:flex;
+gap:15px;
+margin-top:10px;
+flex-wrap:wrap;
+}
+
+.update-btn{
+flex:1;
+background:linear-gradient(90deg,#183b70,#2f68bb);
+color:#fff;
+border:none;
+padding:14px;
+border-radius:12px;
+font-weight:600;
+cursor:pointer;
+transition:.3s;
+}
+
+.update-btn:hover{
+transform:translateY(-2px);
+box-shadow:0 6px 16px rgba(0,0,0,.12);
+}
+
+.back-btn{
+flex:1;
+text-align:center;
+padding:14px;
+border-radius:12px;
+background:#eef2f8;
+color:#1d3e73;
+font-weight:600;
+text-decoration:none;
+}
+
+.back-btn:hover{
+background:#dde6f4;
+}
+
+@media(max-width:768px){
+.form-card{
+padding:25px;
+}
+}
+
+</style>
+
+
+<div class="master-page">
+
+<div class="form-card">
+
 <h2>Edit GST Release</h2>
 
 <form action="/edit_gst_release/{{ gst_release_data.gst_release_id }}" method="POST">
 
-    <!-- PMC Number -->
-    <label for="PMC_No">PMC No :</label><br>
-    <input type="text" id="PMC_No" name="PMC_No" value="{{ gst_release_data.pmc_no }}" required><br><br>
+<label>PMC No</label>
+<input type="text" id="PMC_No" name="PMC_No" value="{{ gst_release_data.pmc_no }}" required>
 
-    <!-- Invoice Number -->
-    <label for="invoice_no">Invoice No:</label><br>
-    <input type="text" id="invoice_no" name="invoice_no" value="{{ gst_release_data.invoice_no }}" required><br><br>
+<label>Invoice No</label>
+<input type="text" id="invoice_no" name="invoice_no" value="{{ gst_release_data.invoice_no }}" required>
 
-    <!-- Basic Amount -->
-    <label for="Basic_Amount">Basic Amount:</label><br>
-    <input type="number" step="0.01" id="Basic_Amount" name="Basic_Amount" value="{{ gst_release_data.basic_amount }}" required><br><br>
+<label>GST Date</label>
+<input type="date" id="Invoice_Date" name="Invoice_Date" value="{{ gst_release_data.invoice_date or '' }}">
 
-    <!-- Final Amount -->
-    <label for="Final_Amount">Final Amount:</label><br>
-    <input type="number" step="0.01" id="Final_Amount" name="Final_Amount" value="{{ gst_release_data.final_amount }}" required><br><br>
+<label>Basic Amount</label>
+<input type="number" step="0.01" id="Basic_Amount" name="Basic_Amount" value="{{ gst_release_data.basic_amount }}" required>
 
-    <!-- Total Amount -->
-    <label for="Total_Amount">Total Amount:</label><br>
-    <input type="number" step="0.01" id="Total_Amount" name="Total_Amount" value="{{ gst_release_data.total_amount }}" required><br><br>
+<label>Final Amount</label>
+<input type="number" step="0.01" id="Final_Amount" name="Final_Amount" value="{{ gst_release_data.final_amount }}" required>
 
-    <!-- UTR -->
-    <label for="UTR">UTR:</label><br>
-    <input type="text" id="UTR" name="UTR" value="{{ gst_release_data.utr }}" readonly required><br><br>
+<label>Total Amount</label>
+<input type="number" step="0.01" id="Total_Amount" name="Total_Amount" value="{{ gst_release_data.total_amount }}" required>
 
-    <!-- Hidden Contractor ID -->
-    <input type="hidden" id="Contractor_ID" name="Contractor_ID" value="{{ gst_release_data.contractor_id }}">
+<label>UTR</label>
+<input type="text" id="UTR" name="UTR" value="{{ gst_release_data.utr }}" readonly required>
 
-    <button type="submit">Update GST Release</button>
+<input type="hidden" id="Contractor_ID" name="Contractor_ID" value="{{ gst_release_data.contractor_id }}">
+
+<div class="button-group">
+
+<button type="submit" class="update-btn">
+Update GST Release
+</button>
+
+<a href="{{ url_for('gst_release_bp.add_gst_release') }}" class="back-btn">
+Back
+</a>
+
+</div>
+
 </form>
 
-</body>
+</div>
+
+</div>
+
 {% endblock %}

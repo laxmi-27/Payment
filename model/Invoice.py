@@ -80,7 +80,8 @@ def insert_invoice(data, village_id):
             data.get('invoice_no'),
             *get_numeric_values(data),
             data.get('subcontractor_id'),
-            0
+            0,  # is_extra
+            0   # sort_order
         ])
         invoice_id = None
         for result in cursor.stored_results():

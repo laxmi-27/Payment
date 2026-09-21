@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+.master-page { max-width: 780px; margin: 48px auto; }
+
+.form-card {
+  background: #fff; padding: 40px; border-radius: 24px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.06);
+}
+
+.form-card h2 {
+  font-size: 22px; color: #1d3e73; margin-bottom: 6px; font-weight: 700;
+}
+.form-card .form-sub {
+  font-size: 13px; color: #8fa3c4; margin-bottom: 28px;
+}
+
+.edit-g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.edit-g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.edit-g4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+@media(max-width:700px){
+  .edit-g2,.edit-g3,.edit-g4 { grid-template-columns: 1fr; }
+}
+
+.edit-field { display: flex; flex-direction: column; }
+.edit-field label {
+  display: block; font-weight: 700; margin-bottom: 7px;
+  color: #344054; font-size: 12.5px; text-transform: uppercase; letter-spacing: .4px;
+}
+.edit-field input, .edit-field select {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid #d8dfeb; border-radius: 12px;
+  background: #fafcff; outline: none; font-size: 14px; color: #2d3748;
+  transition: border-color .15s, box-shadow .15s;
+}
+.edit-field input:focus, .edit-field select:focus {
+  border-color: #2d73d5; background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.08);
+}
+
+.sec-label {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
+  padding: 4px 11px; border-radius: 0 7px 7px 0; display: inline-block;
+  margin-bottom: 14px; margin-top: 8px;
+}
+
+.button-group { display: flex; gap: 14px; margin-top: 28px; flex-wrap: wrap; }
+.update-btn {
+  flex: 1; background: linear-gradient(90deg,#183b70,#2f68bb);
+  color: #fff; border: none; padding: 14px; border-radius: 12px;
+  font-weight: 700; font-size: 14.5px; cursor: pointer; transition: .2s;
+}
+.update-btn:hover { opacity: .9; transform: translateY(-2px); }
+.back-btn {
+  flex: 1; text-align: center; padding: 14px; border-radius: 12px;
+  background: #eef2f8; color: #1d3e73; font-weight: 600;
+  text-decoration: none; font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+}
+.back-btn:hover { background: #dde6f4; }
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  {% for cat, msg in messages %}
+    alert("{{ msg }}");
+  {% endfor %}
+});
+</script>
+<style>
+{% endif %}
+{% endwith %}
+</style>
+
+
+<div class="master-page">
+<div class="form-card">
+
+  <h2><i class="fas fa-file-contract" style="color:#2a5298;margin-right:10px;"></i>Edit Credit / Debit Note</h2>
+  <p class="form-sub">Note #{{ note.Credit_Note_Id }} &mdash; {{ note.Contractor_Name or 'Unknown Contractor' }}</p>
+
+  <form action="/edit_credit_debit_note/{{ note.Credit_Note_Id }}" method="POST">
+
+    <!-- Note Type & References -->
+    <div class="sec-label"><i class="fas fa-tag" style="margin-right:5px;"></i>Note Type &amp; Reference</div>
+    <div class="edit-g3">
+
+      <div class="edit-field">
+        <label>Note Type</label>
+        <select name="Note_Type" required>
+          <option value="Credit Note" {{ 'selected' if note.Note_Type == 'Credit Note' else '' }}>Credit Note</option>
+          <option value="Debit Note"  {{ 'selected' if note.Note_Type == 'Debit Note'  else '' }}>Debit Note</option>
+        </select>
+      </div>
+
+      <div class="edit-field">
+        <label>PMC No</label>
+        <input type="text" name="PMC_No" value="{{ note.PMC_No or '' }}">
+      </div>
+
+      <div class="edit-field">
+        <label>Invoice No</label>
+        <input type="text" name="Invoice_No" value="{{ note.Invoice_No or '' }}">
+      </div>
+
+    </div>
+
+    <!-- Amount Details -->
+    <div class="sec-label"><i class="fas fa-rupee-sign" style="margin-right:5px;"></i>Amount Details</div>
+    <div class="edit-g4">
+
+      <div class="edit-field">
+        <label>Basic Amount</label>
+        <input type="number" step="0.01" name="Basic_Amount" value="{{ note.Basic_Amount or 0 }}">
+      </div>
+
+      <div class="edit-field">
+        <label>Debit Amount</label>
+        <input type="number" step="0.01" name="Debit_Amount" value="{{ note.Debit_Amount or 0 }}">
+      </div>
+
+      <div class="edit-field">
+        <label>After Debit Amount</label>
+        <input type="number" step="0.01" name="After_Debit_Amount" value="{{ note.After_Debit_Amount or 0 }}">
+      </div>
+
+      <div class="edit-field">
+        <label>GST Amount</label>
+        <input type="number" step="0.01" name="GST_Amount" value="{{ note.GST_Amount or 0 }}">
+      </div>
+
+      <div class="edit-field">
+        <label>Final Amount</label>
+        <input type="number" step="0.01" name="Final_Amount" value="{{ note.Final_Amount or 0 }}">
+      </div>
+
+      <div class="edit-field">
+        <label>Payment Amount</label>
+        <input type="number" step="0.01" name="Payment_Amount" value="{{ note.Payment_Amount or 0 }}">
+      </div>
+
+      <div class="edit-field">
+        <label>Total Amount</label>
+        <input type="number" step="0.01" name="Total_Amount" value="{{ note.Total_Amount or 0 }}">
+      </div>
+
+    </div>
+
+    <!-- Transaction -->
+    <div class="sec-label"><i class="fas fa-receipt" style="margin-right:5px;"></i>Transaction Details</div>
+    <div class="edit-g2">
+      <div class="edit-field" style="grid-column:1/-1;">
+        <label>UTR Number</label>
+        <input type="text" name="UTR" value="{{ note.UTR or '' }}" placeholder="Bank transaction reference / UTR number">
+      </div>
+    </div>
+
+    <!-- Hidden: keep contractor unchanged on edit -->
+    <input type="hidden" name="Contractor_ID" value="{{ note.Contractor_Id or '' }}">
+
+    <div class="button-group">
+      <button type="submit" class="update-btn">
+        <i class="fas fa-save" style="margin-right:6px;"></i>Update Note
+      </button>
+      <a href="/credit_debit_note" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+    </div>
+
+  </form>
+
+</div>
+</div>
+
+{% endblock %}
