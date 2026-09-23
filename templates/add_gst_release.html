@@ -286,14 +286,7 @@
         </div>
       </div>
 
-      <!-- Section 3: Transaction Details -->
-      <div class="gr-section">
-        <div class="gr-sec-title"><i class="fas fa-receipt" style="margin-right:6px;"></i>Transaction Details</div>
-        <div class="gr-field" style="max-width:100%;">
-          <label>UTR Number <span class="gr-req">*</span></label>
-          <input type="text" id="grUTR" name="UTR" required placeholder="Bank transaction reference / UTR number">
-        </div>
-      </div>
+    
 
       <div class="gr-form-footer">
         <button type="submit" class="gr-submit-btn" id="grSubmitBtn">Submit GST Release</button>
@@ -332,7 +325,6 @@
             <th>Basic Amt (&#8377;)</th>
             <th>Final Amt (&#8377;)</th>
             <th>Total Amt (&#8377;)</th>
-            <th>UTR</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -348,7 +340,6 @@
                 'basic':     (r.Basic_Amount or 0)|string,
                 'final_amt': (r.Final_Amount or 0)|string,
                 'total':     (r.Total_Amount or 0)|string,
-                'utr':       (r.UTR or ''),
               } %}
               <tr data-id="{{ r.GST_Release_Id }}" data-info='{{ d | tojson }}'>
                 <td class="gr-mono">{{ loop.index }}</td>
@@ -360,9 +351,7 @@
                 <td class="gr-mono">{{ r.Basic_Amount or '—' }}</td>
                 <td class="gr-mono">{{ r.Final_Amount or '—' }}</td>
                 <td class="gr-total">{{ r.Total_Amount or '—' }}</td>
-                <td class="gr-utr-cell" title="{{ r.UTR or '' }}">
-                  {{ (r.UTR or '')[:40] }}{% if r.UTR and r.UTR|length > 40 %}…{% endif %}
-                </td>
+                
                 <td>
                   <button class="gr-act-btn" onclick="grOpenMenu(this, {{ r.GST_Release_Id }})">
                     Actions <i class="fas fa-chevron-down" style="font-size:10px;"></i>
@@ -433,11 +422,7 @@
         <div class="gr-di"><label>Total Amount</label><span id="grDTotal" class="gr-dv-total">—</span></div>
       </div>
 
-      <div class="gr-ms"><i class="fas fa-receipt" style="margin-right:5px;"></i>Transaction Details</div>
-      <div class="gr-di" style="margin-bottom:8px;">
-        <label>UTR Number</label>
-        <span id="grDUtr" style="word-break:break-all;font-family:monospace;font-size:13px;color:#344054;">—</span>
-      </div>
+   
 
     </div>
     <div class="gr-modal-foot">
@@ -591,7 +576,6 @@ function grFilter() {
       || String(d.id        || '').includes(q)
       || (d.pmc        || '').toLowerCase().includes(q)
       || (d.invoice    || '').toLowerCase().includes(q)
-      || (d.utr        || '').toLowerCase().includes(q)
       || String(d.basic     || '').includes(q)
       || String(d.final_amt || '').includes(q)
       || String(d.total     || '').includes(q);
@@ -732,7 +716,6 @@ function _fillGrModal(d) {
   document.getElementById('grDBasic').textContent      = _grFmt(d.basic);
   document.getElementById('grDFinal').textContent      = _grFmt(d.final_amt);
   document.getElementById('grDTotal').textContent      = _grFmt(d.total);
-  document.getElementById('grDUtr').textContent        = d.utr || '—';
 }
 
 function grEditFromModal() {
