@@ -1,189 +1,472 @@
 {% extends 'base.html' %}
+
 {% block content %}
 
 <style>
+
 /* ── Edit Hold Type ─────────────────────────────────────────────── */
-.ht-edit-page { max-width: 720px; margin: 0 auto; }
+
+.ht-edit-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
 
 .ht-edit-header {
   background: linear-gradient(135deg, #183b70, #2f68bb);
-  border-radius: 18px; padding: 22px 30px; margin-bottom: 22px; color: #fff;
-  display: flex; align-items: center; gap: 14px;
+  border-radius: 18px;
+  padding: 22px 30px;
+  margin-bottom: 22px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
-.ht-edit-header h1 { font-size: 20px; font-weight: 700; margin: 0 0 3px; }
-.ht-edit-header p  { margin: 0; font-size: 13px; opacity: .82; }
+
+.ht-edit-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 3px;
+}
+
+.ht-edit-header p {
+  margin: 0;
+  font-size: 13px;
+  opacity: .82;
+}
+
 .ht-edit-id-badge {
-  background: rgba(255,255,255,.2); border-radius: 8px;
-  padding: 6px 14px; font-size: 13px; font-weight: 700; white-space: nowrap;
+  background: rgba(255,255,255,.2);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .ht-edit-card {
-  background: #fff; border-radius: 18px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.06); padding: 30px 34px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+  padding: 30px 34px;
 }
-.ht-esec-title {
-  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
-  color: #2a5298; background: #f0f7ff; border-left: 3px solid #2a5298;
-  padding: 5px 12px; border-radius: 0 8px 8px 0; margin-bottom: 16px; display: inline-block;
-}
-.ht-esec { margin-bottom: 26px; }
-.ht-eg2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
-.ht-eg3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
-.ht-efull { grid-column: 1 / -1; }
 
-.ht-ef { display: flex; flex-direction: column; }
-.ht-ef label { font-size: 13px; font-weight: 600; color: #344054; margin-bottom: 6px; }
-.ht-req { color: #d32f2f; margin-left: 2px; }
-.ht-ef input, .ht-ef select, .ht-ef textarea {
-  padding: 11px 14px; border: 1.5px solid #d8dfeb; border-radius: 10px;
-  background: #fafcff; font-size: 13.5px; outline: none;
-  transition: border-color .15s, box-shadow .15s; width: 100%; box-sizing: border-box;
+.ht-esec-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #2a5298;
+  background: #f0f7ff;
+  border-left: 3px solid #2a5298;
+  padding: 5px 12px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 16px;
+  display: inline-block;
+}
+
+.ht-esec {
+  margin-bottom: 26px;
+}
+
+.ht-eg2 {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 14px;
+}
+
+.ht-eg3 {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 14px;
+}
+
+.ht-efull {
+  grid-column: 1 / -1;
+}
+
+.ht-ef {
+  display: flex;
+  flex-direction: column;
+}
+
+.ht-ef label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+  margin-bottom: 6px;
+}
+
+.ht-req {
+  color: #d32f2f;
+  margin-left: 2px;
+}
+
+.ht-ef input,
+.ht-ef select,
+.ht-ef textarea {
+  padding: 11px 14px;
+  border: 1.5px solid #d8dfeb;
+  border-radius: 10px;
+  background: #fafcff;
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  width: 100%;
+  box-sizing: border-box;
   font-family: inherit;
 }
-.ht-ef textarea { resize: vertical; min-height: 90px; }
-.ht-ef input:focus, .ht-ef select:focus, .ht-ef textarea:focus {
-  border-color: #2d73d5; background: #fff; box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+
+.ht-ef textarea {
+  resize: vertical;
+  min-height: 90px;
 }
-.ht-hint { font-size: 11.5px; color: #8fa3c4; margin-top: 4px; }
+
+.ht-ef input:focus,
+.ht-ef select:focus,
+.ht-ef textarea:focus {
+  border-color: #2d73d5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,115,213,.1);
+}
+
+.ht-hint {
+  font-size: 11.5px;
+  color: #8fa3c4;
+  margin-top: 4px;
+}
 
 /* Flash messages */
-.ht-flash-ok  { background:#f0fff5; border:1.5px solid #a3e6bc; color:#1a7a3f; padding:11px 16px; border-radius:10px; margin-bottom:18px; font-size:13.5px; font-weight:600; }
-.ht-flash-err { background:#fff0f0; border:1.5px solid #ffc0c0; color:#c62828; padding:11px 16px; border-radius:10px; margin-bottom:18px; font-size:13.5px; font-weight:600; }
+
+.ht-flash-ok {
+  background:#f0fff5;
+  border:1.5px solid #a3e6bc;
+  color:#1a7a3f;
+  padding:11px 16px;
+  border-radius:10px;
+  margin-bottom:18px;
+  font-size:13.5px;
+  font-weight:600;
+}
+
+.ht-flash-err {
+  background:#fff0f0;
+  border:1.5px solid #ffc0c0;
+  color:#c62828;
+  padding:11px 16px;
+  border-radius:10px;
+  margin-bottom:18px;
+  font-size:13.5px;
+  font-weight:600;
+}
 
 .ht-edit-foot {
-  display: flex; gap: 12px; padding-top: 16px;
-  border-top: 1px solid #edf1f7; flex-wrap: wrap;
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #edf1f7;
+  flex-wrap: wrap;
 }
+
 .ht-update-btn {
-  padding: 12px 34px; background: linear-gradient(90deg, #183b70, #2f68bb);
-  color: #fff; border: none; border-radius: 10px; font-size: 14.5px; font-weight: 600;
-  cursor: pointer; transition: opacity .2s;
+  padding: 12px 34px;
+  background: linear-gradient(90deg, #183b70, #2f68bb);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
 }
-.ht-update-btn:hover { opacity: .9; }
-.ht-update-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.ht-update-btn:hover {
+  opacity: .9;
+}
+
+.ht-update-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
 .ht-back-btn {
-  padding: 12px 22px; background: #f0f4fa; color: #1d3e73;
-  border: 1.5px solid #d0dff5; border-radius: 10px; font-size: 14px;
-  font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+  padding: 12px 22px;
+  background: #f0f4fa;
+  color: #1d3e73;
+  border: 1.5px solid #d0dff5;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
-.ht-back-btn:hover { background: #e4edf8; }
+
+.ht-back-btn:hover {
+  background: #e4edf8;
+}
 
 /* Toast */
+
 .ht-toast {
-  position: fixed; top: 22px; right: 22px; z-index: 99999;
-  padding: 12px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
-  min-width: 240px; box-shadow: 0 6px 22px rgba(0,0,0,.15); display: none;
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 99999;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  min-width: 240px;
+  box-shadow: 0 6px 22px rgba(0,0,0,.15);
+  display: none;
 }
-.ht-toast.ok  { background: #f0fff5; border: 1.5px solid #a3e6bc; color: #1a7a3f; }
-.ht-toast.err { background: #fff0f0; border: 1.5px solid #ffc0c0; color: #c62828; }
+
+.ht-toast.ok {
+  background:#f0fff5;
+  border:1.5px solid #a3e6bc;
+  color:#1a7a3f;
+}
+
+.ht-toast.err {
+  background:#fff0f0;
+  border:1.5px solid #ffc0c0;
+  color:#c62828;
+}
 
 @media (max-width: 640px) {
-  .ht-edit-card { padding: 20px 16px; }
-  .ht-eg2, .ht-eg3 { grid-template-columns: 1fr; }
-  .ht-edit-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-}
-</style>
+  .ht-edit-card {
+    padding: 20px 16px;
+  }
 
+  .ht-eg2,
+  .ht-eg3 {
+    grid-template-columns: 1fr;
+  }
+
+  .ht-edit-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+</style>
 
 <div class="ht-edit-page">
 
   <!-- Header -->
+
   <div class="ht-edit-header">
+
     <div style="flex:1;">
-      <h1><i class="fas fa-pen" style="margin-right:9px;opacity:.9;"></i>Edit Hold Type</h1>
-      <p>Update the details for this hold type.</p>
+      <h1>
+        <i class="fas fa-pen" style="margin-right:9px;opacity:.9;"></i>
+        Edit Hold Type
+      </h1>
+
+      <p>
+        Update the details for this hold type.
+      </p>
     </div>
-    <div class="ht-edit-id-badge"># {{ hold_type.hold_type_id }}</div>
+
+    <div class="ht-edit-id-badge">
+      # {{ hold_type.hold_type_id }}
+    </div>
+
   </div>
 
   <!-- Toast -->
+
   <div class="ht-toast" id="htEditToast"></div>
 
   <!-- Form Card -->
+
   <div class="ht-edit-card">
 
     {% with messages = get_flashed_messages(with_categories=true) %}
+
       {% for category, message in messages %}
+
         <div class="ht-flash-{{ 'ok' if category == 'success' else 'err' }}">
-          <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}" style="margin-right:6px;"></i>{{ message }}
+
+          <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"
+             style="margin-right:6px;"></i>
+
+          {{ message }}
+
         </div>
+
       {% endfor %}
+
     {% endwith %}
 
     <form id="htEditForm" method="POST">
 
       <!-- Basic Info -->
+
       <div class="ht-esec">
-        <div class="ht-esec-title"><i class="fas fa-tag" style="margin-right:6px;"></i>Basic Information</div>
+
+        <div class="ht-esec-title">
+          <i class="fas fa-tag" style="margin-right:6px;"></i>
+          Basic Information
+        </div>
+
         <div class="ht-eg2">
 
           <div class="ht-ef">
-            <label>Hold Type Name <span class="ht-req">*</span></label>
-            <input type="text" name="hold_type" value="{{ hold_type.hold_type or '' }}" required placeholder="e.g. DPR Excess Hold">
+
+            <label>
+              Hold Type Name
+              <span class="ht-req">*</span>
+            </label>
+
+            <input type="text"
+                   name="hold_type"
+                   value="{{ hold_type.hold_type or '' }}"
+                   required
+                   placeholder="e.g. DPR Excess Hold">
+
           </div>
 
           <div class="ht-ef">
-            <label>Hold Category <span class="ht-req">*</span></label>
+
+            <label>
+              Hold Category
+              <span class="ht-req">*</span>
+            </label>
+
             <select name="hold_category" required>
+
               <option value="">Select Category</option>
-              {% for cat in ['Quality Hold','DPR Hold','Security Deposit Hold','Material Recovery','Penalty Hold','Tax Related Hold','Miscellaneous'] %}
-                <option value="{{ cat }}" {% if hold_type.hold_category == cat %}selected{% endif %}>{{ cat }}</option>
-              {% endfor %}
+              <option value="Security Deposit">Security Deposit</option>
+              <option value="Hydro Testing">Hydro Testing</option>
+              <option value="Testing Deposit">Testing Deposit</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Extra Hold">Extra Hold</option>
+
             </select>
+
           </div>
 
           <div class="ht-ef ht-efull">
-            <label>Description / Reason</label>
-            <textarea name="description" placeholder="Describe when and why this hold type is applied…">{{ hold_type.description or '' }}</textarea>
+
+            <label>
+              Description / Reason
+            </label>
+
+            <textarea name="description"
+                      placeholder="Describe when and why this hold type is applied…">{{ hold_type.description or '' }}</textarea>
+
           </div>
 
         </div>
+
       </div>
 
       <!-- Settings -->
+
       <div class="ht-esec">
-        <div class="ht-esec-title"><i class="fas fa-cog" style="margin-right:6px;"></i>Settings</div>
+
+        <div class="ht-esec-title">
+          <i class="fas fa-cog" style="margin-right:6px;"></i>
+          Settings
+        </div>
+
         <div class="ht-eg3">
 
           <div class="ht-ef">
-            <label>Default Hold % <span style="color:#8fa3c4;font-weight:400;">(optional)</span></label>
-            <input type="number" step="0.01" min="0" max="100" name="default_hold_percentage"
-              value="{{ hold_type.default_hold_percentage if hold_type.default_hold_percentage is not none else '' }}"
-              placeholder="e.g. 5.00">
-            <span class="ht-hint">Leave blank if no default.</span>
+
+            <label>
+              Default Hold %
+              <span style="color:#8fa3c4;font-weight:400;">
+                (optional)
+              </span>
+            </label>
+
+            <input type="number"
+                   step="0.01"
+                   min="0"
+                   max="100"
+                   name="default_hold_percentage"
+                   value="{{ hold_type.default_hold_percentage if hold_type.default_hold_percentage is not none else '' }}"
+                   placeholder="e.g. 5.00">
+
+            <span class="ht-hint">
+              Leave blank if no default.
+            </span>
+
           </div>
 
           <div class="ht-ef">
-            <label>Status <span class="ht-req">*</span></label>
+
+            <label>
+              Status
+              <span class="ht-req">*</span>
+            </label>
+
             <select name="status">
-              <option value="Active"   {% if (hold_type.status or 'Active') == 'Active'   %}selected{% endif %}>Active</option>
-              <option value="Inactive" {% if (hold_type.status or 'Active') == 'Inactive' %}selected{% endif %}>Inactive</option>
+
+              <option value="Active"
+                {% if (hold_type.status or 'Active') == 'Active' %}selected{% endif %}>
+                Active
+              </option>
+
+              <option value="Inactive"
+                {% if (hold_type.status or 'Active') == 'Inactive' %}selected{% endif %}>
+                Inactive
+              </option>
+
             </select>
+
           </div>
 
         </div>
+
       </div>
 
       <div class="ht-edit-foot">
-        <button type="submit" class="ht-update-btn" id="htUpdateBtn">
-          <i class="fas fa-save" style="margin-right:7px;"></i>Update Hold Type
+
+        <button type="submit"
+                class="ht-update-btn"
+                id="htUpdateBtn">
+
+          <i class="fas fa-save" style="margin-right:7px;"></i>
+          Update Hold Type
+
         </button>
-        <a href="{{ url_for('hold_types.add_hold_type') }}" class="ht-back-btn">
-          <i class="fas fa-arrow-left" style="margin-right:7px;"></i>Back to List
+
+        <a href="{{ url_for('hold_types.add_hold_type') }}"
+           class="ht-back-btn">
+
+          <i class="fas fa-arrow-left" style="margin-right:7px;"></i>
+          Back to List
+
         </a>
+
       </div>
 
     </form>
+
   </div>
 
 </div>
 
 <script>
-document.getElementById('htEditForm').addEventListener('submit', function() {
-  const btn = document.getElementById('htUpdateBtn');
-  btn.disabled    = true;
-  btn.textContent = 'Saving…';
-});
+
+document.getElementById('htEditForm')
+  .addEventListener('submit', function() {
+
+    const btn =
+      document.getElementById('htUpdateBtn');
+
+    btn.disabled = true;
+
+    btn.innerHTML =
+      '<i class="fas fa-spinner fa-spin" style="margin-right:7px;"></i>Saving…';
+
+  });
+
 </script>
 
 {% endblock %}
