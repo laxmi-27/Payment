@@ -6,16 +6,20 @@ pipeline {
         disableConcurrentBuilds()
     }
 
+    environment {
+        COMPOSE = 'C:\\DockerCLI\\cli-plugins\\docker-compose.exe'
+    }
+
     stages {
         stage('Validate Docker Compose') {
             steps {
-                bat 'docker compose -f docker-compose.yml config --quiet'
+                bat '"%COMPOSE%" -f docker-compose.yml config --quiet'
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                bat 'docker compose -f docker-compose.yml build'
+                bat '"%COMPOSE%" -f docker-compose.yml build'
             }
         }
     }
