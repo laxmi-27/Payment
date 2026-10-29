@@ -14,20 +14,106 @@ class Paymentmodel:
     # ----------------------------------------------------------
     @staticmethod
     def fetch_all_payments():
+        """Return one unified payment-history list.
+
+        Includes:
+          1. Normal invoice payments from ``payment``
+          2. GST release records from ``gst_releases``
+          3. Hold release records from ``hold_release``
+
+        Release rows are read separately because they are intentionally stored
+        outside the normal ``payment`` table.  This is why the old Payment
+        History showed only the three invoice-payment UTRs.
+        """
         connection = Paymentmodel.get_connection()
-        payments = []
-        if connection:
+        if not connection:
+            return []
+
+        cursor = None
+        try:
             cursor = connection.cursor(dictionary=True)
-            try:
-                cursor.callproc('GetAllPayments')
-                for result in cursor.stored_results():
-                    payments = result.fetchall()
-            except mysql.connector.Error as e:
-                print(f"Error fetching payment history: {e}")
-            finally:
+            records = []
+
+            # Existing payment stored procedure preserves the current
+            # payment fields (date/status/TDS/etc.) used by the UI.
+            cursor.callproc('GetAllPayments')
+            for result in cursor.stored_results():
+                records = result.fetchall() or []
+                break
+
+            for row in records:
+                row['Record_Type'] = 'Payment'
+                row['Record_Key'] = f"payment:{row.get('Payment_Id')}"
+
+            # GST releases
+            cursor.execute(
+                """
+                SELECT
+                    g.GST_Release_Id AS Record_Id,
+                    g.PMC_No,
+                    g.Invoice_No,
+                    g.Final_Amount AS Amount_with_TDS,
+                    0 AS TDS_Percentage,
+                    0 AS TDS_Payment_Amount,
+                    g.Total_Amount AS Amount_after_TDS_Deduction,
+                    g.UTR,
+                    s.Contractor_Name,
+                    NULL AS Payment_Date,
+                    'GST Released' AS Payment_Status,
+                    COALESCE(g.sort_order, g.GST_Release_Id) AS Sort_Order
+                FROM gst_releases g
+                LEFT JOIN subcontractors s
+                    ON s.Contractor_Id = g.Contractor_ID
+                WHERE g.UTR IS NOT NULL AND TRIM(g.UTR) <> ''
+                ORDER BY Sort_Order ASC, g.GST_Release_Id ASC
+                """
+            )
+            gst_rows = cursor.fetchall() or []
+            for row in gst_rows:
+                row['Payment_Id'] = None
+                row['Record_Type'] = 'GST Release'
+                row['Record_Key'] = f"gst:{row.get('Record_Id')}"
+            records.extend(gst_rows)
+
+            # Hold releases.  Include them even when their UTR is blank so
+            # the Payment History represents every release record.
+            cursor.execute(
+                """
+                SELECT
+                    h.Hold_Release_Id AS Record_Id,
+                    h.PMC_No,
+                    h.Invoice_No,
+                    h.Final_Amount AS Amount_with_TDS,
+                    0 AS TDS_Percentage,
+                    0 AS TDS_Payment_Amount,
+                    h.Total_Amount AS Amount_after_TDS_Deduction,
+                    h.UTR,
+                    s.Contractor_Name,
+                    NULL AS Payment_Date,
+                    'Hold Released' AS Payment_Status,
+                    h.Hold_Release_Id AS Sort_Order
+                FROM hold_release h
+                LEFT JOIN subcontractors s
+                    ON s.Contractor_Id = h.Contractor_Id
+                ORDER BY h.Hold_Release_Id ASC
+                """
+            )
+            hold_rows = cursor.fetchall() or []
+            for row in hold_rows:
+                row['Payment_Id'] = None
+                row['Record_Type'] = 'Hold Release'
+                row['Record_Key'] = f"hold:{row.get('Record_Id')}"
+            records.extend(hold_rows)
+
+            return records
+
+        except mysql.connector.Error as e:
+            print(f"Error fetching unified payment history: {e}")
+            return []
+        finally:
+            if cursor:
                 cursor.close()
-                connection.close()
-        return payments
+            connection.close()
 
     # ----------------------------------------------------------
     # FETCH BY ID  (returns dict with Contractor_Name + new fields)
@@ -235,15 +321,25 @@ class Paymentmodel:
             return False
         try:
             cursor = connection.cursor()
+            # UTR must be unique across all payment/release sources.
+            # Otherwise an imported GST/Hold release UTR could be entered
+            # again from the Payment module.
+            params = [utr]
+            payment_sql = "SELECT COUNT(*) FROM payment WHERE UTR = %s"
             if exclude_id:
-                cursor.execute(
-                    "SELECT COUNT(*) FROM payment WHERE UTR = %s AND Payment_Id != %s",
-                    (utr, exclude_id)
-                )
-            else:
-                cursor.execute("SELECT COUNT(*) FROM payment WHERE UTR = %s", (utr,))
-            row = cursor.fetchone()
-            return bool(row and row[0] > 0)
+                payment_sql += " AND Payment_Id != %s"
+                params.append(exclude_id)
+
+            cursor.execute(payment_sql, tuple(params))
+            payment_count = cursor.fetchone()[0] or 0
+
+            cursor.execute("SELECT COUNT(*) FROM gst_releases WHERE UTR = %s", (utr,))
+            gst_count = cursor.fetchone()[0] or 0
+
+            cursor.execute("SELECT COUNT(*) FROM hold_release WHERE UTR = %s", (utr,))
+            hold_count = cursor.fetchone()[0] or 0
+
+            return (payment_count + gst_count + hold_count) > 0
         except mysql.connector.Error as e:
             print(f"Error checking duplicate UTR: {e}")
             return False

@@ -166,9 +166,9 @@
           </div>
 
           <div class="sce-field">
-            <label>Mobile No <span class="sce-req">*</span></label>
+            <label>Mobile No</label>
             <input type="text" id="e_mobile" name="Mobile_No"
-              maxlength="10" value="{{ subcontractor[3] or '' }}">
+              maxlength="10" value="{{ subcontractor[3] or '' }}" placeholder="10-digit number (optional)">
             <span class="sce-err-msg" id="ev_mobile"></span>
           </div>
 
@@ -205,7 +205,7 @@
         <div class="sce-grid">
 
           <div class="sce-field">
-            <label>PAN No <span class="sce-req">*</span></label>
+            <label>PAN No</label>
             <input type="text" id="e_pan" name="PAN_No"
               maxlength="10" style="text-transform:uppercase"
               value="{{ subcontractor[4] or '' }}">
@@ -282,11 +282,11 @@ function validateEdit() {
   const gstNo  = document.getElementById('e_gst_no') ? document.getElementById('e_gst_no').value.trim() : '';
 
   if (!name)   { setEv('ev_name',   'Contractor Name is required.');    ok = false; } else setEv('ev_name', '');
-  if (!/^[0-9]{10}$/.test(mobile))        { setEv('ev_mobile', 'Must be exactly 10 digits.');           ok = false; } else setEv('ev_mobile', '');
+  if (mobile && !/^[0-9]{10}$/.test(mobile)) { setEv('ev_mobile', 'Must be exactly 10 digits when provided.'); ok = false; } else setEv('ev_mobile', '');
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEv('ev_email', 'Enter a valid email address.'); ok = false; } else setEv('ev_email', '');
   setEv('ev_gender', '');
   setEv('ev_address', '');
-  if (!/^[A-Z0-9]{10}$/.test(pan))        { setEv('ev_pan',    'PAN must be 10 uppercase letters/digits.'); ok = false; } else setEv('ev_pan', '');
+  if (pan && !/^[A-Z0-9]{10}$/.test(pan)) { setEv('ev_pan', 'PAN must be 10 uppercase letters/digits when provided.'); ok = false; } else setEv('ev_pan', '');
 
   const gstReq = gstT === 'Registered' || gstT === 'Composition';
   if (gstReq && gstNo.length !== 15) { setEv('ev_gst', 'GST No must be exactly 15 characters.'); ok = false; } else setEv('ev_gst', '');

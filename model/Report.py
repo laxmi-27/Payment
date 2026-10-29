@@ -146,9 +146,9 @@ class ReportHelper:
                 COALESCE(MAX(i.Hydro_Testing),   0)         AS Hydro_Testing,
                 COALESCE(MAX(i.GST_SD_Amount),   0)         AS GST_SD_Amount,
                 COALESCE(MAX(i.Final_Amount),    0)         AS Final_Amount,
-                COALESCE(SUM(p.Amount_with_TDS),             0) AS Amount_with_TDS,
+                COALESCE(SUM(p.Amount_with_TDS),             0) AS Payment_Amount,
                 COALESCE(SUM(p.TDS_Payment_Amount),          0) AS TDS_Payment_Amount,
-                COALESCE(SUM(p.Amount_after_TDS_Deduction),  0) AS Amount_after_TDS_Deduction,
+                COALESCE(SUM(p.Amount_after_TDS_Deduction),  0) AS Total_Amount,
                 GROUP_CONCAT(DISTINCT p.UTR ORDER BY p.Payment_Id SEPARATOR ' | ') AS UTR,
                 COALESCE(i.sort_order, i.Invoice_Id)        AS _sort_key
             FROM subcontractors s
@@ -186,9 +186,9 @@ class ReportHelper:
                 0                                           AS Hydro_Testing,
                 0                                           AS GST_SD_Amount,
                 COALESCE(g.Final_Amount,  0)                AS Final_Amount,
-                0                                           AS Amount_with_TDS,
+                0                                           AS Payment_Amount,
                 0                                           AS TDS_Payment_Amount,
-                COALESCE(g.Total_Amount,  0)                AS Amount_after_TDS_Deduction,
+                COALESCE(g.Total_Amount,  0)                AS Total_Amount,
                 g.UTR                                       AS UTR,
                 COALESCE(g.sort_order, g.GST_Release_Id)    AS _sort_key
             FROM gst_releases g
@@ -220,9 +220,9 @@ class ReportHelper:
                 0                                           AS Hydro_Testing,
                 0                                           AS GST_SD_Amount,
                 COALESCE(cn.Final_Amount,       0)          AS Final_Amount,
-                COALESCE(cn.Payment_Amount,     0)          AS Amount_with_TDS,
+                COALESCE(cn.Payment_Amount,     0)          AS Payment_Amount,
                 0                                           AS TDS_Payment_Amount,
-                COALESCE(cn.Total_Amount,       0)          AS Amount_after_TDS_Deduction,
+                COALESCE(cn.Total_Amount,       0)          AS Total_Amount,
                 cn.UTR                                      AS UTR,
                 cn.Credit_Note_Id                           AS _sort_key
             FROM credit_note cn

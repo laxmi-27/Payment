@@ -414,6 +414,7 @@
             <th>Invoice No</th>
             <th>Amount with TDS (&#8377;)</th>
             <th>Amount after TDS Deduction (&#8377;)</th>
+            <th>Type</th>
             <th>UTR</th>
             <th>Date</th>
             <th>Status</th>
@@ -424,8 +425,12 @@
           {% if payments %}
             {% for p in payments %}
               {% set st = (p.Payment_Status or 'Paid') %}
+              {% set record_type = p.Record_Type or 'Payment' %}
               {% set d = {
                 'id':         p.Payment_Id,
+                'record_id':  p.Record_Id or p.Payment_Id,
+                'record_type': record_type,
+                'record_key': p.Record_Key,
                 'contractor': (p.Contractor_Name or ''),
                 'pmc':        (p.PMC_No or '')|string,
                 'invoice':    (p.Invoice_No or ''),
@@ -437,20 +442,26 @@
                 'date':       p.Payment_Date|string if p.Payment_Date else '',
                 'status':     st,
               } %}
-              <tr data-id="{{ p.Payment_Id }}"
+              <tr data-id="{{ p.Record_Key }}"
                   data-info='{{ d | tojson }}'
                   data-contractor="{{ (p.Contractor_Name or '')|lower }}"
                   data-pmc="{{ p.PMC_No or '' }}"
                   data-invoice="{{ p.Invoice_No or '' }}"
                   data-status="{{ st }}"
                   data-date="{{ p.Payment_Date|string if p.Payment_Date else '' }}"
-                  data-utr="{{ (p.UTR or '')|lower }}">
-                <td class="pm-mono">{{ p.Payment_Id }}</td>
+                  data-utr="{{ (p.UTR or '')|lower }}"
+                  data-record-type="{{ record_type }}">
+                <td class="pm-mono">{{ p.Record_Id or '—' }}</td>
                 <td class="pm-name-cell" title="{{ p.Contractor_Name or '' }}">{{ p.Contractor_Name or '—' }}</td>
                 <td class="pm-mono">{{ p.PMC_No or '—' }}</td>
                 <td>{{ p.Invoice_No or '—' }}</td>
                 <td class="pm-mono">{{ p.Amount_with_TDS or '0.00' }}</td>
                 <td class="pm-total">{{ p.Amount_after_TDS_Deduction or '0.00' }}</td>
+                <td>
+                  <span class="pm-badge {{ 'paid' if record_type == 'Payment' else 'released' }}">
+                    {{ record_type }}
+                  </span>
+                </td>
                 <td class="pm-utr-cell" title="{{ p.UTR or '' }}">
                   {{ (p.UTR or '')[:40] }}{% if p.UTR and p.UTR|length > 40 %}…{% endif %}
                 </td>
@@ -459,7 +470,7 @@
                   <span class="pm-badge {{ st|lower|replace(' ', '-') }}">{{ st }}</span>
                 </td>
                 <td>
-                  <button class="pm-act-btn" onclick="pmOpenMenu(this, {{ p.Payment_Id }})">
+                  <button class="pm-act-btn" onclick="pmOpenMenu(this, '{{ p.Record_Key }}')">
                     Actions <i class="fas fa-chevron-down" style="font-size:10px;"></i>
                   </button>
                 </td>
@@ -467,7 +478,7 @@
             {% endfor %}
           {% else %}
             <tr>
-              <td colspan="12" class="pm-empty">
+              <td colspan="11" class="pm-empty">
                 <i class="fas fa-money-check-alt"></i>
                 <p style="font-weight:600;">No payments recorded yet</p>
                 <p>Click <b>Add Payment</b> to record the first payment.</p>
@@ -485,14 +496,14 @@
 
 <!-- Actions Dropdown (fixed position) -->
 <div class="pm-act-menu" id="pmMenu">
-  <button class="pm-act-item" onclick="pmDoView()">
+  <button class="pm-act-item" id="pmViewAction" onclick="pmDoView()">
     <i class="fas fa-eye" style="width:14px;"></i> View Details
   </button>
-  <button class="pm-act-item" onclick="pmDoEdit()">
+  <button class="pm-act-item" id="pmEditAction" onclick="pmDoEdit()">
     <i class="fas fa-pen" style="width:14px;"></i> Edit Payment
   </button>
   <div class="pm-act-div"></div>
-  <button class="pm-act-item pm-dng" onclick="pmDoDelete()">
+  <button class="pm-act-item pm-dng" id="pmDeleteAction" onclick="pmDoDelete()">
     <i class="fas fa-trash" style="width:14px;"></i> Delete
   </button>
 </div>
@@ -786,12 +797,24 @@ function pmClearFilter() {
 /* ── Actions Dropdown ──────────────────────────────────────────── */
 let _pmMenuId = null;
 
-function pmOpenMenu(btn, paymentId) {
+function pmOpenMenu(btn, recordKey) {
   const menu = document.getElementById('pmMenu');
-  if (_pmMenuId === paymentId && menu.classList.contains('open')) {
+  if (_pmMenuId === recordKey && menu.classList.contains('open')) {
     menu.classList.remove('open'); _pmMenuId = null; return;
   }
-  _pmMenuId = paymentId;
+  _pmMenuId = recordKey;
+
+  const row = btn.closest('tr');
+  const recordType = row.dataset.recordType || 'Payment';
+  const editAction = document.getElementById('pmEditAction');
+
+  if (recordType === 'GST Release') {
+    editAction.innerHTML = '<i class="fas fa-pen" style="width:14px;"></i> Edit GST Release';
+  } else if (recordType === 'Hold Release') {
+    editAction.innerHTML = '<i class="fas fa-pen" style="width:14px;"></i> Edit Hold Release';
+  } else {
+    editAction.innerHTML = '<i class="fas fa-pen" style="width:14px;"></i> Edit Payment';
+  }
 
   /* measure menu height before showing */
   menu.style.visibility = 'hidden';
@@ -804,7 +827,6 @@ function pmOpenMenu(btn, paymentId) {
   const openUp   = (window.innerHeight - r.bottom - 8) < mH;
   const rightOff = window.innerWidth - r.right;
 
-  /* position: fixed — coordinates are viewport-relative, no scrollY needed */
   menu.style.position = 'fixed';
   menu.style.right    = rightOff + 'px';
   menu.style.left     = 'auto';
@@ -817,8 +839,9 @@ function pmOpenMenu(btn, paymentId) {
   }
 
   menu.classList.add('open');
-  menu.dataset.id   = paymentId;
-  menu.dataset.info = btn.closest('tr').dataset.info;
+  menu.dataset.id   = recordKey;
+  menu.dataset.type = recordType;
+  menu.dataset.info = row.dataset.info || '{}';
 }
 
 document.addEventListener('click', function(e) {
@@ -833,47 +856,60 @@ window.addEventListener('scroll', function() {
   _pmMenuId = null;
 }, { passive: true });
 
-async function pmDoView() {
+function pmDoView() {
   const menu = document.getElementById('pmMenu');
-  const id   = menu.dataset.id;
+  const info = JSON.parse(menu.dataset.info || '{}');
+  const recordType = menu.dataset.type || info.record_type || 'Payment';
   menu.classList.remove('open'); _pmMenuId = null;
 
-  document.getElementById('pmDSub').textContent = 'Loading…';
+  /* All three record types are already present in the unified history row,
+     so View can open immediately without a second request. */
+  _fillPmModal({
+    ...info,
+    id: info.record_id || info.id || '—',
+    record_type: recordType,
+    status: info.status || (recordType === 'GST Release' ? 'GST Released' : recordType === 'Hold Release' ? 'Hold Released' : 'Paid')
+  });
   document.getElementById('pmOverlay').classList.add('open');
-
-  try {
-    const res  = await fetch('/api/payment/' + id);
-    const data = await res.json();
-    if (data.success) {
-      _fillPmModal(data);
-    } else {
-      document.getElementById('pmDSub').textContent = 'Failed to load details.';
-    }
-  } catch(err) {
-    document.getElementById('pmDSub').textContent = 'Network error.';
-  }
 }
 
 function pmDoEdit() {
   const menu = document.getElementById('pmMenu');
-  const id   = menu.dataset.id;
+  const recordKey = String(menu.dataset.id || '');
+  const recordType = menu.dataset.type || 'Payment';
+  const id = recordKey.split(':').pop();
   menu.classList.remove('open'); _pmMenuId = null;
-  window.location.href = `/edit_payment/${id}`;
+
+  if (recordType === 'GST Release') {
+    window.location.href = `/edit_gst_release/${id}`;
+  } else if (recordType === 'Hold Release') {
+    window.location.href = `/edit_hold_release/${id}`;
+  } else {
+    window.location.href = `/edit_payment/${id}`;
+  }
 }
 
 async function pmDoDelete() {
   const menu = document.getElementById('pmMenu');
-  const id   = menu.dataset.id;
+  const recordKey = String(menu.dataset.id || '');
+  const recordType = menu.dataset.type || 'Payment';
   const info = JSON.parse(menu.dataset.info || '{}');
+  const id = recordKey.split(':').pop();
   menu.classList.remove('open'); _pmMenuId = null;
 
-  if (!confirm(`Delete payment #${id} (${info.contractor || ''})?\nThis cannot be undone.`)) return;
+  const label = recordType === 'GST Release' ? 'GST release' :
+                recordType === 'Hold Release' ? 'hold release' : 'payment';
+  if (!confirm(`Delete ${label} #${id} (${info.contractor || ''})?\nThis cannot be undone.`)) return;
+
+  let url = `/delete_payment/${id}`;
+  if (recordType === 'GST Release') url = `/delete_gst_release/${id}`;
+  if (recordType === 'Hold Release') url = `/delete_hold_release/${id}`;
 
   try {
-    const res  = await fetch(`/delete_payment/${id}`, { method: 'POST' });
+    const res  = await fetch(url, { method: 'POST' });
     const data = await res.json();
     if (data.success) {
-      pmToast('Payment deleted.', 'ok');
+      pmToast(`${recordType} deleted.`, 'ok');
       setTimeout(() => window.location.reload(), 900);
     } else {
       pmToast(data.message || 'Delete failed.', 'err');
@@ -895,6 +931,14 @@ function _pmFmtPct(v) {
 }
 
 function _fillPmModal(d) {
+  const type = d.record_type || 'Payment';
+  const title = type === 'GST Release' ? 'GST Release Details' :
+                type === 'Hold Release' ? 'Hold Release Details' : 'Payment Details';
+  const icon = type === 'GST Release' ? 'fa-file-invoice-dollar' :
+               type === 'Hold Release' ? 'fa-lock-open' : 'fa-money-check-alt';
+  const titleEl = document.querySelector('#pmOverlay .pm-modal-head h3');
+  if (titleEl) titleEl.innerHTML = `<i class="fas ${icon}" style="margin-right:8px;"></i>${title}`;
+
   document.getElementById('pmDSub').textContent        = (d.contractor || '—') + ' · PMC ' + (d.pmc || '—');
   document.getElementById('pmDId').textContent         = '#' + (d.id || '—');
   document.getElementById('pmDContractor').textContent = d.contractor || '—';

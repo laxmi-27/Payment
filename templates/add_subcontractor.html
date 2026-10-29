@@ -457,8 +457,8 @@
             </div>
 
             <div class="sc-field">
-              <label>Mobile No <span class="sc-req">*</span></label>
-              <input type="text" id="f_mobile" name="Mobile_No" maxlength="10" placeholder="10-digit number">
+              <label>Mobile No</label>
+              <input type="text" id="f_mobile" name="Mobile_No" maxlength="10" placeholder="10-digit number (optional)">
               <span class="sc-err-msg" id="e_mobile"></span>
             </div>
 
@@ -494,8 +494,8 @@
           <div class="sc-form-grid">
 
             <div class="sc-field">
-              <label>PAN No <span class="sc-req">*</span></label>
-              <input type="text" id="f_pan" name="PAN_No" maxlength="10" placeholder="ABCDE1234F" style="text-transform:uppercase">
+              <label>PAN No</label>
+              <input type="text" id="f_pan" name="PAN_No" maxlength="10" placeholder="ABCDE1234F (optional)" style="text-transform:uppercase">
               <span class="sc-err-msg" id="e_pan"></span>
             </div>
 
@@ -797,11 +797,11 @@ function validateAdd() {
   const gstNo  = gstEl ? gstEl.value.trim() : '';
 
   if (!name)   { setErr('e_name', 'Contractor Name is required.');     ok = false; } else setErr('e_name', '');
-  if (!/^[0-9]{10}$/.test(mobile)) { setErr('e_mobile', 'Must be exactly 10 digits.'); ok = false; } else setErr('e_mobile', '');
+  if (mobile && !/^[0-9]{10}$/.test(mobile)) { setErr('e_mobile', 'Must be exactly 10 digits when provided.'); ok = false; } else setErr('e_mobile', '');
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setErr('e_email', 'Enter a valid email address.'); ok = false; } else setErr('e_email', '');
   setErr('e_gender', '');
   setErr('e_address', '');
-  if (!/^[A-Z0-9]{10}$/.test(pan)) { setErr('e_pan', 'PAN must be 10 uppercase letters/digits.'); ok = false; } else setErr('e_pan', '');
+  if (pan && !/^[A-Z0-9]{10}$/.test(pan)) { setErr('e_pan', 'PAN must be 10 uppercase letters/digits when provided.'); ok = false; } else setErr('e_pan', '');
 
   const gstRequired = gstT === 'Registered' || gstT === 'Composition';
   if (gstRequired && gstNo.length !== 15) { setErr('e_gst', 'GST No must be exactly 15 characters.'); ok = false; } else setErr('e_gst', '');

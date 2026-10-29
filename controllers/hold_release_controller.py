@@ -8,6 +8,16 @@ hr_bp      = Blueprint('hr_bp', __name__)
 hr_service = HoldRelease()
 
 
+def _parse_hold_col(value):
+    """hold_col = 't:<hold_type_id>' (custom hold type) | 'f:<SD_Amount|Hydro_Testing>' | ''"""
+    value = (value or '').strip()
+    if value.startswith('t:') and value[2:].isdigit():
+        return {'hold_type_id': int(value[2:]), 'fixed_hold': None}
+    if value.startswith('f:') and value[2:] in ('SD_Amount', 'Hydro_Testing'):
+        return {'hold_type_id': None, 'fixed_hold': value[2:]}
+    return {'hold_type_id': None, 'fixed_hold': None}
+
+
 def _parse_form(form):
     def amt(key):
         try:
@@ -24,6 +34,7 @@ def _parse_form(form):
         'Total_Amount':    amt('Total_Amount'),
         'UTR':             (form.get('UTR') or '').strip(),
         'Contractor_Id':   int(form.get('Contractor_ID') or 0),
+        **_parse_hold_col(form.get('hold_col')),
     }
 
 
@@ -58,12 +69,16 @@ def get_pmc_nos_by_subcontractor(subcontractorId):
 def hold_release():
     if request.method == 'POST':
         data = _parse_form(request.form)
+        if not (data['hold_type_id'] or data['fixed_hold']):
+            return jsonify({"success": False,
+                            "message": "Please select the hold column this release belongs to."})
         hr_service.add(data)
         LogHelper.log_action("Add Hold Release", "User added a hold release record")
         return jsonify({"success": hr_service.isSuccess, "message": hr_service.resultMessage})
 
     records = hr_service.get_all()
-    return render_template('add_hold_release.html', records=records)
+    return render_template('add_hold_release.html', records=records,
+                           hold_types=hr_service.get_hold_types())
 
 
 # ── Edit ───────────────────────────────────────────────────────────────
@@ -76,12 +91,16 @@ def edit_hold_release(hr_id):
 
     if request.method == 'POST':
         data = _parse_form(request.form)
+        if not (data['hold_type_id'] or data['fixed_hold']):
+            flash('Please select the hold column this release belongs to.', 'error')
+            return redirect(url_for('hr_bp.edit_hold_release', hr_id=hr_id))
         hr_service.update(hr_id, data)
         LogHelper.log_action("Edit Hold Release", "User edited a hold release record")
         flash(hr_service.resultMessage, 'success' if hr_service.isSuccess else 'error')
         return redirect(url_for('hr_bp.hold_release'))
 
-    return render_template('edit_hold_release.html', record=record)
+    return render_template('edit_hold_release.html', record=record,
+                           hold_types=hr_service.get_hold_types())
 
 
 # ── Delete ─────────────────────────────────────────────────────────────

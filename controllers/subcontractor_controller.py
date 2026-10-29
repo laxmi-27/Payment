@@ -18,10 +18,12 @@ def _validate_contractor(form):
 
     if not name:
         return 'Contractor Name is required.'
-    if not _re.match(r'^[0-9]{10}$', mobile):
-        return 'Mobile No must be exactly 10 digits.'
-    if not _re.match(r'^[A-Z0-9]{10}$', pan):
-        return 'PAN No must be 10 uppercase letters/digits.'
+    # Mobile No and PAN No are optional.
+    # Validate format only when a value is provided.
+    if mobile and not _re.fullmatch(r'[0-9]{10}', mobile):
+        return 'Mobile No must be exactly 10 digits when provided.'
+    if pan and not _re.fullmatch(r'[A-Z0-9]{10}', pan):
+        return 'PAN No must be 10 uppercase letters/digits when provided.'
     if email and not _re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$', email):
         return 'Enter a valid email address.'
     if gst_type in ('Registered', 'Composition') and len(gst_no) != 15:

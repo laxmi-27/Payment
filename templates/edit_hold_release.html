@@ -107,6 +107,28 @@
       </div>
     </div>
 
+    <!-- Hold column released -->
+    <div class="sec-label"><i class="fas fa-lock-open" style="margin-right:5px;"></i>Hold Column Released</div>
+    <div style="margin-bottom:18px;">
+      <div class="edit-field">
+        <label>Which hold column does this release belong to? *</label>
+        <select name="hold_col" required
+          style="padding:11px 14px;border:1.5px solid #d8dfeb;border-radius:10px;background:#fafcff;font-size:13.5px;width:100%;">
+          <option value="">— Select hold column —</option>
+          <optgroup label="Invoice hold columns">
+            {% for fx in ['SD_Amount', 'Hydro_Testing'] %}
+            <option value="f:{{ fx }}" {{ 'selected' if record.fixed_hold == fx else '' }}>{{ fx }}</option>
+            {% endfor %}
+          </optgroup>
+          <optgroup label="Custom hold types">
+            {% for ht in hold_types %}
+            <option value="t:{{ ht.hold_type_id }}" {{ 'selected' if record.hold_type_id == ht.hold_type_id else '' }}>{{ ht.hold_type }}</option>
+            {% endfor %}
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
     <!-- Amounts -->
     <div class="sec-label"><i class="fas fa-rupee-sign" style="margin-right:5px;"></i>Amount Details</div>
     <div class="edit-g3">

@@ -12,11 +12,94 @@ from flask import Blueprint, request, render_template, redirect, url_for, jsonif
 
 from model.Log import LogHelper
 from model.FolderAndFile import FolderAndFile
+from model.HoldReleaseSummary import infer_target, FIXED_HOLDS
 from datetime import datetime
 
 excel_bp = Blueprint('excel', __name__)
 
 _DATE_FMTS = ('%d-%m-%Y', '%d/%m/%Y', '%Y-%m-%d', '%m/%d/%Y', '%d.%m.%Y')
+
+
+def _norm_hold_name(s):
+    return re.sub(r'[\s_]+', '', str(s or '')).lower()
+
+
+def _is_hold_release_note(details_lower):
+    """
+    True for notes like 'Hold Release Note', 'Testing deposit Release Note',
+    'Maintenance Release Note', 'SD Release Note' ...
+    Any '... release ...' note that is NOT a GST release.
+    """
+    return 'release' in details_lower and 'gst' not in details_lower
+
+
+def _hold_target_from_text(cursor, details):
+    """
+    Read the hold column from the note text. Spaces / underscores / case are ignored:
+      'Testing_ Deposit_RR_release_note' -> Testing_ Deposit_RR   (hold type)
+      'Maintaninece_RR_release_note'     -> Maintaninece_RR       (hold type)
+      'SD_RR_release_note'               -> SD_RR                 (hold type)
+      'SD_Amount_release_note'           -> SD_Amount             (fixed column)
+      'Hydro_Testing_release_note'       -> Hydro_Testing         (fixed column)
+      'Hydro_Testing_RR_release_note'    -> Hydro_Testing         (fixed column)
+    Returns (hold_type_id, fixed_hold) or (None, None).
+    """
+    key = _norm_hold_name(details)
+    if not key:
+        return None, None
+    for fx in FIXED_HOLDS:                                   # sdamount / hydrotesting
+        if _norm_hold_name(fx) in key:
+            return None, fx
+    if 'hydro' in key:
+        return None, 'Hydro_Testing'
+    cursor.execute("SELECT hold_type_id, hold_type FROM hold_types")
+    types = cursor.fetchall()
+    best = None                                              # longest matching name wins
+    for tid, tname in types:
+        n = _norm_hold_name(tname)
+        n_short = n[:-2] if n.endswith('rr') else n          # 'testingdepositrr' -> 'testingdeposit'
+        hit = len(n) if (n and n in key) else (len(n_short) if (len(n_short) > 3 and n_short in key) else 0)
+        if hit and (best is None or hit > best[0]):
+            best = (hit, tid)
+    if best:
+        return best[1], None
+    if 'maint' in key:                                       # maintenance / maintainance / maintaninece
+        for tid, tname in types:
+            if 'maint' in _norm_hold_name(tname):
+                return tid, None
+    if re.match(r'^(sd|securitydeposit)(release|amt)', key):  # plain 'SD Release Note'
+        return None, 'SD_Amount'
+    return None, None
+
+
+def _resolve_hold_release_target(cursor, entry, contractor_id, pmc_no, invoice_no, amount, details=''):
+    """
+    Decide which hold column a release note belongs to:
+      1. Excel column 'Release_Column' (e.g. Testing_ Deposit_RR)
+      2. The note text itself ('Testing deposit Release Note')
+      3. Inference from invoice no + amount (HoldReleaseSummary.infer_target)
+    Returns (hold_type_id, fixed_hold).
+    """
+    # Optional extra Excel column. Header can be written 'Release_Column', 'Release Column',
+    # 'Released Column' ...  (do NOT use the word 'hold' in the header - the parser would
+    # treat it as a hold amount column).
+    name = ''
+    for _k, _v in entry.items():
+        if _norm_hold_name(_k) in ('releasecolumn', 'releasedcolumn', 'releasecol', 'releasefrom') and _v:
+            name = _v
+            break
+    if str(name).strip():
+        key = _norm_hold_name(name)
+        for fx in FIXED_HOLDS:                       # SD_Amount / Hydro_Testing
+            if _norm_hold_name(fx) == key:
+                return None, fx
+        t, f = _hold_target_from_text(cursor, name)  # Testing_ Deposit_RR / SD_RR / Maintaninece_RR
+        if t or f:
+            return t, f
+    t, f = _hold_target_from_text(cursor, details)
+    if t or f:
+        return t, f
+    return infer_target(cursor, contractor_id, pmc_no, invoice_no, amount)
 
 
 def _to_float(v):
@@ -137,10 +220,6 @@ _HEADER_NORM = {
     'village': 'Village_Name',
     'sdamount': 'SD_Amount',
     'sdamt': 'SD_Amount',
-    'oncommission': 'On_Commission',
-    'oncommissioning': 'On_Commission',
-    'oncommisionning': 'On_Commission',
-    'commission': 'On_Commission',
     'hydrotesting': 'Hydro_Testing',
     'hydro': 'Hydro_Testing',
     'gstsdamount': 'GST_SD_Amount',
@@ -980,13 +1059,13 @@ def show_table(filename):
 
     filepath = FolderAndFile.get_upload_path(filename)
 
-    # Parse the Excel file — workbook is opened and closed inside the helper
-    parsed           = _parse_excel_file(filepath)
+    # Parse the Excel file
+    parsed = _parse_excel_file(filepath)
+
     file_info        = parsed['file_info']
     variables        = parsed['variables']
     hold_columns_raw = parsed['hold_columns_raw']
-    data             = parsed['data']          # set global for backward-compat preview
-
+    data             = parsed['data']
 
     errors             = []
     warnings           = []
@@ -998,150 +1077,449 @@ def show_table(filename):
     hold_types_lookup  = {}
 
     connection = config.get_db_connection()
+
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
 
-            state_data = _fuzzy_lookup_state(cursor, file_info['State'])
-            if not state_data:
-                errors.append(f"State '{file_info['State']}' is not valid. Please add it.")
+            # ---------------------------------------------------------
+            # State
+            # ---------------------------------------------------------
+            state_data = _fuzzy_lookup_state(
+                cursor,
+                file_info['State']
+            )
 
+            if not state_data:
+                errors.append(
+                    f"State '{file_info['State']}' is not valid. Please add it."
+                )
+
+            # ---------------------------------------------------------
+            # District
+            # ---------------------------------------------------------
             if state_data:
-                district_data = _fuzzy_lookup_district(cursor, file_info['District'], state_data['State_Id'])
+                district_data = _fuzzy_lookup_district(
+                    cursor,
+                    file_info['District'],
+                    state_data['State_Id']
+                )
+
                 if not district_data:
                     errors.append(
                         f"District '{file_info['District']}' is not valid "
                         f"under state '{file_info['State']}'."
                     )
 
+            # ---------------------------------------------------------
+            # Block
+            # ---------------------------------------------------------
             if district_data:
                 block_data, block_created = _fuzzy_lookup_block(
-                    cursor, file_info['Block'], district_data['District_id'], connection)
+                    cursor,
+                    file_info['Block'],
+                    district_data['District_id'],
+                    connection
+                )
+
                 if block_created:
                     warnings.append(
-                        f"New block '{block_data['Block_Name']}' was automatically added "
-                        f"under district '{district_data['District_Name']}'."
+                        f"New block '{block_data['Block_Name']}' was "
+                        f"automatically added under district "
+                        f"'{district_data['District_Name']}'."
                     )
+
                 elif not block_data:
                     errors.append(
                         f"Block '{file_info['Block']}' is not valid "
                         f"under district '{file_info['District']}'."
                     )
 
-            sub_name = (file_info.get('Subcontractor') or '').strip()
+            # ---------------------------------------------------------
+            # Subcontractor
+            # ---------------------------------------------------------
+            sub_name = (
+                file_info.get('Subcontractor') or ''
+            ).strip()
+
             if sub_name:
-                cursor.callproc('GetSubcontractorByName', [sub_name])
+                cursor.callproc(
+                    'GetSubcontractorByName',
+                    [sub_name]
+                )
+
                 for result in cursor.stored_results():
                     subcontractor_data = result.fetchone()
 
                 if not subcontractor_data:
-                    cursor.callproc('SaveContractor',
-                                    [sub_name, None, None, None, None, None, None, None, None])
+                    cursor.callproc(
+                        'SaveContractor',
+                        [
+                            sub_name,
+                            None,
+                            None,
+                            None,
+                            None,
+                            None,
+                            None,
+                            None,
+                            None
+                        ]
+                    )
+
                     connection.commit()
-                    cursor.callproc('GetSubcontractorByName', [sub_name])
+
+                    cursor.callproc(
+                        'GetSubcontractorByName',
+                        [sub_name]
+                    )
+
                     for result in cursor.stored_results():
                         subcontractor_data = result.fetchone()
+
             else:
                 errors.append(
                     "Contractor Name not detected in the Excel file. "
-                    "Ensure the file has a 'Contractor Name:' metadata row above the data table."
+                    "Ensure the file has a 'Contractor Name:' metadata row "
+                    "above the data table."
                 )
 
+            # =========================================================
+            # GET ALL CONFIGURED HOLD TYPES
+            # =========================================================
+
             cursor.callproc("GetAllHoldTypes")
+
             hold_types_data = []
+
             for ht in cursor.stored_results():
                 hold_types_data = ht.fetchall()
+
+            # Create lookup:
+            #
+            # SD_RR               -> 2
+            # Testing_Deposit_RR  -> 3
+            # Maintaninece_RR     -> 4
+            # Extra_Hold          -> 1
+            #
             hold_types_lookup = {
-                row['hold_type'].lower(): row['hold_type_id']
-                for row in hold_types_data if row['hold_type']
+                _norm_key(row['hold_type']): row['hold_type_id']
+                for row in hold_types_data
+                if row.get('hold_type')
             }
 
-            # Resolve hold_type_id for each detected hold column; auto-create unknown types
+            print(
+                "Configured Hold Types:",
+                hold_types_lookup
+            )
+
+            # =========================================================
+            # IMPORTANT FIX
+            #
+            # _parse_excel_file() currently detects a hold column only
+            # when the Excel column name contains "hold".
+            #
+            # Therefore:
+            #
+            # Extra_Hold          -> detected
+            # SD_RR               -> NOT detected
+            # Testing_Deposit_RR  -> NOT detected
+            # Maintaninece_RR     -> NOT detected
+            #
+            # The following code additionally detects Excel columns
+            # whose names match configured Hold Types in the database.
+            # =========================================================
+
+            detected_hold_columns = {
+                _norm_key(hc['column_name'])
+                for hc in hold_columns_raw
+                if hc.get('column_name')
+            }
+
+            for column_name, column_number in variables.items():
+
+                if not column_name:
+                    continue
+
+                normalized_column = _norm_key(column_name)
+
+                # Already detected by:
+                #
+                # if 'hold' in raw.lower()
+                #
+                # Skip it so Extra_Hold is not added twice.
+                if normalized_column in detected_hold_columns:
+                    continue
+
+                # -----------------------------------------------------
+                # NEW FIX:
+                # Match Excel column with configured Hold Type
+                # -----------------------------------------------------
+                if normalized_column in hold_types_lookup:
+
+                    hold_columns_raw.append({
+                        'column_name': column_name,
+                        'column_number': column_number
+                    })
+
+                    detected_hold_columns.add(
+                        normalized_column
+                    )
+
+                    print(
+                        "Configured hold column detected: "
+                        f"{column_name} -> "
+                        f"hold_type_id="
+                        f"{hold_types_lookup[normalized_column]}"
+                    )
+
+            # =========================================================
+            # RESOLVE HOLD TYPE IDs
+            # =========================================================
+
             _DPR_CANONICAL = 'dpr excess amount'
+
             hold_columns = []
+
             for hc in hold_columns_raw:
-                col_name     = hc['column_name']
-                col_lower    = col_name.lower()
-                hold_type_id = hold_types_lookup.get(col_lower)
+
+                col_name = hc['column_name']
+
+                col_lower = _norm_key(col_name)
+
+                hold_type_id = hold_types_lookup.get(
+                    col_lower
+                )
+                                # -----------------------------------------------------
+                # Existing DPR logic
+                # -----------------------------------------------------
                 if not hold_type_id and col_name and col_name.strip():
-                    # If this column looks like a DPR hold, reuse the canonical DPR entry
-                    # instead of auto-creating a new one with the long original name.
+
+                    # If this column looks like a DPR hold,
+                    # reuse canonical DPR hold type.
                     if 'dpr' in col_lower:
-                        hold_type_id = hold_types_lookup.get(_DPR_CANONICAL)
+
+                        hold_type_id = hold_types_lookup.get(
+                            _DPR_CANONICAL
+                        )
+
                         if hold_type_id:
-                            hold_types_lookup[col_lower] = hold_type_id
-                            print(f" Hold col DPR-mapped: {col_name} → hold_type_id={hold_type_id}")
-                        else:
-                            # No canonical DPR entry yet — create it properly
-                            cursor.execute(
-                                "INSERT INTO hold_types (hold_type, include_in_hold) VALUES (%s, 0)",
-                                ('DPR Excess Amount',)
+
+                            hold_types_lookup[
+                                col_lower
+                            ] = hold_type_id
+
+                            print(
+                                f"Hold col DPR-mapped: "
+                                f"{col_name} -> "
+                                f"hold_type_id={hold_type_id}"
                             )
+
+                        else:
+
+                            cursor.execute(
+                                """
+                                INSERT INTO hold_types
+                                    (hold_type, include_in_hold)
+                                VALUES (%s, %s)
+                                """,
+                                (
+                                    'DPR Excess Amount',
+                                    0
+                                )
+                            )
+
                             connection.commit()
+
                             hold_type_id = cursor.lastrowid
-                            hold_types_lookup[_DPR_CANONICAL] = hold_type_id
-                            hold_types_lookup[col_lower] = hold_type_id
-                            warnings.append("New hold type 'DPR Excess Amount' was automatically added.")
-                            print(f" Hold col DPR-created: {col_name} → hold_type_id={hold_type_id}")
+
+                            hold_types_lookup[
+                                _DPR_CANONICAL
+                            ] = hold_type_id
+
+                            hold_types_lookup[
+                                col_lower
+                            ] = hold_type_id
+
+                            warnings.append(
+                                "New hold type 'DPR Excess Amount' "
+                                "was automatically added."
+                            )
+
+                            print(
+                                f"Hold col DPR-created: "
+                                f"{col_name} -> "
+                                f"hold_type_id={hold_type_id}"
+                            )
+
+                    # -------------------------------------------------
+                    # Existing unknown hold type logic
+                    # -------------------------------------------------
                     else:
-                        # Auto-create the missing hold type with original name
-                        args = [col_name.strip(), 0]
-                        cursor.callproc('InsertHoldType', args)
+
+                        args = [
+                            col_name.strip(),
+                            0
+                        ]
+
+                        cursor.callproc(
+                            'InsertHoldType',
+                            args
+                        )
+
                         connection.commit()
+
                         cursor.execute(
-                            "SELECT hold_type_id FROM hold_types WHERE hold_type = %s LIMIT 1",
+                            """
+                            SELECT hold_type_id
+                            FROM hold_types
+                            WHERE hold_type = %s
+                            LIMIT 1
+                            """,
                             (col_name.strip(),)
                         )
+
                         new_row = cursor.fetchone()
-                        hold_type_id = new_row['hold_type_id'] if new_row else None
+
+                        hold_type_id = (
+                            new_row['hold_type_id']
+                            if new_row
+                            else None
+                        )
+
                         if hold_type_id:
-                            hold_types_lookup[col_lower] = hold_type_id
+
+                            hold_types_lookup[
+                                col_lower
+                            ] = hold_type_id
+
                             warnings.append(
-                                f"New hold type '{col_name}' was automatically added to the database."
+                                f"New hold type '{col_name}' "
+                                f"was automatically added "
+                                f"to the database."
                             )
-                            print(f" Hold col AUTO: {col_name} → hold_type_id={hold_type_id}")
+
+                            print(
+                                f"Hold col AUTO: "
+                                f"{col_name} -> "
+                                f"hold_type_id={hold_type_id}"
+                            )
+
                         else:
-                            print(f" Hold col FAIL auto-create: {col_name}")
+
+                            print(
+                                f"Hold col FAIL auto-create: "
+                                f"{col_name}"
+                            )
+
                 else:
-                    print(f" Hold col OK : {col_name} → hold_type_id={hold_type_id}")
+
+                    print(
+                        f"Hold col OK: "
+                        f"{col_name} -> "
+                        f"hold_type_id={hold_type_id}"
+                    )
+
+                # -----------------------------------------------------
+                # Add resolved hold column
+                # -----------------------------------------------------
                 hold_columns.append({
-                    'column_name':   col_name,
+                    'column_name': col_name,
                     'column_number': hc['column_number'],
-                    'hold_type_id':  hold_type_id,
+                    'hold_type_id': hold_type_id,
                 })
 
+            # =========================================================
+            # DEBUG OUTPUT
+            # =========================================================
+
+            print("\n========== FINAL HOLD COLUMNS ==========")
+
+            for hold in hold_columns:
+                print(
+                    f"Column: {hold['column_name']} | "
+                    f"Column Number: {hold['column_number']} | "
+                    f"Hold Type ID: {hold['hold_type_id']}"
+                )
+
+            print("========================================\n")
+
             cursor.close()
+
         except Exception as e:
-            print(f"Database error: {e}")
-            return f"Database operation failed: {e}", 500
+
+            print(
+                f"Database error: {e}"
+            )
+
+            return (
+                f"Database operation failed: {e}",
+                500
+            )
+
         finally:
+
             connection.close()
 
-    metadata_contractor = (file_info.get('Subcontractor') or '').strip()
-    if 'Contractor_Name' not in variables and not metadata_contractor:
+    # =============================================================
+    # Contractor validation
+    # =============================================================
+
+    metadata_contractor = (
+        file_info.get('Subcontractor') or ''
+    ).strip()
+
+    if (
+        'Contractor_Name' not in variables
+        and not metadata_contractor
+    ):
         errors.append(
             "Contractor Name not found in Excel columns or metadata. "
-            "Add a 'Contractor Name:' row above the data table, or include a Contractor Name column."
+            "Add a 'Contractor Name:' row above the data table, "
+            "or include a Contractor Name column."
         )
+
+    # =============================================================
+    # Upload history
+    # =============================================================
 
     all_uploads = _get_all_uploads()
 
+    # =============================================================
+    # Render page
+    # =============================================================
+
     return render_template(
         'show_excel_file.html',
+
         file_info=file_info,
+
         variables=variables,
+
         data=data,
+
         subcontractor_data=subcontractor_data,
+
         state_data=state_data,
+
         district_data=district_data,
+
         block_data=block_data,
+
         errors=errors,
+
         warnings=warnings,
+
         hold_columns=hold_columns,
+
         hold_counter=len(hold_columns),
+
         file_id=file_id,
+
         has_contractor=bool(subcontractor_data),
+
         all_uploads=all_uploads,
+
         current_filename=filename,
     )
 
@@ -1480,11 +1858,14 @@ def save_data():
                             'excess hold amount', 'multi to single layer bill', 'hold amount',
                             'logging report'
                         ]
-                        if any(kw in normalized_details for kw in _hold_kws):
+                        if any(kw in normalized_details for kw in _hold_kws) or _is_hold_release_note(normalized_details):
                             try:
+                                _hr_type_id, _hr_fixed = _resolve_hold_release_target(
+                                    cursor, entry, subcontractor_id, PMC_No, Invoice_No, Final_Amount, Invoice_Details)
                                 cursor.callproc(
                                     'AddHoldReleaseFromExcel',
-                                    [PMC_No, Invoice_No, Invoice_Details, Basic_Amount, Final_Amount, Total_Amount, UTR, subcontractor_id])
+                                    [PMC_No, Invoice_No, Invoice_Details, Basic_Amount, Final_Amount, Total_Amount, UTR,
+                                     subcontractor_id, _hr_type_id, _hr_fixed])
                                 connection.commit()
                             except Exception as hre:
                                 if '1062' in str(hre) or 'Duplicate' in str(hre):

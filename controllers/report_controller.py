@@ -22,11 +22,13 @@ def _serialize_row(r):
 
 
 def _row_paid(r):
-    """Actual amount paid: prefer Amount_after_TDS_Deduction; fall back to Amount_with_TDS."""
-    ta = float(r.get('Amount_after_TDS_Deduction') or 0)
+    """Actual amount paid: prefer the net amount (after TDS); fall back to the gross amount.
+    The report query names these columns Total_Amount / Payment_Amount, older versions used
+    Amount_after_TDS_Deduction / Amount_with_TDS - accept both."""
+    ta = float(r.get('Amount_after_TDS_Deduction') or r.get('Total_Amount') or 0)
     if ta > 0:
         return ta
-    return float(r.get('Amount_with_TDS') or 0)
+    return float(r.get('Amount_with_TDS') or r.get('Payment_Amount') or 0)
 
 
 # ---------------- Report Page ----------------
@@ -184,6 +186,11 @@ def download_filtered_report():
                 contractor_ids
             )
             _hold_types = _cur.fetchall()
+            # SD_Amount / Hydro_Testing / On_Commission already have their own fixed columns.
+            # A custom hold type with the same name would show (and count) them twice.
+            _fixed_norm = {'sdamount', 'hydrotesting'}
+            _hold_types = [h for h in _hold_types
+                           if re.sub(r'[\s_]+', '', str(h['hold_type'] or '')).lower() not in _fixed_norm]
             fmt_i = ','.join(['%s'] * len(invoice_ids))
             _cur.execute(
                 f"SELECT Invoice_Id, hold_type_id, hold_amount "
@@ -207,7 +214,6 @@ def download_filtered_report():
     total_inv   = sum(_fv(r, 'Final_Amount') for r in rows)
     paid        = sum(_row_paid(r) for r in rows)
     hold_sd     = sum(_fv(r, 'SD_Amount')     for r in inv_rows)
-    hold_oc     = sum(_fv(r, 'On_Commission') for r in inv_rows)
     hold_ht     = sum(_fv(r, 'Hydro_Testing') for r in inv_rows)
     # hold_amt finalized after custom_hold_totals is built below
     surplus     = round(total_inv - paid, 2)
@@ -243,25 +249,31 @@ def download_filtered_report():
         amt for ht, amt in zip(_hold_types, custom_hold_totals.values())
         if ht.get('include_in_hold', 1)
     )
-    hold_amt = round(hold_sd + hold_oc + hold_ht + hold_custom_sum, 2)
+    hold_amt = round(hold_sd + hold_ht + hold_custom_sum, 2)
 
-    # Fetch total hold releases to compute net custom hold amounts
-    total_hold_released = 0.0
-    if contractor_ids:
-        try:
-            _conn3 = _cfg.get_db_connection()
-            _cur3 = _conn3.cursor()
-            fmt_c3 = ','.join(['%s'] * len(contractor_ids))
-            _cur3.execute(
-                f"SELECT COALESCE(SUM(Final_Amount), 0) FROM hold_release "
-                f"WHERE Contractor_Id IN ({fmt_c3})",
-                contractor_ids
-            )
-            total_hold_released = float(_cur3.fetchone()[0] or 0)
-            _cur3.close()
-            _conn3.close()
-        except Exception as _hre:
-            print(f"Hold release fetch error: {_hre}")
+    # ── Hold releases: subtract each release from the hold column it belongs to ──
+    from model.HoldReleaseSummary import get_release_totals, sum_by_type, sum_fixed
+    _pmc_set       = {str(r.get('PMC_No') or '').strip() for r in rows if r.get('PMC_No')}
+    _rel           = get_release_totals(contractor_ids, pmc_nos=_pmc_set)
+    rel_by_type    = sum_by_type(_rel)                       # {hold_type_id: released}
+    rel_fixed      = sum_fixed(_rel)                         # {'SD_Amount': released, ...}
+    rel_unassigned = round(sum(_rel['unassigned'].values()), 2)
+
+    # Remaining (net) hold per custom hold type = gross - released
+    remaining_by_type = {
+        ht['hold_type_id']: round(custom_hold_totals.get(ht['hold_type_id'], 0)
+                                  - rel_by_type.get(ht['hold_type_id'], 0), 2)
+        for ht in _hold_types
+    }
+    hold_custom_net = sum(
+        remaining_by_type[ht['hold_type_id']] for ht in _hold_types if ht.get('include_in_hold', 1)
+    )
+    # Hold = (SD + OC + HT + custom holds) - everything released
+    hold_amt = round(
+        (hold_sd - rel_fixed['SD_Amount'])
+        + (hold_ht - rel_fixed['Hydro_Testing'])
+        + hold_custom_net
+        - rel_unassigned, 2)
 
     ws.append(["Summary"])
     ws[f'A{ws.max_row}'].font = bold_blue
@@ -274,16 +286,29 @@ def download_filtered_report():
         if color:
             ws[f'B{r_idx}'].fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
 
-    _sum_row("Hold",            hold_amt,    bold=True, color="FFE699")
     _sum_row("Balance to Debit", balance_to_debit)
     _sum_row("Advance/ Surplus", surplus,
              color="C6EFCE" if surplus >= 0 else "FFC7CE")
     _sum_row("GST Remaining",   gst_remaining)
-    # Custom hold types shown as gross — hold releases are already captured in payments/surplus
+    _sum_row("Total Hold",      hold_amt,    bold=True, color="FFE699")
+    # Fixed hold columns: REMAINING hold (gross - released)
+    for _lbl, _gross, _fx in (("SD_Amount", hold_sd, 'SD_Amount'),
+                              ("Hydro_Testing", hold_ht, 'Hydro_Testing')):
+        _rel_fx = rel_fixed.get(_fx, 0)
+        if _gross or _rel_fx:
+            _sum_row(_lbl, round(_gross - _rel_fx, 2))
+            ws.cell(row=ws.max_row, column=3,
+                    value=f"Gross {_gross:,.2f} - Released {_rel_fx:,.2f}").font = Font(italic=True, color="888888", size=9)
+    # Custom hold types: REMAINING hold (gross - released), with the breakdown beside it
     for ht in _hold_types:
-        gross = custom_hold_totals.get(ht['hold_type_id'], 0)
-        if gross:
-            _sum_row(ht['hold_type'], gross)
+        gross    = custom_hold_totals.get(ht['hold_type_id'], 0)
+        released = rel_by_type.get(ht['hold_type_id'], 0)
+        if gross or released:
+            _sum_row(ht['hold_type'], round(gross - released, 2))
+            ws.cell(row=ws.max_row, column=3,
+                    value=f"Gross {gross:,.2f} - Released {released:,.2f}").font = Font(italic=True, color="888888", size=9)
+    if rel_unassigned:
+        _sum_row("Unassigned hold release (set column in Hold Release page)", rel_unassigned, color="FFC7CE")
     ws.append([])
 
     # ── Table headers ─────────────────────────────────────────────────────
@@ -291,7 +316,7 @@ def download_filtered_report():
         "Contractor Name", "PMC No", "State", "District", "Block", "Village",
         "Invoice Date", "Invoice No", "Invoice Details",
         "Basic Amount", "Debit", "After Debit Amount", "GST Amount", "Amount",
-        "TDS Amount", "SD Amount", "On Commission", "Hydro Testing",
+        "TDS Amount", "SD Amount", "Hydro Testing",
         "GST SD Amount",
     ]
     hold_headers = [ht['hold_type'] for ht in _hold_types]
@@ -313,7 +338,7 @@ def download_filtered_report():
     for _i, _r in enumerate(rows):
         _p = str(_r.get('PMC_No') or '').strip()
         _pmc_final_map[_p] += float(_r.get('Final_Amount') or 0)
-        _pmc_paid_map[_p]  += float(_r.get('Amount_after_TDS_Deduction') or 0)
+        _pmc_paid_map[_p]  += _row_paid(_r)
         _pmc_last_idx[_p] = _i
     _vwa_by_pmc = {p: round(_pmc_final_map[p] - _pmc_paid_map[p], 2) for p in _pmc_final_map}
 
@@ -324,8 +349,8 @@ def download_filtered_report():
     )
     _dup_utrs   = {u for u, c in _utr_counts.items() if c > 1}
     _dup_fill   = PatternFill(start_color="FF6600", end_color="FF6600", fill_type="solid")
-    # UTR column index (1-based): 19 base cols + hold cols + Final + Paid + UTR
-    _utr_col    = 19 + len(_hold_types) + 3
+    # UTR column index (1-based): 18 base cols + hold cols + Final + Paid + UTR
+    _utr_col    = 18 + len(_hold_types) + 3
 
     # ── Data rows ─────────────────────────────────────────────────────────
     for i, r in enumerate(rows):
@@ -345,7 +370,7 @@ def download_filtered_report():
             v('Invoice_Details'),
             fv('Basic_Amount'), fv('Debit_Amount'), fv('After_Debit_Amount'),
             fv('GST_Amount'), fv('Amount'),
-            fv('TDS_Amount'), fv('SD_Amount'), fv('On_Commission'), fv('Hydro_Testing'),
+            fv('TDS_Amount'), fv('SD_Amount'), fv('Hydro_Testing'),
             fv('GST_SD_Amount'),
         ]
         inv_holds = _hold_data.get(r.get('Invoice_Id'), {})
@@ -382,7 +407,6 @@ def download_filtered_report():
             round(sum(float(r.get('Amount')              or 0) for r in rows), 2),
             round(sum(float(r.get('TDS_Amount')          or 0) for r in rows), 2),
             round(sum(float(r.get('SD_Amount')           or 0) for r in rows), 2),
-            round(sum(float(r.get('On_Commission')       or 0) for r in rows), 2),
             round(sum(float(r.get('Hydro_Testing')       or 0) for r in rows), 2),
             round(sum(float(r.get('GST_SD_Amount')       or 0) for r in rows), 2),
         ]
@@ -403,7 +427,7 @@ def download_filtered_report():
 
     # Number format for amount columns
     amt_start = 10
-    amt_end   = 10 + len(base_headers) - 9 + len(hold_headers) + 2  # through Final+Paid
+    amt_end   = 10 + len(base_headers) - 9 + len(hold_headers) + 1  # through Final+Paid (excludes UTR)
     for row in ws.iter_rows(min_row=hdr_row + 1, max_row=ws.max_row,
                             min_col=amt_start, max_col=amt_end):
         for cell in row:

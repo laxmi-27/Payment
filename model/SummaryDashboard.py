@@ -1,4 +1,5 @@
 import config
+from model.HoldReleaseSummary import get_release_totals
 
 
 class SummaryDashboard:
@@ -101,15 +102,14 @@ class SummaryDashboard:
             """, contractor_ids)
             credit_map = {r['Contractor_Id']: float(r['total_debit_notes'] or 0) for r in cursor.fetchall()}
 
-            # ── Hold releases per contractor ───────────────────────────────
-            cursor.execute(f"""
-                SELECT Contractor_Id,
-                       COALESCE(SUM(Final_Amount), 0) AS total_released
-                FROM hold_release
-                WHERE Contractor_Id IN ({fmt})
-                GROUP BY Contractor_Id
-            """, contractor_ids)
-            hold_release_map = {r['Contractor_Id']: float(r['total_released'] or 0) for r in cursor.fetchall()}
+            # ── Hold releases per contractor, split by hold column ─────────
+            release = get_release_totals(contractor_ids)
+            hold_release_map = {
+                cid: round(sum(release['by_type'].get(cid, {}).values())
+                           + sum(release['fixed'].get(cid, {}).values())
+                           + release['unassigned'].get(cid, 0.0), 2)
+                for cid in contractor_ids
+            }
 
             # ── Custom holds (gross) per contractor per hold type ──────────
             cursor.execute(f"""
@@ -155,7 +155,20 @@ class SummaryDashboard:
                     amt for htid, amt in custom_hold_gross_map.get(cid, {}).items()
                     if hold_type_include.get(htid, True)
                 )
-                hold_amt    = round(total_sd + total_oc + total_ht + custom_hold_gross_total, 2)
+                rel_t   = release['by_type'].get(cid, {})
+                rel_f   = release['fixed'].get(cid, {})
+                rel_u   = release['unassigned'].get(cid, 0.0)
+                # custom holds that count toward Hold, net of their own releases
+                custom_hold_net_total = sum(
+                    amt - rel_t.get(htid, 0.0)
+                    for htid, amt in custom_hold_gross_map.get(cid, {}).items()
+                    if hold_type_include.get(htid, True)
+                )
+                # Hold = remaining (gross - released) of every column
+                hold_amt = round(
+                    (total_sd - rel_f.get('SD_Amount', 0.0))
+                    + (total_ht - rel_f.get('Hydro_Testing', 0.0))
+                    + custom_hold_net_total - rel_u, 2)
 
                 total_final = float(c.get('total_final') or 0)
                 total_paid  = float(c.get('total_paid')  or 0)
@@ -172,10 +185,15 @@ class SummaryDashboard:
                 # Surplus = (Invoice Final + GST Final) - (Invoice Paid + GST Paid)
                 surplus = round((total_final + gst_final) - (total_paid + gst_paid), 2)
 
-                # Custom holds shown as gross — releases already captured in payments/surplus
+                # Custom holds shown as REMAINING (gross - released)
                 contractor_gross = custom_hold_gross_map.get(cid, {})
                 custom_holds_gross = {
-                    ht['hold_type_id']: round(contractor_gross.get(ht['hold_type_id'], 0.0), 2)
+                    ht['hold_type_id']: round(contractor_gross.get(ht['hold_type_id'], 0.0)
+                                              - rel_t.get(ht['hold_type_id'], 0.0), 2)
+                    for ht in sorted_hold_types
+                }
+                custom_holds_released = {
+                    ht['hold_type_id']: round(rel_t.get(ht['hold_type_id'], 0.0), 2)
                     for ht in sorted_hold_types
                 }
 
@@ -199,7 +217,9 @@ class SummaryDashboard:
                     'gst_final':       round(gst_final,   2),
                     'total_paid':      round(total_paid,  2),
                     'gst_paid':        round(gst_paid,    2),
-                    'custom_holds':    custom_holds_gross,
+                    'custom_holds':    custom_holds_gross,          # remaining = gross - released
+                    'custom_holds_released': custom_holds_released,
+                    'hold_released':   round(hold_released, 2),
                 })
 
             return result, sorted_hold_types

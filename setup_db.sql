@@ -152,6 +152,8 @@ CREATE TABLE IF NOT EXISTS `hold_release` (
     `UTR`             VARCHAR(255) UNIQUE,
     `Contractor_Id`   INT,
     `uploaded_file_id` INT DEFAULT NULL,
+    `hold_type_id`    INT NULL,
+    `fixed_hold`      VARCHAR(30) NULL,
     FOREIGN KEY (`Contractor_Id`) REFERENCES `subcontractors`(`Contractor_Id`)
 );
 
@@ -770,7 +772,7 @@ END //
 
 -- ── HOLD RELEASES ────────────────────────────────────────────────
 
--- 8 params: writes to hold_release
+-- 10 params: writes to hold_release (incl. which hold column is released)
 DROP PROCEDURE IF EXISTS AddHoldReleaseFromExcel //
 CREATE PROCEDURE AddHoldReleaseFromExcel(
     IN p_pmc_no        VARCHAR(100),
@@ -780,11 +782,15 @@ CREATE PROCEDURE AddHoldReleaseFromExcel(
     IN p_final         DECIMAL(15,2),
     IN p_total         DECIMAL(15,2),
     IN p_utr           VARCHAR(255),
-    IN p_contractor_id INT
+    IN p_contractor_id INT,
+    IN p_hold_type_id  INT,
+    IN p_fixed_hold    VARCHAR(30)
 )
 BEGIN
-    INSERT INTO hold_release (PMC_No, Invoice_No, Invoice_Details, Basic_Amount, Final_Amount, Total_Amount, UTR, Contractor_Id)
-    VALUES (p_pmc_no, p_invoice_no, p_details, p_basic, p_final, p_total, p_utr, p_contractor_id);
+    INSERT INTO hold_release (PMC_No, Invoice_No, Invoice_Details, Basic_Amount, Final_Amount, Total_Amount,
+                              UTR, Contractor_Id, hold_type_id, fixed_hold)
+    VALUES (p_pmc_no, p_invoice_no, p_details, p_basic, p_final, p_total,
+            p_utr, p_contractor_id, p_hold_type_id, p_fixed_hold);
 END //
 
 -- ── REPORT / LOOKUP ──────────────────────────────────────────────

@@ -3,6 +3,7 @@ from openpyxl.styles import Font, PatternFill
 from datetime import datetime
 from decimal import Decimal
 from model.FolderAndFile import FolderAndFile
+from model.HoldReleaseSummary import get_release_totals, sum_by_type, sum_fixed
 
 class excel:
 
@@ -235,15 +236,21 @@ class excel:
 
         # ── Summary rows ──────────────────────────────────────────────────
         sd_amt = float(total.get('sum_invo_ds_amt', 0) or 0)
-        oc_amt = float(total.get('sum_invo_on_commission', 0) or 0)
         ht_amt = float(total.get('sum_invo_hydro_test', 0) or 0)
 
-        # Hold = SD + OC + HT + non-DPR custom holds (include_in_hold=1), matching source Excel formula
+        # Releases split by the hold column they belong to
+        _rel        = get_release_totals([contractor_id])
+        rel_by_type = sum_by_type(_rel)
+        rel_fixed   = sum_fixed(_rel)
+        rel_unassigned = round(sum(_rel['unassigned'].values()), 2)
+
+        # Hold = remaining (gross - released) of SD + OC + HT + non-DPR custom holds
         custom_total = sum(
-            float(hold_totals.get(ht['hold_type_id'], 0) or 0)
+            float(hold_totals.get(ht['hold_type_id'], 0) or 0) - rel_by_type.get(ht['hold_type_id'], 0)
             for ht in hold_types if ht.get('include_in_hold', 1)
         )
-        hold_amt = round(sd_amt + oc_amt + ht_amt + custom_total, 2)
+        hold_amt = round((sd_amt - rel_fixed['SD_Amount'])
+                         + (ht_amt - rel_fixed['Hydro_Testing']) + custom_total - rel_unassigned, 2)
         sheet.append(["Hold", hold_amt])
         hold_row = sheet.max_row
         for col_idx in (1, 2):
@@ -272,11 +279,15 @@ class excel:
             float(total.get('sum_gst_final_amt',  0) or 0), 2)
         sheet.append(["GST Remaining", gst_remaining])
 
-        # Custom hold types shown as gross — hold releases are already captured in payments/surplus
+        # Custom hold types: REMAINING = gross - released (Testing_ Deposit_RR -> 4,633,964.80 - 2,245,964.80 = 2,388,000.00)
         for ht in hold_types:
-            gross = round(float(hold_totals.get(ht['hold_type_id'], 0) or 0), 2)
-            if gross:
-                sheet.append([ht['hold_type'], gross])
+            gross    = round(float(hold_totals.get(ht['hold_type_id'], 0) or 0), 2)
+            released = round(rel_by_type.get(ht['hold_type_id'], 0), 2)
+            if gross or released:
+                sheet.append([ht['hold_type'], round(gross - released, 2),
+                              f"Gross {gross:,.2f} - Released {released:,.2f}"])
+        if rel_unassigned:
+            sheet.append(["Unassigned hold release", rel_unassigned])
 
         # ── Auto-fit columns ──────────────────────────────────────────────
         for col in sheet.columns:

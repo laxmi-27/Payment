@@ -228,6 +228,21 @@
             <textarea id="hrInvoiceDetails" name="Invoice_Details"
               placeholder="Enter invoice / hold details…" rows="2"></textarea>
           </div>
+          <div class="hr-field">
+            <label>Hold Column Released <span class="hr-req">*</span></label>
+            <select id="hrHoldCol" name="hold_col" required>
+              <option value="">— Select hold column —</option>
+              <optgroup label="Invoice hold columns">
+                <option value="f:SD_Amount">SD_Amount</option>
+                <option value="f:Hydro_Testing">Hydro_Testing</option>
+              </optgroup>
+              <optgroup label="Custom hold types">
+                {% for ht in hold_types %}
+                <option value="t:{{ ht.hold_type_id }}">{{ ht.hold_type }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -285,7 +300,7 @@
         <div class="hr-sw">
           <i class="fas fa-search"></i>
           <input type="text" id="hrSearch"
-            placeholder="Search PMC, invoice, UTR, subcontractor…"
+            placeholder="Search PMC, invoice, hold column, UTR, subcontractor…"
             oninput="hrFilter()">
         </div>
       </div>
@@ -300,6 +315,7 @@
             <th>PMC No</th>
             <th>Invoice No</th>
             <th>Invoice Details</th>
+            <th>Hold Column Released</th>
             <th>Basic (&#8377;)</th>
             <th>Final (&#8377;)</th>
             <th>Total (&#8377;)</th>
@@ -320,6 +336,7 @@
                 'final_amt':   (r.Final_Amount or 0)|string,
                 'total':       (r.Total_Amount or 0)|string,
                 'utr':         (r.UTR or ''),
+                'column':      (r.Released_Column or ''),
               } %}
               <tr data-id="{{ r.Hold_Release_Id }}" data-info='{{ d | tojson }}'>
                 <td class="hr-mono">{{ r.Hold_Release_Id }}</td>
@@ -342,6 +359,13 @@
                     {{ r.Invoice_Details[:60] }}{% if r.Invoice_Details|length > 60 %}…{% endif %}
                   {% else %}
                     <span class="hr-na">Not provided</span>
+                  {% endif %}
+                </td>
+                <td style="font-weight:600;color:#2a5298;white-space:nowrap;">
+                  {% if r.Released_Column and r.Released_Column != 'Unassigned' %}
+                    {{ r.Released_Column }}
+                  {% else %}
+                    <span class="hr-na" style="color:#c62828;">Unassigned</span>
                   {% endif %}
                 </td>
                 <td class="hr-amt">
@@ -375,7 +399,7 @@
             {% endfor %}
           {% else %}
             <tr>
-              <td colspan="10" class="hr-empty">
+              <td colspan="11" class="hr-empty">
                 <i class="fas fa-lock-open"></i>
                 <p style="font-weight:600;">No hold releases recorded yet</p>
                 <p>Click <b>Add Hold Release</b> to record the first entry.</p>
@@ -558,6 +582,7 @@ function hrFilter() {
       || (d.invoice    || '').toLowerCase().includes(q)
       || (d.details    || '').toLowerCase().includes(q)
       || (d.utr        || '').toLowerCase().includes(q)
+      || (d.column     || '').toLowerCase().includes(q)
       || String(d.basic     || '').includes(q)
       || String(d.final_amt || '').includes(q)
       || String(d.total     || '').includes(q);
@@ -575,7 +600,7 @@ function hrFilter() {
       noRow = document.createElement('tr');
       noRow.id = 'hrNoResults';
       noRow.innerHTML =
-        '<td colspan="10" class="hr-empty" style="padding:32px 0;">'
+        '<td colspan="11" class="hr-empty" style="padding:32px 0;">'
         + '<i class="fas fa-search" style="font-size:28px;color:#9aadcc;display:block;margin-bottom:10px;"></i>'
         + '<p style="font-weight:600;color:#374151;margin:0 0 4px;">No matching records found</p>'
         + '<p style="color:#9aadcc;margin:0;">Try a different search term.</p>'

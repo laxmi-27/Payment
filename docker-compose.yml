@@ -2,10 +2,9 @@ version: "3.8"
 
 services:
   flask-app:
-    container_name: flask1
     build: .
     ports:
-      - "5030:5020"
+      - "5020:5020"  
     depends_on:
       - mysql
     environment:
@@ -23,7 +22,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
     ports:
-      - "3321:3306"
+      - "3320:3306"   
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
